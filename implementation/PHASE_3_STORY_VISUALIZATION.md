@@ -444,6 +444,321 @@ After the story ends, the child can:
 
 ---
 
+## Optional: Video Generation with Veo 3 (Post-Story Feature)
+
+> **This is an optional stretch feature.** Video generation takes 30–90 seconds per clip
+> and is significantly more expensive than image generation. It should only trigger
+> after the story session has ended — never during live audio streaming.
+
+### Concept
+
+Once the story ends and the scene grid is populated with still images, offer the child
+a **"Bring my story to life!"** button. This animates each scene image into a short
+4–8 second video clip using **Veo 3.1** on Vertex AI, then plays them back as a
+mini storybook movie.
+
+```
+Story ends → "Bring to life!" button appears
+  ↓
+For each generated scene image:
+  POST /api/video  { image_b64, motion_hint, image_style, session_id }
+    ↓
+  Veo 3.1 image-to-video (async long-running operation, poll every 10s)
+    ↓
+  Return mp4 bytes as base64 → frontend <video> element
+```
+
+---
+
+### Why Image-to-Video (not Text-to-Video)
+
+We already have the scene images from Phase 3. Feeding them to Veo as `starting_image`
+gives visual consistency — the animated clip will look exactly like the illustration
+the child just saw, but now with motion. Text-to-video would generate a completely
+new scene with different visual style.
+
+---
+
+### Backend: `/api/video` endpoint
+
+```python
+# backend/video_gen.py
+import asyncio
+import base64
+import os
+import time
+from google import genai
+from google.genai import types
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
+
+router = APIRouter()
+
+PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
+LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+VIDEO_MODEL = "veo-3.1-generate-001"
+VIDEO_MODEL_FAST = "veo-3.1-fast-generate-001"   # lower latency, slightly lower quality
+
+
+class VideoRequest(BaseModel):
+    image_data: str        # base64 PNG — the scene image from Phase 3
+    motion_hint: str       # short description of what should move (from story text)
+    image_style: str       # character's art style string
+    session_id: str
+    fast: bool = True      # use fast model by default to reduce latency
+
+
+class VideoResponse(BaseModel):
+    video_data: str        # base64 mp4
+    mime_type: str = "video/mp4"
+
+
+@router.post("/api/video", response_model=VideoResponse)
+async def generate_scene_video(request: VideoRequest):
+    """Animate a story scene image into a short video clip using Veo 3."""
+
+    client = genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
+    model = VIDEO_MODEL_FAST if request.fast else VIDEO_MODEL
+
+    # Decode the base64 image
+    image_bytes = base64.b64decode(request.image_data)
+
+    # Build a child-safe motion prompt from the story context
+    prompt = (
+        f"child-safe animation, gentle motion, storybook style, "
+        f"{request.image_style}, "
+        f"{request.motion_hint.strip()}"
+    )
+
+    operation = client.models.generate_videos(
+        model=model,
+        prompt=prompt,
+        image=types.Image(image_bytes=image_bytes, mime_type="image/png"),
+        config=types.GenerateVideosConfig(
+            aspect_ratio="4:3",
+            number_of_videos=1,
+            duration_seconds=6,
+            resolution="720p",
+            person_generation="dont_allow",   # child-safe: no generated people
+            enhance_prompt=True,
+            generate_audio=False,             # audio comes from Gemini Live, not Veo
+        ),
+    )
+
+    # Poll until complete (Veo is a long-running operation)
+    max_wait = 120  # seconds
+    waited = 0
+    while not operation.done:
+        await asyncio.sleep(10)
+        waited += 10
+        operation = client.operations.get(operation)
+        if waited >= max_wait:
+            raise HTTPException(status_code=504, detail="Video generation timed out")
+
+    if not operation.response:
+        raise HTTPException(status_code=500, detail="Video generation failed")
+
+    video_bytes = operation.result.generated_videos[0].video.video_bytes
+    video_b64 = base64.b64encode(video_bytes).decode("utf-8")
+
+    return VideoResponse(video_data=video_b64)
+```
+
+Register the router in `main.py`:
+```python
+from video_gen import router as video_router
+app.include_router(video_router)
+```
+
+---
+
+### Motion Hint Extraction
+
+The `motion_hint` tells Veo what should move in the scene. Extract it from the story
+transcription that triggered the image (already available in `SceneDetector`):
+
+```python
+def extract_motion_hint(scene_text: str) -> str:
+    """
+    Pull a short action phrase from the story text to use as Veo motion prompt.
+    Falls back to a generic 'gentle swaying, leaves rustling' if text is too long.
+    """
+    # Take first sentence and trim to 80 chars — Veo doesn't need a novel
+    first_sentence = scene_text.split(".")[0].strip()
+    if len(first_sentence) > 80:
+        return "gentle movement, soft breeze, storybook animation"
+    return first_sentence
+```
+
+---
+
+### Frontend: `useStoryVideos` hook
+
+```typescript
+// frontend/src/hooks/useStoryVideos.ts
+import { useState, useCallback } from "react";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+interface VideoScene {
+  sceneId: string;
+  status: "idle" | "loading" | "ready" | "error";
+  videoData: string | null;  // base64 mp4
+}
+
+export function useStoryVideos() {
+  const [videos, setVideos] = useState<Record<string, VideoScene>>({});
+
+  const animateScene = useCallback(async (
+    sceneId: string,
+    imageData: string,
+    motionHint: string,
+    imageStyle: string,
+    sessionId: string,
+  ) => {
+    setVideos(prev => ({
+      ...prev,
+      [sceneId]: { sceneId, status: "loading", videoData: null },
+    }));
+
+    try {
+      const res = await fetch(`${API_BASE}/api/video`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image_data: imageData,
+          motion_hint: motionHint,
+          image_style: imageStyle,
+          session_id: sessionId,
+          fast: true,
+        }),
+      });
+
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      setVideos(prev => ({
+        ...prev,
+        [sceneId]: { sceneId, status: "ready", videoData: data.video_data },
+      }));
+    } catch (err) {
+      console.error("[story-videos] Failed:", err);
+      setVideos(prev => ({
+        ...prev,
+        [sceneId]: { sceneId, status: "error", videoData: null },
+      }));
+    }
+  }, []);
+
+  return { videos, animateScene };
+}
+```
+
+---
+
+### Frontend: Animated Scene Card (post-story)
+
+After story ends, scene cards swap from `<img>` to `<video>` if a video is ready:
+
+```tsx
+// In StorySceneCard — post-story video overlay
+{sessionEnded && videoScene?.status === "ready" && videoScene.videoData ? (
+  <video
+    src={`data:video/mp4;base64,${videoScene.videoData}`}
+    autoPlay
+    loop
+    muted
+    playsInline
+    className="w-full h-full object-cover"
+  />
+) : (
+  <img
+    src={`data:${scene.mimeType};base64,${scene.imageData}`}
+    alt="Story scene"
+    className="w-full h-full object-cover"
+  />
+)}
+```
+
+---
+
+### "Bring to life!" Button
+
+Shown in the post-story gallery when at least one scene image exists:
+
+```tsx
+{sessionState === "ended" && scenes.length > 0 && !hasAnimated && (
+  <button
+    onClick={() => {
+      setHasAnimated(true);
+      scenes.forEach(scene => {
+        if (scene.status === "loaded" && scene.imageData) {
+          animateScene(
+            scene.id,
+            scene.imageData,
+            scene.description,   // used as motion_hint
+            character.imageStyle,
+            sessionId,
+          );
+        }
+      });
+    }}
+    className="font-bangers text-2xl px-8 py-3 rounded-full
+               bg-gradient-to-r from-yellow-400 to-orange-400
+               text-white shadow-lg hover:scale-105 transition-transform"
+  >
+    ✨ Bring my story to life!
+  </button>
+)}
+```
+
+---
+
+### Latency & Cost Considerations
+
+| Model | Typical latency | Relative cost |
+|---|---|---|
+| `veo-3.1-generate-001` | 60–90s per clip | Higher |
+| `veo-3.1-fast-generate-001` | 30–45s per clip | Lower |
+
+- **Max 8 scenes** from Phase 3 image cap → max 8 video requests per story
+- **Generate in parallel** (`Promise.all` on the frontend) to reduce total wall time
+- **Don't block** the gallery — show the still image immediately, swap to video when ready
+- Consider adding a **per-session video cap** (e.g. 3 clips max) to control costs
+- All Veo videos include **SynthID** watermarking by default
+
+---
+
+### Alternative: Story Recap with Frame Interpolation (Advanced)
+
+Veo 3.1 supports **frame interpolation** — specify a first and last frame and it
+generates the transition between them. For TaleWeaver this could create a
+continuous cinematic sweep through all the scenes:
+
+```python
+# Interpolate from scene N to scene N+1 for a flowing story recap
+operation = client.models.generate_videos(
+    model=VIDEO_MODEL,
+    prompt="gentle scene transition, storybook style, soft camera pan",
+    image=types.Image(image_bytes=scene_1_bytes, mime_type="image/png"),
+    config=types.GenerateVideosConfig(
+        last_frame=types.Image(image_bytes=scene_2_bytes, mime_type="image/png"),
+        aspect_ratio="16:9",
+        number_of_videos=1,
+        duration_seconds=6,
+        resolution="720p",
+        person_generation="dont_allow",
+        generate_audio=False,
+    ),
+)
+```
+
+This produces one fluid clip per scene pair, which could then be stitched into a
+full story movie on the frontend using the Web Codecs API or served as separate
+sequential `<video>` elements.
+
+---
+
 ## Definition of Done
 
 - [ ] Image generation API call works with character-specific art styles
