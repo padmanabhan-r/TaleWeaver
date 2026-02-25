@@ -1,0 +1,213 @@
+# backend/proxy.py
+"""Bidirectional WebSocket proxy between browser and Gemini Live API."""
+
+import asyncio
+import json
+import os
+import ssl
+import certifi
+import google.auth
+from google.auth.transport.requests import Request
+from fastapi import WebSocket, WebSocketDisconnect
+from websockets.exceptions import ConnectionClosed
+import websockets
+
+from characters import build_gemini_setup_message, get_character, gemini_service_url
+from scene_detector import SceneDetector
+
+PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
+LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
+
+
+def get_access_token() -> str:
+    """Get a fresh GCP access token using application default credentials."""
+    creds, _ = google.auth.default(
+        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+    )
+    if not creds.valid:
+        creds.refresh(Request())
+    return creds.token
+
+
+async def proxy_browser_to_gemini(browser_ws: WebSocket, gemini_ws) -> None:
+    """Forward all text messages from the browser to Gemini."""
+    try:
+        while True:
+            data = await browser_ws.receive_text()
+            await gemini_ws.send(data)
+    except WebSocketDisconnect:
+        print("[proxy] Browser disconnected (browser→gemini)")
+    except Exception as e:
+        print(f"[proxy] browser→gemini error: {e}")
+    finally:
+        try:
+            await gemini_ws.close()
+        except Exception:
+            pass
+
+
+async def proxy_gemini_to_browser(
+    gemini_ws,
+    browser_ws: WebSocket,
+    scene_detector: SceneDetector = None,
+) -> None:
+    """Forward all messages from Gemini to the browser.
+
+    Optionally monitors output transcriptions for image triggers.
+    """
+    try:
+        async for message in gemini_ws:
+            try:
+                data = json.loads(message)
+
+                # Monitor output transcriptions for image generation triggers
+                if scene_detector:
+                    server_content = data.get("serverContent", {})
+                    output_tx = server_content.get("outputTranscription", {})
+                    if output_tx.get("finished") and output_tx.get("text"):
+                        asyncio.create_task(
+                            scene_detector.process_transcription(output_tx["text"])
+                        )
+
+                await browser_ws.send_text(json.dumps(data))
+
+            except json.JSONDecodeError:
+                # Binary frame — forward as bytes (rare with Gemini JSON protocol)
+                if isinstance(message, bytes):
+                    await browser_ws.send_bytes(message)
+                else:
+                    await browser_ws.send_text(message)
+            except RuntimeError:
+                # Browser WebSocket already closed — normal during teardown
+                break
+            except Exception as e:
+                print(f"[proxy] gemini→browser send error: {e}")
+                break
+
+    except ConnectionClosed as e:
+        print(f"[proxy] Gemini connection closed (gemini→browser): {e.code} - {e.reason}")
+    except Exception as e:
+        print(f"[proxy] gemini→browser loop error: {e}")
+
+
+async def run_proxy_session(
+    browser_ws: WebSocket,
+    character_id: str,
+    session_id: str,
+) -> None:
+    """
+    Establishes a Gemini Live API session for a character and proxies it to the browser.
+
+    Protocol:
+    1. Load character config
+    2. Connect to Gemini Live API with auth
+    3. Send character setup message (system prompt + voice)
+    4. Wait for setup confirmation from Gemini
+    5. Forward setup confirmation to browser
+    6. Start bidirectional proxy
+    """
+    character = get_character(character_id)
+    if not character:
+        await browser_ws.send_text(json.dumps({
+            "error": f"Unknown character: {character_id}"
+        }))
+        await browser_ws.close(code=1008, reason="Unknown character")
+        return
+
+    try:
+        token = get_access_token()
+    except Exception as e:
+        print(f"[proxy] Auth failed: {e}")
+        await browser_ws.close(code=1008, reason="Authentication failed")
+        return
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+
+    ssl_context = ssl.create_default_context(cafile=certifi.where())
+    setup_message = build_gemini_setup_message(character, PROJECT_ID, LOCATION)
+
+    print(f"[proxy] Connecting to Gemini for character: {character.name}")
+
+    try:
+        async with websockets.connect(
+            gemini_service_url(LOCATION),
+            additional_headers=headers,
+            ssl=ssl_context,
+            ping_interval=20,
+            ping_timeout=10,
+        ) as gemini_ws:
+            print("[proxy] Connected to Gemini Live API ✓")
+
+            # Send character setup to Gemini
+            await gemini_ws.send(json.dumps(setup_message))
+
+            # Wait for Gemini setup confirmation
+            setup_response = await asyncio.wait_for(gemini_ws.recv(), timeout=15.0)
+            setup_data = json.loads(setup_response)
+
+            if not setup_data.get("setupComplete"):
+                print(f"[proxy] Unexpected setup response: {setup_data}")
+                await browser_ws.close(code=1011, reason="Gemini setup failed")
+                return
+
+            # Forward setup confirmation to browser
+            await browser_ws.send_text(json.dumps({
+                "setupComplete": True,
+                "characterName": character.name,
+                "characterId": character.id,
+            }))
+
+            print(f"[proxy] Session ready for {character.name} (session: {session_id})")
+
+            # Prompt the character to deliver their opening greeting.
+            # Without this, proactive_audio alone doesn't reliably trigger speech.
+            await gemini_ws.send(json.dumps({
+                "client_content": {
+                    "turns": [{"role": "user", "parts": [{"text": "Begin!"}]}],
+                    "turn_complete": True,
+                }
+            }))
+
+            scene_detector = SceneDetector(
+                session_id=session_id,
+                image_style=character.image_style,
+            )
+
+            # Start bidirectional proxy
+            browser_to_gemini = asyncio.create_task(
+                proxy_browser_to_gemini(browser_ws, gemini_ws)
+            )
+            gemini_to_browser = asyncio.create_task(
+                proxy_gemini_to_browser(gemini_ws, browser_ws, scene_detector)
+            )
+
+            done, pending = await asyncio.wait(
+                [browser_to_gemini, gemini_to_browser],
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+    except asyncio.TimeoutError:
+        print("[proxy] Timeout waiting for Gemini setup")
+        await browser_ws.close(code=1008, reason="Gemini setup timeout")
+    except ConnectionClosed as e:
+        print(f"[proxy] Gemini connection closed: {e.code} - {e.reason}")
+        try:
+            await browser_ws.close(code=e.code, reason=e.reason)
+        except Exception:
+            pass
+    except Exception as e:
+        print(f"[proxy] Error: {e}")
+        try:
+            await browser_ws.close(code=1011, reason="Internal error")
+        except Exception:
+            pass

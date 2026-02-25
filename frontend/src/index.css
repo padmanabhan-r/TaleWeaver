@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 100% 97%;
+    --foreground: 270 50% 15%;
+    --card: 0 0% 100%;
+    --card-foreground: 270 50% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 270 50% 15%;
+    --primary: 270 60% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 200 80% 85%;
+    --secondary-foreground: 210 60% 20%;
+    --muted: 270 30% 92%;
+    --muted-foreground: 270 10% 45%;
+    --accent: 45 100% 60%;
+    --accent-foreground: 30 80% 20%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 270 30% 85%;
+    --input: 270 30% 85%;
+    --ring: 270 60% 50%;
+    --radius: 1rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Comic Neue", cursive;
+  }
+}
+
+/* Emoji bounce on hover */
+@keyframes emoji-bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  30%      { transform: translateY(-12px) scale(1.15); }
+  60%      { transform: translateY(-5px) scale(1.05); }
+}
+.emoji-hover { animation: emoji-bounce 0.5s ease forwards; }
+
+/* Emoji big jump on selection */
+@keyframes emoji-jump {
+  0%   { transform: translateY(0) scale(1) rotate(0deg); }
+  25%  { transform: translateY(-20px) scale(1.2) rotate(-5deg); }
+  50%  { transform: translateY(-30px) scale(1.3) rotate(5deg); }
+  75%  { transform: translateY(-10px) scale(1.1) rotate(-2deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
+}
+.emoji-selected { animation: emoji-jump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+/* Gold ring pulse around selected card */
+@keyframes gold-ring-pulse {
+  0%   { box-shadow: 0 0 0 0px rgba(251, 191, 36, 0.7); }
+  70%  { box-shadow: 0 0 0 12px rgba(251, 191, 36, 0); }
+  100% { box-shadow: 0 0 0 0px rgba(251, 191, 36, 0); }
+}
+.ring-gold-pulse { animation: gold-ring-pulse 1s ease-out infinite; }
+
+/* Sparkle float */
+@keyframes sparkle-float {
+  0%, 100% { transform: translateY(0px) scale(1); opacity: 0.6; }
+  50%      { transform: translateY(-15px) scale(1.1); opacity: 1; }
+}
+.sparkle-float { animation: sparkle-float var(--duration, 3s) ease-in-out infinite; animation-delay: var(--delay, 0s); }
+
+/* Screen fade out transition */
+@keyframes fade-to-white {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+.screen-fade-out { animation: fade-to-white 0.4s ease forwards; }
+
+/* Screen fade in */
+@keyframes fade-from-white {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.screen-fade-in { animation: fade-from-white 0.5s ease forwards; }
+
+/* Card fade out (others when one selected) */
+@keyframes card-dismiss {
+  to { opacity: 0; transform: scale(0.85); }
+}
+.card-dismissed { animation: card-dismiss 0.3s ease forwards; }
+
+/* Speaking ring pulse (story screen) */
+@keyframes speaking-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5); }
+  50%      { box-shadow: 0 0 0 20px rgba(251, 191, 36, 0); }
+}
+.state-speaking { animation: speaking-pulse 0.8s ease infinite; }
+
+/* Listening ring glow (story screen) */
+@keyframes listening-glow {
+  0%   { box-shadow: 0 0 0 5px rgba(96, 165, 250, 0.2); }
+  100% { box-shadow: 0 0 0 20px rgba(96, 165, 250, 0.5); }
+}
+.state-listening { animation: listening-glow 1.5s ease-in-out infinite alternate; }
+
+/* Dashed border color cycle on story right panel */
+@keyframes border-rainbow {
+  0%   { border-color: #C084FC; }
+  25%  { border-color: #60A5FA; }
+  50%  { border-color: #34D399; }
+  75%  { border-color: #FB923C; }
+  100% { border-color: #C084FC; }
+}
+.border-cycle { animation: border-rainbow 4s linear infinite; }
+
+/* Idle ring state */
+.state-idle {
+  box-shadow: 0 0 0 6px rgba(156, 163, 175, 0.3);
+}
+
+/* Atmospheric cloud drift */
+@keyframes cloud-drift {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(30px); }
+  100% { transform: translateX(0); }
+}
+.cloud-drift { animation: cloud-drift 12s ease-in-out infinite; }
+
+@keyframes cloud-drift-slow {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(-20px); }
+  100% { transform: translateX(0); }
+}
+.cloud-drift-slow { animation: cloud-drift-slow 18s ease-in-out infinite; }
