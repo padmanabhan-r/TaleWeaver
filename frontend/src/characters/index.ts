@@ -9,6 +9,7 @@ export interface Character {
   accentColor: string;
   textColor: string;
   greeting: string;
+  imageStyle: string;
 }
 
 export const CHARACTERS: Character[] = [
@@ -23,6 +24,7 @@ export const CHARACTERS: Character[] = [
     accentColor: "#FF69B4",
     textColor: "#9D174D",
     greeting: "Hello sweetheart! I've been waiting for you. Shall we tell a story?",
+    imageStyle: "warm watercolor illustration, storybook style, soft pastel colors, cozy and gentle, children's picture book art, golden hour lighting, heartwarming, detailed backgrounds",
   },
   {
     id: "captain-leo",
@@ -35,6 +37,7 @@ export const CHARACTERS: Character[] = [
     accentColor: "#2563EB",
     textColor: "#1E3A8A",
     greeting: "Ahoy there, young explorer! Ready for an adventure on the high seas?",
+    imageStyle: "bold comic book illustration style, vibrant saturated colors, adventure and nautical themes, dynamic action poses, bright sky and ocean, children's adventure book art",
   },
   {
     id: "fairy-sparkle",
@@ -47,6 +50,7 @@ export const CHARACTERS: Character[] = [
     accentColor: "#A855F7",
     textColor: "#6B21A8",
     greeting: "Oh! A visitor! I have the most wonderful magical story just waiting to be told!",
+    imageStyle: "sparkly magical fantasy illustration, pastel rainbow colors, glitter and stars, enchanted forest, fairy tale art style, soft glowing light, magical creatures, flowers and butterflies",
   },
   {
     id: "professor-whiz",
@@ -59,6 +63,7 @@ export const CHARACTERS: Character[] = [
     accentColor: "#10B981",
     textColor: "#065F46",
     greeting: "Fascinating! A young mind arrives! I have a most extraordinary story!",
+    imageStyle: "colorful cartoon science illustration, bright cheerful laboratory, inventor workshop style, children's STEM art, gadgets and gizmos, colorful experiments, friendly robots, clean bright backgrounds",
   },
   {
     id: "dragon-blaze",
@@ -71,6 +76,7 @@ export const CHARACTERS: Character[] = [
     accentColor: "#F97316",
     textColor: "#9A3412",
     greeting: "ROAAARRR! Oh wait, I mean... hello! Ready for the most EPIC story EVER?!",
+    imageStyle: "bold vibrant cartoon style, fiery bright orange and red colors, funny expressive dragon characters, action-comedy illustration, big eyes and expressions, energetic and dynamic, children's cartoon style",
   },
   // ── Indian language storytellers ─────────────────────────────────────────
   {
@@ -84,6 +90,7 @@ export const CHARACTERS: Character[] = [
     accentColor: "#C2410C",
     textColor: "#7C2D12",
     greeting: "வாங்க கண்ணா! என்னிடம் மிகவும் அழகான கதை இருக்கு. கேட்கணுமா?",
+    imageStyle: "warm watercolor illustration, traditional Tamil village setting, rich saffron and deep magenta colors, jasmine flowers, kolam patterns, children's picture book art, golden lamp light, heartwarming",
   },
   {
     id: "dadi",
@@ -96,6 +103,7 @@ export const CHARACTERS: Character[] = [
     accentColor: "#0E7490",
     textColor: "#164E63",
     greeting: "आओ बेटा! दादी के पास बहुत सारी कहानियाँ हैं। सुनोगे ना?",
+    imageStyle: "warm watercolor illustration, traditional North Indian village setting, rich teal and gold colors, marigold flowers, rangoli patterns, children's picture book art, soft evening lamp light, heartwarming",
   },
 ];
 

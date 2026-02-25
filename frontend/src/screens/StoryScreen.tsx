@@ -1,7 +1,10 @@
+import { useRef } from "react";
 import { Character } from "@/characters";
 import CharacterPortrait from "@/components/CharacterPortrait";
 import StorybookEmpty from "@/components/StorybookEmpty";
+import { StorySceneGrid } from "@/components/StorySceneGrid";
 import { useLiveAPI, CharacterState } from "@/hooks/useLiveAPI";
+import { useStoryImages } from "@/hooks/useStoryImages";
 
 interface Props {
   character: Character;
@@ -29,7 +32,18 @@ const STATUS_TEXT: Record<string, string> = {
 };
 
 const StoryScreen = ({ character, onBack, onBegin }: Props) => {
-  const { connect, disconnect, sessionState, characterState } = useLiveAPI({ character });
+  // Stable session ID for this screen mount
+  const sessionIdRef = useRef<string>(crypto.randomUUID());
+
+  const { scenes, triggerImageGeneration } = useStoryImages(
+    character.imageStyle,
+    sessionIdRef.current
+  );
+
+  const { connect, disconnect, sessionState, characterState } = useLiveAPI({
+    character,
+    onImageTrigger: triggerImageGeneration,
+  });
 
   const avatarClass = AVATAR_STATE_CLASS[characterState];
 
@@ -143,9 +157,17 @@ const StoryScreen = ({ character, onBack, onBegin }: Props) => {
           )}
         </div>
 
-        {/* Right panel — story scene images appear here (Phase 3) */}
-        <div className="md:w-[60%] w-full min-h-[400px] md:min-h-[500px] rounded-3xl border-4 border-dashed bg-white/40 flex flex-col items-center justify-center gap-4 p-8 border-cycle">
-          <StorybookEmpty />
+        {/* Right panel — story scene images */}
+        <div className="md:w-[60%] w-full min-h-[400px] md:min-h-[500px] rounded-3xl border-4 border-dashed bg-white/40 border-cycle overflow-hidden">
+          {scenes.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 p-8">
+              <StorybookEmpty />
+            </div>
+          ) : (
+            <div className="w-full h-full">
+              <StorySceneGrid scenes={scenes} />
+            </div>
+          )}
         </div>
       </main>
     </div>

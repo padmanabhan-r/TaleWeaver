@@ -156,6 +156,8 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
+  // Accumulates character speech across transcription chunks (finished flag unreliable in native audio)
+  const outputTextAccRef = useRef("");
 
   const { startCapture, stopCapture, isCapturing } = useAudioCapture(wsRef);
   const { initPlayback, playChunk, clearBuffer, isPlaying } = useAudioPlayback();
@@ -218,6 +220,7 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
 
           // Barge-in: child interrupted the character
           if (sc.interrupted) {
+            outputTextAccRef.current = "";
             clearBufferRef.current();
             setCharacterState("listening");
             return;
@@ -228,11 +231,10 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
             onTranscriptionRef.current?.({ type: "child", text: sc.inputTranscription.text });
           }
 
-          // What the character said — triggers image generation
-          if (sc.outputTranscription?.finished && sc.outputTranscription?.text) {
-            const text = sc.outputTranscription.text;
-            onTranscriptionRef.current?.({ type: "character", text });
-            onImageTriggerRef.current?.(text);
+          // Accumulate character speech transcription chunks
+          // (finished flag is unreliable in native audio model — we fire on turnComplete)
+          if (sc.outputTranscription?.text) {
+            outputTextAccRef.current += sc.outputTranscription.text;
           }
 
           // Audio chunks from the character
@@ -245,8 +247,14 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
             }
           }
 
-          // Character finished speaking — wait for child
+          // Character finished speaking — fire image trigger with accumulated text
           if (sc.turnComplete) {
+            const accText = outputTextAccRef.current.trim();
+            if (accText) {
+              onTranscriptionRef.current?.({ type: "character", text: accText });
+              onImageTriggerRef.current?.(accText);
+              outputTextAccRef.current = "";
+            }
             setCharacterState("listening");
           }
 

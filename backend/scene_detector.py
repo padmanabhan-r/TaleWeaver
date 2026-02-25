@@ -1,8 +1,6 @@
 # backend/scene_detector.py
-"""Detects scene-worthy moments in story transcriptions and triggers image generation."""
+"""Detects scene-worthy moments in story transcriptions."""
 
-import asyncio
-import aiohttp
 import re
 from dataclasses import dataclass, field
 
@@ -56,34 +54,3 @@ class SceneDetector:
         if rich_sentences:
             return ". ".join(rich_sentences[:3])
         return ". ".join(sentences[:2])  # Fallback: first 2 sentences
-
-    async def process_transcription(self, text: str) -> None:
-        """Called after each completed Gemini turn with output transcription."""
-        if not self.should_generate_image(text):
-            return
-        if text == self.last_image_text:
-            return  # Avoid duplicates
-
-        self.last_image_text = text
-        self.image_count += 1
-        scene_desc = self.extract_scene_description(text)
-
-        print(f"[scene] Triggering image {self.image_count}: {scene_desc[:80]}...")
-
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    "http://localhost:8000/api/image",
-                    json={
-                        "scene_description": scene_desc,
-                        "image_style": self.image_style,
-                        "session_id": self.session_id,
-                    },
-                    timeout=aiohttp.ClientTimeout(total=30),
-                ) as resp:
-                    if resp.status == 200:
-                        print(f"[scene] Image {self.image_count} generated ✓")
-                    else:
-                        print(f"[scene] Image generation failed: {resp.status}")
-        except Exception as e:
-            print(f"[scene] Image generation error: {e}")

@@ -13,7 +13,6 @@ from websockets.exceptions import ConnectionClosed
 import websockets
 
 from characters import build_gemini_setup_message, get_character, gemini_service_url
-from scene_detector import SceneDetector
 
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
@@ -49,26 +48,12 @@ async def proxy_browser_to_gemini(browser_ws: WebSocket, gemini_ws) -> None:
 async def proxy_gemini_to_browser(
     gemini_ws,
     browser_ws: WebSocket,
-    scene_detector: SceneDetector = None,
 ) -> None:
-    """Forward all messages from Gemini to the browser.
-
-    Optionally monitors output transcriptions for image triggers.
-    """
+    """Forward all messages from Gemini to the browser."""
     try:
         async for message in gemini_ws:
             try:
                 data = json.loads(message)
-
-                # Monitor output transcriptions for image generation triggers
-                if scene_detector:
-                    server_content = data.get("serverContent", {})
-                    output_tx = server_content.get("outputTranscription", {})
-                    if output_tx.get("finished") and output_tx.get("text"):
-                        asyncio.create_task(
-                            scene_detector.process_transcription(output_tx["text"])
-                        )
-
                 await browser_ws.send_text(json.dumps(data))
 
             except json.JSONDecodeError:
@@ -171,17 +156,12 @@ async def run_proxy_session(
                 }
             }))
 
-            scene_detector = SceneDetector(
-                session_id=session_id,
-                image_style=character.image_style,
-            )
-
             # Start bidirectional proxy
             browser_to_gemini = asyncio.create_task(
                 proxy_browser_to_gemini(browser_ws, gemini_ws)
             )
             gemini_to_browser = asyncio.create_task(
-                proxy_gemini_to_browser(gemini_ws, browser_ws, scene_detector)
+                proxy_gemini_to_browser(gemini_ws, browser_ws)
             )
 
             done, pending = await asyncio.wait(

@@ -11,17 +11,18 @@ from pydantic import BaseModel
 router = APIRouter()
 
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
-LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
-IMAGE_MODEL = "gemini-2.0-flash-preview-image-generation"
+IMAGE_MODEL = "gemini-2.5-flash-image-preview"
+IMAGE_LOCATION = "global"  # only location this model is available
 
 SAFETY_PREFIX = (
     "child-safe illustration, age-appropriate for children aged 4-10, "
     "no violence, no scary content, no adult themes, cartoon style, "
+    "no text, no words, no letters, no captions, no speech bubbles, no labels, purely visual, "
 )
 
 
 def get_image_client():
-    return genai.Client(vertexai=True, project=PROJECT_ID, location=LOCATION)
+    return genai.Client(vertexai=True, project=PROJECT_ID, location=IMAGE_LOCATION)
 
 
 class ImageRequest(BaseModel):

@@ -250,6 +250,7 @@ def build_gemini_setup_message(character: Character, project_id: str, location: 
             },
             "generation_config": {
                 "response_modalities": ["audio"],
+                "enable_affective_dialog": True,
                 "speech_config": {
                     "voice_config": {
                         "prebuilt_voice_config": {
@@ -257,7 +258,6 @@ def build_gemini_setup_message(character: Character, project_id: str, location: 
                         }
                     }
                 },
-                "enable_affective_dialog": True,
             },
             "input_audio_transcription": {},
             "output_audio_transcription": {},
