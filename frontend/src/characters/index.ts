@@ -72,6 +72,31 @@ export const CHARACTERS: Character[] = [
     textColor: "#9A3412",
     greeting: "ROAAARRR! Oh wait, I mean... hello! Ready for the most EPIC story EVER?!",
   },
+  // ── Indian language storytellers ─────────────────────────────────────────
+  {
+    id: "paati",
+    name: "Paati",
+    tagline: "Tamil கதைகள்",
+    emoji: "👩‍🦳",
+    description: "அன்பான தமிழ் பாட்டி. Warm Tamil grandmother with a treasure chest of folk tales.",
+    cardGradient: "from-amber-100 to-orange-200",
+    bgColor: "#FFE0B2",
+    accentColor: "#C2410C",
+    textColor: "#7C2D12",
+    greeting: "வாங்க கண்ணா! என்னிடம் மிகவும் அழகான கதை இருக்கு. கேட்கணுமா?",
+  },
+  {
+    id: "dadi",
+    name: "Dadi",
+    tagline: "Hindi कहानियाँ",
+    emoji: "👵",
+    description: "प्यारी हिंदी दादी। A warm Hindi grandmother who knows every Panchatantra tale.",
+    cardGradient: "from-teal-100 to-cyan-200",
+    bgColor: "#B2EBF2",
+    accentColor: "#0E7490",
+    textColor: "#164E63",
+    greeting: "आओ बेटा! दादी के पास बहुत सारी कहानियाँ हैं। सुनोगे ना?",
+  },
 ];
 
 export const getCharacter = (id: string) => CHARACTERS.find((c) => c.id === id);
