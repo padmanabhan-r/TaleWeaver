@@ -7,7 +7,7 @@ interface Props {
 
 /* ─── Grandma Rose ─── warmth, round softness, reading glasses, cozy shawl */
 const GrandmaRose = ({ size }: { size: string }) => {
-  const w = size === "story" ? 260 : 150;
+  const w = size === "story" ? 260 : 135;
   return (
     <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Grandma Rose">
       <defs>
@@ -79,7 +79,7 @@ const GrandmaRose = ({ size }: { size: string }) => {
 
 /* ─── Captain Leo ─── bold, confident, captain's hat, epaulettes */
 const CaptainLeo = ({ size }: { size: string }) => {
-  const w = size === "story" ? 260 : 150;
+  const w = size === "story" ? 260 : 135;
   return (
     <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Captain Leo">
       <defs>
@@ -155,7 +155,7 @@ const CaptainLeo = ({ size }: { size: string }) => {
 
 /* ─── Fairy Sparkle ─── ethereal, wings, flowing hair, wand */
 const FairySparkle = ({ size }: { size: string }) => {
-  const w = size === "story" ? 260 : 150;
+  const w = size === "story" ? 260 : 135;
   return (
     <svg viewBox="0 0 220 260" width={w} height={w * 1.18} aria-label="Fairy Sparkle">
       <defs>
@@ -250,7 +250,7 @@ const FairySparkle = ({ size }: { size: string }) => {
 
 /* ─── Professor Whiz ─── wild hair, huge glasses, lab coat, flask */
 const ProfessorWhiz = ({ size }: { size: string }) => {
-  const w = size === "story" ? 260 : 150;
+  const w = size === "story" ? 260 : 135;
   return (
     <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Professor Whiz">
       <defs>
@@ -337,9 +337,202 @@ const ProfessorWhiz = ({ size }: { size: string }) => {
   );
 };
 
+/* ─── Paati ─── warm Tamil grandmother, silk saree, jasmine bun, bindi, gold jewellery */
+const Paati = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Paati">
+      <defs>
+        <linearGradient id="pt-saree" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#C2410C" />
+          <stop offset="100%" stopColor="#9A3412" />
+        </linearGradient>
+        <linearGradient id="pt-border" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+        <radialGradient id="pt-cheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#C2410C" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#C2410C" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Saree body */}
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158 L 170 250 L 30 250 Z" fill="url(#pt-saree)" />
+      {/* Saree gold border */}
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158" fill="none" stroke="url(#pt-border)" strokeWidth="4" />
+      {/* Saree pallu drape across shoulder */}
+      <path d="M 128 140 Q 148 130 162 138 L 168 170 Q 148 158 132 162 Z" fill="#EA580C" opacity="0.7" />
+      {/* Saree gold trim details */}
+      <path d="M 55 178 Q 72 185 88 178 Q 100 172 112 178 Q 128 185 145 178" fill="none" stroke="#FBBF24" strokeWidth="1.5" opacity="0.5" />
+      <path d="M 50 196 Q 68 203 86 196 Q 100 190 114 196 Q 132 203 150 196" fill="none" stroke="#FBBF24" strokeWidth="1.2" opacity="0.35" />
+
+      {/* White/silver hair – neat bun */}
+      <ellipse cx="100" cy="58" rx="52" ry="42" fill="#E8E2DC" />
+      <circle cx="100" cy="32" r="24" fill="#DDD6CE" />
+      {/* Bun at back */}
+      <circle cx="100" cy="22" r="16" fill="#E8E2DC" />
+      <ellipse cx="100" cy="20" rx="12" ry="8" fill="#D6CFC8" />
+      {/* Jasmine flowers in bun */}
+      <circle cx="88" cy="16" r="4" fill="white" opacity="0.9" />
+      <circle cx="96" cy="11" r="3.5" fill="white" opacity="0.85" />
+      <circle cx="104" cy="11" r="3.5" fill="white" opacity="0.85" />
+      <circle cx="112" cy="16" r="4" fill="white" opacity="0.9" />
+      <circle cx="88" cy="16" r="2" fill="#FEF9C3" opacity="0.6" />
+      <circle cx="96" cy="11" r="1.8" fill="#FEF9C3" opacity="0.6" />
+      <circle cx="104" cy="11" r="1.8" fill="#FEF9C3" opacity="0.6" />
+      <circle cx="112" cy="16" r="2" fill="#FEF9C3" opacity="0.6" />
+
+      {/* Face – warm brown skin */}
+      <ellipse cx="100" cy="100" rx="48" ry="52" fill="#C8825A" />
+      <path d="M 62 110 Q 68 148 100 154 Q 132 148 138 110" fill="#C8825A" />
+
+      {/* Warm rosy cheeks */}
+      <circle cx="68" cy="112" r="14" fill="url(#pt-cheek)" />
+      <circle cx="132" cy="112" r="14" fill="url(#pt-cheek)" />
+
+      {/* Bindi – bright red dot */}
+      <circle cx="100" cy="80" r="5" fill="#DC2626" />
+      <circle cx="100" cy="80" r="3" fill="#EF4444" />
+
+      {/* Eyes – warm, kind, slightly crinkled */}
+      <ellipse cx="80" cy="96" rx="7" ry="7.5" fill="#3B1F0A" />
+      <ellipse cx="120" cy="96" rx="7" ry="7.5" fill="#3B1F0A" />
+      <circle cx="82" cy="93" r="2.5" fill="white" opacity="0.85" />
+      <circle cx="122" cy="93" r="2.5" fill="white" opacity="0.85" />
+      {/* Smile lines around eyes */}
+      <path d="M 62 92 Q 60 96 62 100" fill="none" stroke="#A0622A" strokeWidth="1" opacity="0.5" />
+      <path d="M 138 92 Q 140 96 138 100" fill="none" stroke="#A0622A" strokeWidth="1" opacity="0.5" />
+
+      {/* Eyebrows – gentle, slightly arched */}
+      <path d="M 70 84 Q 80 78 90 83" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M 110 83 Q 120 78 130 84" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+
+      {/* Nose */}
+      <path d="M 97 106 Q 100 112 103 106" fill="none" stroke="#A0622A" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Small nose stud */}
+      <circle cx="108" cy="108" r="2.5" fill="#FBBF24" opacity="0.8" />
+
+      {/* Warm, wide smile */}
+      <path d="M 80 122 Q 100 140 120 122" fill="none" stroke="#7C2D12" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="76" cy="120" r="2" fill="#A0622A" opacity="0.3" />
+      <circle cx="124" cy="120" r="2" fill="#A0622A" opacity="0.3" />
+
+      {/* Gold earrings – jhumka style */}
+      <circle cx="54" cy="108" r="6" fill="#FBBF24" />
+      <path d="M 51 113 Q 54 124 57 113" fill="#F59E0B" />
+      <circle cx="54" cy="125" r="3" fill="#FBBF24" />
+      <circle cx="146" cy="108" r="6" fill="#FBBF24" />
+      <path d="M 143 113 Q 146 124 149 113" fill="#F59E0B" />
+      <circle cx="146" cy="125" r="3" fill="#FBBF24" />
+
+      {/* Gold necklace */}
+      <path d="M 68 144 Q 100 155 132 144" fill="none" stroke="#FBBF24" strokeWidth="2.5" opacity="0.75" />
+      <circle cx="100" cy="155" r="4" fill="#FBBF24" opacity="0.8" />
+    </svg>
+  );
+};
+
+/* ─── Dadi ─── warm Hindi grandmother, teal saree, dupatta, maang tikka, sindoor */
+const Dadi = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Dadi">
+      <defs>
+        <linearGradient id="dd-saree" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0E7490" />
+          <stop offset="100%" stopColor="#164E63" />
+        </linearGradient>
+        <linearGradient id="dd-dupatta" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#06B6D4" stopOpacity="0.7" />
+          <stop offset="100%" stopColor="#0891B2" stopOpacity="0.5" />
+        </linearGradient>
+        <radialGradient id="dd-cheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#0E7490" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#0E7490" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+
+      {/* Saree body */}
+      <path d="M 36 158 Q 54 144 70 140 Q 84 152 100 156 Q 116 152 130 140 Q 146 144 164 158 L 172 250 L 28 250 Z" fill="url(#dd-saree)" />
+      {/* Gold saree border */}
+      <path d="M 36 158 Q 54 144 70 140 Q 84 152 100 156 Q 116 152 130 140 Q 146 144 164 158" fill="none" stroke="#FBBF24" strokeWidth="3.5" />
+      {/* Saree fold lines */}
+      <path d="M 52 176 Q 68 182 84 176 Q 100 170 116 176 Q 132 182 148 176" fill="none" stroke="#FBBF24" strokeWidth="1.2" opacity="0.4" />
+      <path d="M 48 194 Q 66 200 84 194 Q 100 188 116 194 Q 134 200 152 194" fill="none" stroke="#FBBF24" strokeWidth="1" opacity="0.3" />
+
+      {/* Dupatta draped over head */}
+      <path d="M 48 68 Q 30 80 28 110 Q 30 140 40 155 L 36 158 Q 24 138 22 108 Q 20 78 44 60 Z" fill="url(#dd-dupatta)" />
+      <path d="M 152 68 Q 170 80 172 110 Q 170 140 160 155 L 164 158 Q 176 138 178 108 Q 180 78 156 60 Z" fill="url(#dd-dupatta)" />
+      <path d="M 44 60 Q 100 44 156 60 Q 160 68 155 72 Q 100 56 45 72 Z" fill="url(#dd-dupatta)" />
+
+      {/* Hair — silver, parted in centre, bun at back */}
+      <ellipse cx="100" cy="66" rx="50" ry="36" fill="#D1D5DB" />
+      <path d="M 100 30 Q 98 45 100 66" fill="none" stroke="#9CA3AF" strokeWidth="3" />
+      {/* Sindoor at parting */}
+      <path d="M 100 30 Q 100 38 100 46" fill="none" stroke="#DC2626" strokeWidth="3" strokeLinecap="round" />
+      {/* Bun */}
+      <circle cx="100" cy="52" r="18" fill="#9CA3AF" />
+      <ellipse cx="100" cy="50" rx="13" ry="9" fill="#D1D5DB" />
+
+      {/* Face — warm North Indian complexion */}
+      <ellipse cx="100" cy="102" rx="46" ry="50" fill="#D4A574" />
+      <path d="M 64 112 Q 70 148 100 154 Q 130 148 136 112" fill="#D4A574" />
+
+      {/* Cheeks */}
+      <circle cx="68" cy="114" r="13" fill="url(#dd-cheek)" />
+      <circle cx="132" cy="114" r="13" fill="url(#dd-cheek)" />
+
+      {/* Bindi */}
+      <circle cx="100" cy="82" r="5" fill="#DC2626" />
+      <circle cx="100" cy="82" r="3" fill="#F87171" />
+
+      {/* Maang tikka */}
+      <circle cx="100" cy="70" r="4" fill="#FBBF24" />
+      <circle cx="100" cy="70" r="2.5" fill="#FEF3C7" />
+      <line x1="100" y1="70" x2="100" y2="78" stroke="#FBBF24" strokeWidth="1.5" />
+
+      {/* Eyes — warm, kind, slightly hooded */}
+      <ellipse cx="80" cy="98" rx="7" ry="7" fill="#3B1F0A" />
+      <ellipse cx="120" cy="98" rx="7" ry="7" fill="#3B1F0A" />
+      <circle cx="82" cy="95" r="2.5" fill="white" opacity="0.85" />
+      <circle cx="122" cy="95" r="2.5" fill="white" opacity="0.85" />
+      {/* Hooded upper lids */}
+      <path d="M 73 95 Q 80 90 87 95" fill="none" stroke="#3B1F0A" strokeWidth="1.5" />
+      <path d="M 113 95 Q 120 90 127 95" fill="none" stroke="#3B1F0A" strokeWidth="1.5" />
+
+      {/* Eyebrows */}
+      <path d="M 70 86 Q 80 80 90 85" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M 110 85 Q 120 80 130 86" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+
+      {/* Nose */}
+      <path d="M 97 108 Q 100 114 103 108" fill="none" stroke="#A0622A" strokeWidth="1.5" strokeLinecap="round" />
+
+      {/* Warm smile — slightly reserved, deeply loving */}
+      <path d="M 82 124 Q 100 138 118 124" fill="none" stroke="#7C2D12" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="78" cy="122" r="2" fill="#A0622A" opacity="0.25" />
+      <circle cx="122" cy="122" r="2" fill="#A0622A" opacity="0.25" />
+
+      {/* Earrings — long dangling style */}
+      <circle cx="55" cy="106" r="5" fill="#FBBF24" />
+      <rect x="52.5" y="110" width="5" height="14" rx="2.5" fill="#F59E0B" />
+      <ellipse cx="55" cy="125" rx="5" ry="3.5" fill="#FBBF24" />
+      <circle cx="145" cy="106" r="5" fill="#FBBF24" />
+      <rect x="142.5" y="110" width="5" height="14" rx="2.5" fill="#F59E0B" />
+      <ellipse cx="145" cy="125" rx="5" ry="3.5" fill="#FBBF24" />
+
+      {/* Gold necklace with pendant */}
+      <path d="M 66 144 Q 100 156 134 144" fill="none" stroke="#FBBF24" strokeWidth="2" opacity="0.7" />
+      <path d="M 90 152 Q 100 160 110 152" fill="none" stroke="#FBBF24" strokeWidth="2" opacity="0.7" />
+      <circle cx="100" cy="162" r="5" fill="#FBBF24" opacity="0.85" />
+      <circle cx="100" cy="162" r="2.5" fill="#FEF3C7" />
+    </svg>
+  );
+};
+
 /* ─── Dragon Blaze ─── round, friendly, huge eyes, tiny wings, big grin */
 const DragonBlaze = ({ size }: { size: string }) => {
-  const w = size === "story" ? 260 : 150;
+  const w = size === "story" ? 260 : 135;
   return (
     <svg viewBox="0 0 200 240" width={w} height={w * 1.2} aria-label="Dragon Blaze">
       <defs>
@@ -443,6 +636,10 @@ const CharacterPortrait = ({ character, size = "card" }: Props) => {
       return <ProfessorWhiz size={size} />;
     case "dragon-blaze":
       return <DragonBlaze size={size} />;
+    case "paati":
+      return <Paati size={size} />;
+    case "dadi":
+      return <Dadi size={size} />;
     default:
       return null;
   }
