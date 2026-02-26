@@ -31,19 +31,30 @@ export interface StoryScene {
   description: string;
 }
 
+// Wait this long after session start before generating the first image
+const SESSION_START_DELAY_MS = 20_000;
+
 export function useStoryImages(imageStyle: string, sessionId: string) {
   const [scenes, setScenes] = useState<StoryScene[]>([]);
   const sceneCountRef = useRef(0);
   const lastTriggerTimeRef = useRef(0);
+  const sessionStartTimeRef = useRef(Date.now());
+  // Rolling story context — last ~600 chars of character speech across all turns
+  const storyContextRef = useRef("");
 
   const triggerImageGeneration = useCallback(
     async (transcriptionText: string) => {
+      // Append this turn to the rolling context (keep last ~600 chars)
+      storyContextRef.current = (storyContextRef.current + " " + transcriptionText).slice(-600).trim();
       // Cap at max scenes
       if (sceneCountRef.current >= MAX_SCENES) return;
 
-      // Rate limit: no more than 1 image per 15 seconds
+      // Wait for story to establish before generating first image
       const now = Date.now();
-      if (now - lastTriggerTimeRef.current < 15_000) return;
+      if (now - sessionStartTimeRef.current < SESSION_START_DELAY_MS) return;
+
+      // Rate limit: 1 image per 30 seconds
+      if (now - lastTriggerTimeRef.current < 30_000) return;
 
       // Client-side visual keyword pre-filter
       const lower = transcriptionText.toLowerCase();
@@ -73,10 +84,19 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             scene_description: transcriptionText.slice(0, 400),
+            story_context: storyContextRef.current,
             image_style: imageStyle,
             session_id: sessionId,
           }),
         });
+
+        if (response.status === 429) {
+          // Vertex AI rate-limited — silently discard, reset timer so next turn can retry
+          setScenes((prev) => prev.filter((s) => s.id !== sceneId));
+          sceneCountRef.current--;
+          lastTriggerTimeRef.current = 0;
+          return;
+        }
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
