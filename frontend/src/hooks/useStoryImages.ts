@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 const MAX_SCENES = 8;
 
 // Client-side pre-filter — English, Tamil, and Hindi visual scene keywords
@@ -21,6 +21,18 @@ const VISUAL_WORDS = [
   //        बगीचा=garden, एक बार=once upon)
   "जंगल", "पहाड़", "समुद्र", "महल", "अचानक", "रहता था", "रहती थी",
   "गाँव", "आकाश", "बगीचा", "एक बार", "राजकुमारी", "राजकुमार", "जादू",
+  // Telugu (అడవి=forest, పర్వతం=mountain, సముద్రం=ocean, రాజ్యం=kingdom,
+  //          అకస్మాత్తుగా=suddenly, గ్రామం=village, ఆకాశం=sky, తోట=garden)
+  "అడవి", "పర్వతం", "సముద్రం", "రాజ్యం", "అకస్మాత్తుగా", "గ్రామం",
+  "ఆకాశం", "తోట", "రాకుమారి", "మాంత్రికుడు", "ఒకసారి",
+  // Marathi (जंगल=forest, डोंगर=mountain, समुद्र=ocean, राज्य=kingdom,
+  //           अचानक=suddenly, गाव=village, आकाश=sky, बाग=garden)
+  "जंगल", "डोंगर", "समुद्र", "राज्य", "अचानक", "गाव", "आकाश", "बाग",
+  "राजकन्या", "जादूगार", "एकदा",
+  // Bengali (জঙ্গল=forest, পাহাড়=mountain, সমুদ্র=ocean, রাজ্য=kingdom,
+  //          হঠাৎ=suddenly, গ্রাম=village, আকাশ=sky, বাগান=garden)
+  "জঙ্গল", "পাহাড়", "সমুদ্র", "রাজ্য", "হঠাৎ", "গ্রাম", "আকাশ", "বাগান",
+  "রাজকন্যা", "জাদুকর", "একদিন",
 ];
 
 export interface StoryScene {
@@ -44,8 +56,8 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
 
   const triggerImageGeneration = useCallback(
     async (transcriptionText: string) => {
-      // Append this turn to the rolling context (keep last ~600 chars)
-      storyContextRef.current = (storyContextRef.current + " " + transcriptionText).slice(-600).trim();
+      // Append this turn to the rolling context (keep last ~2000 chars)
+      storyContextRef.current = (storyContextRef.current + " " + transcriptionText).slice(-2000).trim();
       // Cap at max scenes
       if (sceneCountRef.current >= MAX_SCENES) return;
 
@@ -56,11 +68,8 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
       // Rate limit: 1 image per 30 seconds
       if (now - lastTriggerTimeRef.current < 30_000) return;
 
-      // Client-side visual keyword pre-filter
-      const lower = transcriptionText.toLowerCase();
-      const isVisual =
-        VISUAL_WORDS.some((w) => transcriptionText.includes(w)) ||
-        transcriptionText.split(" ").length >= 10;
+      // Client-side visual keyword pre-filter — require actual visual content keywords
+      const isVisual = VISUAL_WORDS.some((w) => transcriptionText.includes(w));
       if (!isVisual) return;
 
       lastTriggerTimeRef.current = now;
@@ -83,7 +92,7 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            scene_description: transcriptionText.slice(0, 400),
+            scene_description: transcriptionText.slice(0, 2000),
             story_context: storyContextRef.current,
             image_style: imageStyle,
             session_id: sessionId,

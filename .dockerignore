@@ -1,0 +1,9 @@
+**/__pycache__
+**/*.py[oc]
+**/.env*
+**/node_modules
+**/dist
+frontend/.vite
+.git
+.github
+implementation

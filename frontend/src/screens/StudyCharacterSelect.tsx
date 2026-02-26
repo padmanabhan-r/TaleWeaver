@@ -4,17 +4,15 @@ import CharacterPortrait from "@/components/CharacterPortrait";
 
 interface Props {
   onSelect: (character: Character) => void;
-  onBack?: () => void;
+  onBack: () => void;
 }
 
-const CharacterSelect = ({ onSelect, onBack }: Props) => {
+const StudyCharacterSelect = ({ onSelect, onBack }: Props) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const ENGLISH_IDS = ["grandma-rose", "captain-leo", "fairy-sparkle", "professor-whiz", "dragon-blaze"];
-  const englishChars = CHARACTERS.filter((c) => ENGLISH_IDS.includes(c.id));
-  const indianChars = CHARACTERS.filter((c) => !c.isStudy && !ENGLISH_IDS.includes(c.id));
+  const studyChars = CHARACTERS.filter((c) => c.isStudy);
 
   const handleSelect = useCallback(
     (character: Character) => {
@@ -48,7 +46,6 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
         `}
         style={{ minHeight: "210px" }}
       >
-        {/* Portrait */}
         <div className="flex-1 w-full flex items-center justify-center pt-1 relative overflow-hidden">
           <div
             className={`transition-transform duration-300 ${
@@ -58,8 +55,6 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
             <CharacterPortrait character={char} size="card" />
           </div>
         </div>
-
-        {/* Name + tagline */}
         <div className="w-full px-2 py-2 bg-white/35 backdrop-blur-sm flex flex-col items-center gap-0.5">
           <span className="font-bangers text-lg text-gray-800 tracking-wide leading-tight">
             {char.name}
@@ -79,10 +74,10 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
       }`}
       style={{
         background: `
-          radial-gradient(ellipse 80% 50% at 20% 80%, rgba(196, 181, 253, 0.35) 0%, transparent 70%),
+          radial-gradient(ellipse 80% 50% at 20% 80%, rgba(167, 243, 208, 0.35) 0%, transparent 70%),
           radial-gradient(ellipse 60% 40% at 85% 15%, rgba(186, 230, 253, 0.45) 0%, transparent 70%),
           radial-gradient(ellipse 50% 50% at 50% 50%, rgba(253, 230, 138, 0.1) 0%, transparent 60%),
-          linear-gradient(160deg, #BAE6FD 0%, #DDD6FE 35%, #E9D5FF 65%, #C4B5FD 100%)
+          linear-gradient(160deg, #BAE6FD 0%, #D1FAE5 35%, #ECFDF5 65%, #A7F3D0 100%)
         `,
       }}
     >
@@ -90,62 +85,36 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
       <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute rounded-full cloud-drift" style={{ width: "500px", height: "140px", top: "6%", left: "-8%", background: "radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 70%)" }} />
         <div className="absolute rounded-full cloud-drift-slow" style={{ width: "600px", height: "120px", top: "55%", right: "-12%", background: "radial-gradient(ellipse, rgba(255,255,255,0.18) 0%, transparent 70%)" }} />
-        <div className="absolute rounded-full cloud-drift-slow" style={{ width: "350px", height: "100px", bottom: "8%", left: "10%", background: "radial-gradient(ellipse, rgba(255,255,255,0.12) 0%, transparent 70%)" }} />
       </div>
 
       {/* Back button */}
-      {onBack && (
-        <button
-          onClick={onBack}
-          className="absolute top-4 left-4 z-20 font-comic-neue text-sm text-purple-700 bg-white/40 hover:bg-white/60 backdrop-blur-sm border border-white/50 rounded-full px-4 py-1.5 transition-all duration-200 hover:scale-105"
-        >
-          ← Back
-        </button>
-      )}
+      <button
+        onClick={onBack}
+        className="absolute top-4 left-4 z-20 font-comic-neue text-sm text-teal-700 bg-white/40 hover:bg-white/60 backdrop-blur-sm border border-white/50 rounded-full px-4 py-1.5 transition-all duration-200 hover:scale-105"
+      >
+        ← Back
+      </button>
 
       {/* Title */}
-      <div className="z-10 text-center mb-4">
+      <div className="z-10 text-center mb-6">
         <h1
-          className="font-bangers text-4xl md:text-5xl text-purple-900 mb-1 tracking-wide"
-          style={{ textShadow: "2px 3px 0px rgba(168, 85, 247, 0.2)" }}
+          className="font-bangers text-4xl md:text-5xl text-emerald-900 mb-1 tracking-wide"
+          style={{ textShadow: "2px 3px 0px rgba(16, 185, 129, 0.2)" }}
         >
-          Who should tell your story?
+          Who will you learn with today?
         </h1>
-        <p className="font-comic-neue text-base md:text-lg text-purple-500/80">
-          Tap a storyteller to begin!
+        <p className="font-comic-neue text-base md:text-lg text-emerald-600/80">
+          Tap a teacher to begin!
         </p>
       </div>
 
-      <div className="z-10 w-full max-w-6xl px-2 flex flex-col gap-3">
-
-        {/* ── Row 1: English storytellers ── */}
-        <div className="grid grid-cols-5 gap-3">
-          {englishChars.map(renderCard)}
+      <div className="z-10 w-full max-w-2xl px-2">
+        <div className="grid grid-cols-2 gap-4">
+          {studyChars.map(renderCard)}
         </div>
-
-        {/* ── Divider ── */}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-white/40" />
-          <div className="flex items-center gap-1.5 bg-white/30 backdrop-blur-sm border border-white/50 rounded-full px-4 py-1 shadow-sm">
-            <span className="text-base">🇮🇳</span>
-            <span className="font-bangers text-base tracking-wide text-purple-800">
-              Indian Languages
-            </span>
-            <span className="font-comic-neue text-xs text-purple-600">
-              · भारतीय भाषाएँ
-            </span>
-          </div>
-          <div className="flex-1 h-px bg-white/40" />
-        </div>
-
-        {/* ── Row 2: Indian language storytellers ── */}
-        <div className="grid grid-cols-5 gap-3">
-          {indianChars.map(renderCard)}
-        </div>
-
       </div>
     </div>
   );
 };
 
-export default CharacterSelect;
+export default StudyCharacterSelect;

@@ -30,18 +30,22 @@ print(f"[image_gen] Using model: {IMAGE_MODEL} @ {IMAGE_LOCATION}")
 async def _extract_english_scene(transcript: str, story_context: str) -> str:
     """Extract a concise English visual scene description from story narration in any language."""
     context_section = (
-        f"Story so far (for context only — use this to correctly identify characters, "
-        f"species, and setting):\n{story_context[:600]}\n\n"
+        f"Story so far (use this to identify the exact characters, species, names, and setting):\n"
+        f"{story_context[:1500]}\n\n"
     ) if story_context else ""
 
     prompt = (
         f"{context_section}"
-        "From the CURRENT narration below, extract a concise visual scene description "
-        "in English (1-2 sentences). Use the story context to correctly name and describe "
-        "characters (e.g. if they are animals, keep them as animals). "
-        "Describe only what to illustrate: setting, characters, key action. "
-        "No dialogue, no abstract concepts, purely visual.\n\n"
-        f"Current narration: {transcript[:300]}"
+        "The storyteller just spoke the narration below. "
+        "Identify the single most visually interesting moment in this narration and describe it "
+        "as a concise English image description (2-3 sentences). "
+        "Be SPECIFIC — name the exact character (their species, appearance, clothing), "
+        "the exact setting (forest, village, ocean, cave, etc.), and the precise action happening. "
+        "Use the story context above to get character details exactly right. "
+        "Do NOT be generic. Do NOT write 'a character in a setting'. "
+        "Write what a painter would actually paint: specific subject, specific place, specific moment. "
+        "No dialogue, no abstract concepts — purely visual.\n\n"
+        f"Narration: {transcript[:1500]}"
     )
     response = await _extract_client.aio.models.generate_content(
         model=EXTRACT_MODEL,
@@ -107,7 +111,7 @@ class ImageResponse(BaseModel):
 async def generate_scene_image(request: ImageRequest):
     """Generate a story scene image from a description."""
 
-    if len(request.scene_description) > 500:
+    if len(request.scene_description) > 2000:
         raise HTTPException(status_code=400, detail="Scene description too long")
 
     try:

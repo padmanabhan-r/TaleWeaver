@@ -624,6 +624,504 @@ const DragonBlaze = ({ size }: { size: string }) => {
   );
 };
 
+/* ─── Ammamma ─── warm Telugu grandmother, red/gold sari, bindi, jasmine bun */
+const Ammamma = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Ammamma">
+      <defs>
+        <linearGradient id="am-saree" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#DC2626" />
+          <stop offset="100%" stopColor="#9B1C1C" />
+        </linearGradient>
+        <linearGradient id="am-border" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+        <radialGradient id="am-cheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#DC2626" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#DC2626" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* Saree body */}
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158 L 170 250 L 30 250 Z" fill="url(#am-saree)" />
+      {/* Gold border */}
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158" fill="none" stroke="url(#am-border)" strokeWidth="4" />
+      {/* Pallu drape */}
+      <path d="M 128 140 Q 148 130 162 138 L 168 170 Q 148 158 132 162 Z" fill="#EF4444" opacity="0.7" />
+      {/* Gold trim lines */}
+      <path d="M 55 178 Q 72 185 88 178 Q 100 172 112 178 Q 128 185 145 178" fill="none" stroke="#FBBF24" strokeWidth="1.5" opacity="0.5" />
+      <path d="M 50 196 Q 68 203 86 196 Q 100 190 114 196 Q 132 203 150 196" fill="none" stroke="#FBBF24" strokeWidth="1.2" opacity="0.35" />
+      {/* White hair neat bun */}
+      <ellipse cx="100" cy="58" rx="52" ry="42" fill="#E8E2DC" />
+      <circle cx="100" cy="32" r="24" fill="#DDD6CE" />
+      <circle cx="100" cy="22" r="16" fill="#E8E2DC" />
+      <ellipse cx="100" cy="20" rx="12" ry="8" fill="#D6CFC8" />
+      {/* Lotus flowers in bun */}
+      <circle cx="88" cy="16" r="4" fill="#FCA5A5" opacity="0.9" />
+      <circle cx="96" cy="11" r="3.5" fill="#FCA5A5" opacity="0.85" />
+      <circle cx="104" cy="11" r="3.5" fill="#FCA5A5" opacity="0.85" />
+      <circle cx="112" cy="16" r="4" fill="#FCA5A5" opacity="0.9" />
+      <circle cx="88" cy="16" r="2" fill="#FBBF24" opacity="0.6" />
+      <circle cx="104" cy="11" r="1.8" fill="#FBBF24" opacity="0.6" />
+      {/* Face warm brown */}
+      <ellipse cx="100" cy="100" rx="48" ry="52" fill="#C8825A" />
+      <path d="M 62 110 Q 68 148 100 154 Q 132 148 138 110" fill="#C8825A" />
+      {/* Cheeks */}
+      <circle cx="68" cy="112" r="14" fill="url(#am-cheek)" />
+      <circle cx="132" cy="112" r="14" fill="url(#am-cheek)" />
+      {/* Bindi red */}
+      <circle cx="100" cy="80" r="5" fill="#DC2626" />
+      <circle cx="100" cy="80" r="3" fill="#FCA5A5" />
+      {/* Eyes kind */}
+      <ellipse cx="80" cy="96" rx="7" ry="7.5" fill="#3B1F0A" />
+      <ellipse cx="120" cy="96" rx="7" ry="7.5" fill="#3B1F0A" />
+      <circle cx="82" cy="93" r="2.5" fill="white" opacity="0.85" />
+      <circle cx="122" cy="93" r="2.5" fill="white" opacity="0.85" />
+      {/* Smile lines */}
+      <path d="M 62 92 Q 60 96 62 100" fill="none" stroke="#A0622A" strokeWidth="1" opacity="0.5" />
+      <path d="M 138 92 Q 140 96 138 100" fill="none" stroke="#A0622A" strokeWidth="1" opacity="0.5" />
+      {/* Eyebrows */}
+      <path d="M 70 84 Q 80 78 90 83" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M 110 83 Q 120 78 130 84" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Nose + stud */}
+      <path d="M 97 106 Q 100 112 103 106" fill="none" stroke="#A0622A" strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="108" cy="108" r="2.5" fill="#FBBF24" opacity="0.8" />
+      {/* Warm wide smile */}
+      <path d="M 80 122 Q 100 140 120 122" fill="none" stroke="#7C2D12" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Gold jhumka earrings */}
+      <circle cx="54" cy="108" r="6" fill="#FBBF24" />
+      <path d="M 51 113 Q 54 124 57 113" fill="#F59E0B" />
+      <circle cx="54" cy="125" r="3" fill="#FBBF24" />
+      <circle cx="146" cy="108" r="6" fill="#FBBF24" />
+      <path d="M 143 113 Q 146 124 149 113" fill="#F59E0B" />
+      <circle cx="146" cy="125" r="3" fill="#FBBF24" />
+      {/* Necklace */}
+      <path d="M 68 144 Q 100 155 132 144" fill="none" stroke="#FBBF24" strokeWidth="2.5" opacity="0.75" />
+      <circle cx="100" cy="155" r="4" fill="#FBBF24" opacity="0.8" />
+    </svg>
+  );
+};
+
+/* ─── Aaji ─── Marathi grandmother, green/gold sari, gentle expression */
+const Aaji = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Aaji">
+      <defs>
+        <linearGradient id="aj-saree" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#15803D" />
+          <stop offset="100%" stopColor="#14532D" />
+        </linearGradient>
+        <linearGradient id="aj-border" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+        <radialGradient id="aj-cheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#15803D" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#15803D" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* Saree body */}
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158 L 170 250 L 30 250 Z" fill="url(#aj-saree)" />
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158" fill="none" stroke="url(#aj-border)" strokeWidth="4" />
+      {/* Nauvari-style extra drape across front */}
+      <path d="M 62 160 Q 80 170 100 172 Q 120 170 138 160 L 140 185 Q 120 178 100 180 Q 80 178 60 185 Z" fill="#16A34A" opacity="0.5" />
+      <path d="M 55 178 Q 72 185 88 178 Q 100 172 112 178 Q 128 185 145 178" fill="none" stroke="#FBBF24" strokeWidth="1.5" opacity="0.45" />
+      {/* White silver hair bun */}
+      <ellipse cx="100" cy="58" rx="52" ry="42" fill="#E8E2DC" />
+      <circle cx="100" cy="32" r="24" fill="#DDD6CE" />
+      <circle cx="100" cy="22" r="16" fill="#E8E2DC" />
+      <ellipse cx="100" cy="20" rx="12" ry="8" fill="#D6CFC8" />
+      {/* Marigold flowers */}
+      <circle cx="88" cy="16" r="4" fill="#FCD34D" opacity="0.9" />
+      <circle cx="96" cy="11" r="3.5" fill="#FCD34D" opacity="0.85" />
+      <circle cx="104" cy="11" r="3.5" fill="#FBBF24" opacity="0.85" />
+      <circle cx="112" cy="16" r="4" fill="#FCD34D" opacity="0.9" />
+      <circle cx="88" cy="16" r="2" fill="#F59E0B" opacity="0.6" />
+      {/* Face warm */}
+      <ellipse cx="100" cy="100" rx="48" ry="52" fill="#C8825A" />
+      <path d="M 62 110 Q 68 148 100 154 Q 132 148 138 110" fill="#C8825A" />
+      <circle cx="68" cy="112" r="14" fill="url(#aj-cheek)" />
+      <circle cx="132" cy="112" r="14" fill="url(#aj-cheek)" />
+      {/* Bindi small green */}
+      <circle cx="100" cy="80" r="4.5" fill="#15803D" />
+      <circle cx="100" cy="80" r="2.5" fill="#86EFAC" />
+      {/* Eyes gentle */}
+      <ellipse cx="80" cy="96" rx="7" ry="7.5" fill="#3B1F0A" />
+      <ellipse cx="120" cy="96" rx="7" ry="7.5" fill="#3B1F0A" />
+      <circle cx="82" cy="93" r="2.5" fill="white" opacity="0.85" />
+      <circle cx="122" cy="93" r="2.5" fill="white" opacity="0.85" />
+      <path d="M 62 92 Q 60 96 62 100" fill="none" stroke="#A0622A" strokeWidth="1" opacity="0.5" />
+      <path d="M 138 92 Q 140 96 138 100" fill="none" stroke="#A0622A" strokeWidth="1" opacity="0.5" />
+      <path d="M 70 84 Q 80 78 90 83" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M 110 83 Q 120 78 130 84" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M 97 106 Q 100 112 103 106" fill="none" stroke="#A0622A" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Gentle smile */}
+      <path d="M 82 122 Q 100 138 118 122" fill="none" stroke="#14532D" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Earrings */}
+      <circle cx="54" cy="108" r="6" fill="#FBBF24" />
+      <path d="M 51 113 Q 54 122 57 113" fill="#F59E0B" />
+      <circle cx="54" cy="123" r="3" fill="#FBBF24" />
+      <circle cx="146" cy="108" r="6" fill="#FBBF24" />
+      <path d="M 143 113 Q 146 122 149 113" fill="#F59E0B" />
+      <circle cx="146" cy="123" r="3" fill="#FBBF24" />
+      <path d="M 68 144 Q 100 155 132 144" fill="none" stroke="#FBBF24" strokeWidth="2.5" opacity="0.7" />
+      <circle cx="100" cy="155" r="4" fill="#FBBF24" opacity="0.8" />
+    </svg>
+  );
+};
+
+/* ─── Dida ─── Bengali grandmother, white sari with blue border, bun, kind eyes */
+const Dida = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Dida">
+      <defs>
+        <linearGradient id="di-saree" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#F8FAFC" />
+          <stop offset="100%" stopColor="#E2E8F0" />
+        </linearGradient>
+        <radialGradient id="di-cheek" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#1D4ED8" stopOpacity="0.15" />
+          <stop offset="100%" stopColor="#1D4ED8" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      {/* White saree body */}
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158 L 170 250 L 30 250 Z" fill="url(#di-saree)" />
+      {/* Blue border */}
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158" fill="none" stroke="#1D4ED8" strokeWidth="5" />
+      <path d="M 38 158 Q 55 144 72 140 Q 86 152 100 156 Q 114 152 128 140 Q 145 144 162 158" fill="none" stroke="#93C5FD" strokeWidth="2" opacity="0.6" />
+      {/* Blue trim lines on white saree */}
+      <path d="M 55 178 Q 72 185 88 178 Q 100 172 112 178 Q 128 185 145 178" fill="none" stroke="#1D4ED8" strokeWidth="1.5" opacity="0.4" />
+      <path d="M 50 196 Q 68 203 86 196 Q 100 190 114 196 Q 132 203 150 196" fill="none" stroke="#1D4ED8" strokeWidth="1.2" opacity="0.3" />
+      {/* White/silver hair tight bun */}
+      <ellipse cx="100" cy="60" rx="50" ry="40" fill="#E8E2DC" />
+      <circle cx="100" cy="36" r="22" fill="#DDD6CE" />
+      <circle cx="100" cy="25" r="15" fill="#E8E2DC" />
+      <ellipse cx="100" cy="23" rx="11" ry="7" fill="#D6CFC8" />
+      {/* Earthen lamp / sindoor dot */}
+      <circle cx="88" cy="18" r="3" fill="#FCA5A5" opacity="0.7" />
+      <circle cx="100" cy="13" r="3" fill="#FCA5A5" opacity="0.7" />
+      <circle cx="112" cy="18" r="3" fill="#FCA5A5" opacity="0.7" />
+      {/* Face light warm */}
+      <ellipse cx="100" cy="100" rx="48" ry="52" fill="#D4A574" />
+      <path d="M 62 110 Q 68 148 100 154 Q 132 148 138 110" fill="#D4A574" />
+      <circle cx="68" cy="112" r="13" fill="url(#di-cheek)" />
+      <circle cx="132" cy="112" r="13" fill="url(#di-cheek)" />
+      {/* Bindi blue */}
+      <circle cx="100" cy="80" r="4.5" fill="#1D4ED8" />
+      <circle cx="100" cy="80" r="2.5" fill="#93C5FD" />
+      {/* Kind eyes */}
+      <ellipse cx="80" cy="96" rx="7" ry="7.5" fill="#3B1F0A" />
+      <ellipse cx="120" cy="96" rx="7" ry="7.5" fill="#3B1F0A" />
+      <circle cx="82" cy="93" r="2.5" fill="white" opacity="0.85" />
+      <circle cx="122" cy="93" r="2.5" fill="white" opacity="0.85" />
+      {/* Crow's feet */}
+      <path d="M 62 92 Q 60 96 62 100" fill="none" stroke="#A0622A" strokeWidth="1" opacity="0.5" />
+      <path d="M 138 92 Q 140 96 138 100" fill="none" stroke="#A0622A" strokeWidth="1" opacity="0.5" />
+      <path d="M 70 84 Q 80 78 90 83" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M 110 83 Q 120 78 130 84" fill="none" stroke="#3B1F0A" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M 97 106 Q 100 112 103 106" fill="none" stroke="#A0622A" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Warm smile */}
+      <path d="M 82 122 Q 100 138 118 122" fill="none" stroke="#1E3A8A" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Simple silver earrings */}
+      <circle cx="54" cy="108" r="5" fill="#93C5FD" />
+      <circle cx="54" cy="108" r="3" fill="#1D4ED8" />
+      <circle cx="146" cy="108" r="5" fill="#93C5FD" />
+      <circle cx="146" cy="108" r="3" fill="#1D4ED8" />
+      {/* Thin blue-gold necklace */}
+      <path d="M 68 144 Q 100 154 132 144" fill="none" stroke="#1D4ED8" strokeWidth="2" opacity="0.6" />
+      <circle cx="100" cy="154" r="4" fill="#1D4ED8" opacity="0.7" />
+    </svg>
+  );
+};
+
+/* ─── Count Cosmo ─── friendly astronaut, helmet, stars, numbers */
+const CountCosmo = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Count Cosmo">
+      <defs>
+        <linearGradient id="cc-suit" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#6D28D9" />
+          <stop offset="100%" stopColor="#4C1D95" />
+        </linearGradient>
+        <radialGradient id="cc-visor" cx="40%" cy="35%" r="65%">
+          <stop offset="0%" stopColor="#BFDBFE" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.4" />
+        </radialGradient>
+        <linearGradient id="cc-helmet" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#E0E7FF" />
+          <stop offset="100%" stopColor="#C7D2FE" />
+        </linearGradient>
+      </defs>
+      {/* Suit body */}
+      <path d="M 42 158 L 60 145 L 100 162 L 140 145 L 158 158 L 166 250 L 34 250 Z" fill="url(#cc-suit)" />
+      {/* Suit collar ring */}
+      <ellipse cx="100" cy="155" rx="42" ry="12" fill="#7C3AED" />
+      <ellipse cx="100" cy="155" rx="38" ry="9" fill="#8B5CF6" />
+      {/* Number patch on suit */}
+      <rect x="62" y="170" width="24" height="18" rx="4" fill="#FBBF24" />
+      <text x="74" y="183" textAnchor="middle" fontSize="11" fontWeight="bold" fill="#4C1D95">123</text>
+      {/* Stars on suit */}
+      <text x="120" y="185" fontSize="12" fill="#FCD34D">★</text>
+      <text x="134" y="200" fontSize="9" fill="#A5B4FC">✦</text>
+      <text x="55" y="200" fontSize="9" fill="#A5B4FC">✦</text>
+      {/* Gloves */}
+      <ellipse cx="38" cy="172" rx="14" ry="10" fill="#7C3AED" />
+      <ellipse cx="162" cy="172" rx="14" ry="10" fill="#7C3AED" />
+      {/* Helmet outer */}
+      <ellipse cx="100" cy="88" rx="62" ry="66" fill="url(#cc-helmet)" />
+      {/* Visor */}
+      <ellipse cx="100" cy="92" rx="44" ry="46" fill="url(#cc-visor)" />
+      {/* Face inside visor */}
+      <ellipse cx="100" cy="98" rx="30" ry="32" fill="#FDDCB5" />
+      {/* Big happy eyes */}
+      <ellipse cx="88" cy="92" rx="8" ry="9" fill="#1E3A8A" />
+      <ellipse cx="112" cy="92" rx="8" ry="9" fill="#1E3A8A" />
+      <circle cx="91" cy="88" r="3.5" fill="white" opacity="0.9" />
+      <circle cx="115" cy="88" r="3.5" fill="white" opacity="0.9" />
+      {/* Big smile */}
+      <path d="M 84 108 Q 100 122 116 108" fill="white" stroke="#1E3A8A" strokeWidth="2" strokeLinecap="round" />
+      {/* Nose */}
+      <path d="M 98 100 Q 100 104 102 100" fill="none" stroke="#D4A574" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Helmet star badge */}
+      <text x="94" y="52" fontSize="16" fill="#FBBF24">★</text>
+      {/* Floating numbers around */}
+      <text x="22" y="80" fontSize="14" fill="#7C3AED" opacity="0.6">3</text>
+      <text x="164" y="75" fontSize="14" fill="#7C3AED" opacity="0.6">7</text>
+      <text x="28" y="115" fontSize="12" fill="#A5B4FC" opacity="0.5">+</text>
+      <text x="160" y="112" fontSize="12" fill="#A5B4FC" opacity="0.5">2</text>
+      {/* Antenna on helmet */}
+      <line x1="100" y1="24" x2="100" y2="10" stroke="#8B5CF6" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="100" cy="8" r="5" fill="#FBBF24" />
+    </svg>
+  );
+};
+
+/* ─── Dr. Luna ─── scientist, lab coat, sunflower, magnifying glass */
+const DrLuna = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Dr. Luna">
+      <defs>
+        <linearGradient id="dl-coat" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="100%" stopColor="#F0FDF4" />
+        </linearGradient>
+        <linearGradient id="dl-hair" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#7C3AED" />
+          <stop offset="100%" stopColor="#5B21B6" />
+        </linearGradient>
+      </defs>
+      {/* Lab coat body */}
+      <path d="M 42 152 L 58 140 L 100 158 L 142 140 L 158 152 L 168 250 L 32 250 Z" fill="url(#dl-coat)" />
+      {/* Coat lapels */}
+      <path d="M 58 140 L 82 165 L 78 250" fill="#E2E8F0" />
+      <path d="M 142 140 L 118 165 L 122 250" fill="#E2E8F0" />
+      <line x1="100" y1="165" x2="100" y2="250" stroke="#D1D5DB" strokeWidth="1" />
+      {/* Pocket with leaf/flower */}
+      <rect x="112" y="175" width="20" height="22" rx="3" fill="none" stroke="#D1D5DB" strokeWidth="1.5" />
+      <text x="116" y="191" fontSize="14">🌿</text>
+      {/* Name badge */}
+      <rect x="60" y="165" width="26" height="16" rx="3" fill="#DCFCE7" stroke="#86EFAC" strokeWidth="1" />
+      <text x="73" y="177" textAnchor="middle" fontSize="7" fill="#14532D" fontWeight="bold">DR. LUNA</text>
+      {/* Hair — curly lavender */}
+      <ellipse cx="100" cy="55" rx="56" ry="44" fill="url(#dl-hair)" />
+      <circle cx="56" cy="62" rx="18" ry="20" r="18" fill="#7C3AED" />
+      <circle cx="144" cy="62" r="18" fill="#7C3AED" />
+      <ellipse cx="100" cy="30" rx="38" ry="22" fill="#8B5CF6" />
+      {/* Curls */}
+      <circle cx="58" cy="58" r="10" fill="none" stroke="#A78BFA" strokeWidth="3" opacity="0.5" />
+      <circle cx="142" cy="58" r="10" fill="none" stroke="#A78BFA" strokeWidth="3" opacity="0.5" />
+      {/* Face */}
+      <ellipse cx="100" cy="100" rx="46" ry="50" fill="#FDDCB5" />
+      {/* Round glasses */}
+      <circle cx="82" cy="96" r="14" fill="rgba(220,252,231,0.4)" stroke="#0D9488" strokeWidth="2.5" />
+      <circle cx="118" cy="96" r="14" fill="rgba(220,252,231,0.4)" stroke="#0D9488" strokeWidth="2.5" />
+      <line x1="96" y1="96" x2="104" y2="96" stroke="#0D9488" strokeWidth="2.5" />
+      <line x1="68" y1="90" x2="56" y2="84" stroke="#0D9488" strokeWidth="2" />
+      <line x1="132" y1="90" x2="144" y2="84" stroke="#0D9488" strokeWidth="2" />
+      {/* Curious eyes */}
+      <ellipse cx="82" cy="95" rx="6" ry="7" fill="#065F46" />
+      <ellipse cx="118" cy="95" rx="6" ry="7" fill="#065F46" />
+      <circle cx="84" cy="92" r="2.5" fill="white" opacity="0.9" />
+      <circle cx="120" cy="92" r="2.5" fill="white" opacity="0.9" />
+      {/* Eyebrows raised */}
+      <path d="M 68 82 Q 82 74 96 82" fill="none" stroke="#5B21B6" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M 104 82 Q 118 74 132 82" fill="none" stroke="#5B21B6" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Nose */}
+      <path d="M 98 104 Q 100 110 102 104" fill="none" stroke="#C9A068" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Wonder smile */}
+      <path d="M 82 116 Q 100 132 118 116" fill="none" stroke="#0D9488" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Magnifying glass */}
+      <circle cx="158" cy="135" r="16" fill="none" stroke="#0D9488" strokeWidth="3" />
+      <circle cx="158" cy="135" r="14" fill="rgba(220,252,231,0.3)" />
+      <line x1="169" y1="146" x2="178" y2="160" stroke="#0D9488" strokeWidth="4" strokeLinecap="round" />
+      {/* Sunflower in hair */}
+      <circle cx="140" cy="40" r="8" fill="#FBBF24" />
+      <circle cx="140" cy="40" r="4" fill="#92400E" />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((a, i) => (
+        <ellipse
+          key={i}
+          cx={140 + Math.cos((a * Math.PI) / 180) * 10}
+          cy={40 + Math.sin((a * Math.PI) / 180) * 10}
+          rx="3.5"
+          ry="5"
+          fill="#FCD34D"
+          transform={`rotate(${a} ${140 + Math.cos((a * Math.PI) / 180) * 10} ${40 + Math.sin((a * Math.PI) / 180) * 10})`}
+        />
+      ))}
+    </svg>
+  );
+};
+
+/* ─── Professor Pip ─── owl, graduation cap, glasses, book */
+const ProfessorPip = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Professor Pip">
+      <defs>
+        <linearGradient id="pp-body" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#D97706" />
+          <stop offset="100%" stopColor="#92400E" />
+        </linearGradient>
+        <linearGradient id="pp-book" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FBBF24" />
+          <stop offset="100%" stopColor="#F59E0B" />
+        </linearGradient>
+      </defs>
+      {/* Owl body */}
+      <ellipse cx="100" cy="170" rx="55" ry="65" fill="url(#pp-body)" />
+      {/* Belly */}
+      <ellipse cx="100" cy="178" rx="35" ry="45" fill="#FEF3C7" />
+      {/* Feather texture on belly */}
+      <path d="M 76 160 Q 88 168 100 162 Q 112 168 124 160" fill="none" stroke="#FBBF24" strokeWidth="1.5" opacity="0.5" />
+      <path d="M 74 175 Q 87 183 100 177 Q 113 183 126 175" fill="none" stroke="#FBBF24" strokeWidth="1.5" opacity="0.4" />
+      {/* Wings */}
+      <path d="M 46 150 Q 24 135 28 105 Q 36 90 52 100 Q 48 120 55 140 Z" fill="#B45309" />
+      <path d="M 154 150 Q 176 135 172 105 Q 164 90 148 100 Q 152 120 145 140 Z" fill="#B45309" />
+      {/* Tail feathers */}
+      <path d="M 80 230 Q 85 250 100 245 Q 115 250 120 230" fill="#92400E" />
+      <path d="M 72 225 Q 72 248 80 245" fill="#B45309" />
+      <path d="M 128 225 Q 128 248 120 245" fill="#B45309" />
+      {/* Head */}
+      <ellipse cx="100" cy="92" rx="52" ry="54" fill="url(#pp-body)" />
+      {/* Face disc */}
+      <ellipse cx="100" cy="96" rx="38" ry="38" fill="#FEF3C7" />
+      {/* Ear tufts */}
+      <path d="M 72 48 L 62 22 L 82 42" fill="#B45309" />
+      <path d="M 128 48 L 138 22 L 118 42" fill="#B45309" />
+      {/* BIG round eyes with glasses */}
+      <circle cx="82" cy="92" r="18" fill="white" stroke="#78350F" strokeWidth="2" />
+      <circle cx="118" cy="92" r="18" fill="white" stroke="#78350F" strokeWidth="2" />
+      <line x1="100" y1="92" x2="100" y2="92" stroke="#78350F" strokeWidth="2" />
+      <line x1="64" y1="86" x2="54" y2="80" stroke="#78350F" strokeWidth="2" />
+      <line x1="136" y1="86" x2="146" y2="80" stroke="#78350F" strokeWidth="2" />
+      {/* Amber irises */}
+      <circle cx="82" cy="92" r="12" fill="#D97706" />
+      <circle cx="118" cy="92" r="12" fill="#D97706" />
+      <circle cx="82" cy="92" r="7" fill="#451A03" />
+      <circle cx="118" cy="92" r="7" fill="#451A03" />
+      <circle cx="86" cy="87" r="4" fill="white" opacity="0.9" />
+      <circle cx="122" cy="87" r="4" fill="white" opacity="0.9" />
+      {/* Beak */}
+      <path d="M 94 106 L 100 118 L 106 106" fill="#FBBF24" />
+      {/* Graduation cap */}
+      <rect x="66" y="42" width="68" height="12" rx="2" fill="#1E3A8A" />
+      <path d="M 75 42 L 100 18 L 125 42" fill="#1E3A8A" />
+      <line x1="125" y1="42" x2="138" y2="56" stroke="#1E3A8A" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="138" cy="58" r="5" fill="#FBBF24" />
+      {/* Book held in wing */}
+      <rect x="136" y="155" width="28" height="36" rx="3" fill="url(#pp-book)" />
+      <rect x="138" y="157" width="24" height="32" rx="2" fill="#FFFBEB" />
+      <line x1="141" y1="163" x2="159" y2="163" stroke="#D97706" strokeWidth="1.5" opacity="0.6" />
+      <line x1="141" y1="169" x2="159" y2="169" stroke="#D97706" strokeWidth="1.5" opacity="0.5" />
+      <line x1="141" y1="175" x2="155" y2="175" stroke="#D97706" strokeWidth="1.5" opacity="0.4" />
+      {/* Floating letters */}
+      <text x="18" y="100" fontSize="16" fill="#D97706" opacity="0.5">A</text>
+      <text x="168" y="95" fontSize="16" fill="#D97706" opacity="0.5">B</text>
+      <text x="24" y="140" fontSize="13" fill="#FBBF24" opacity="0.4">c</text>
+    </svg>
+  );
+};
+
+/* ─── Arty ─── colorful child artist, paint-covered overalls, big smile */
+const Arty = ({ size }: { size: string }) => {
+  const w = size === "story" ? 260 : 135;
+  return (
+    <svg viewBox="0 0 200 250" width={w} height={w * 1.25} aria-label="Arty">
+      <defs>
+        <linearGradient id="ar-overalls" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#7C3AED" />
+          <stop offset="100%" stopColor="#5B21B6" />
+        </linearGradient>
+        <radialGradient id="ar-palette" cx="50%" cy="50%" r="70%">
+          <stop offset="0%" stopColor="#FEF3C7" />
+          <stop offset="100%" stopColor="#FDE68A" />
+        </radialGradient>
+      </defs>
+      {/* Overalls body */}
+      <path d="M 44 152 L 62 140 L 100 158 L 138 140 L 156 152 L 164 250 L 36 250 Z" fill="url(#ar-overalls)" />
+      {/* Paint splats on overalls */}
+      <ellipse cx="70" cy="180" rx="8" ry="5" fill="#EF4444" opacity="0.7" transform="rotate(-15 70 180)" />
+      <ellipse cx="130" cy="175" rx="6" ry="4" fill="#FBBF24" opacity="0.8" transform="rotate(10 130 175)" />
+      <ellipse cx="82" cy="205" rx="7" ry="4" fill="#10B981" opacity="0.6" transform="rotate(5 82 205)" />
+      <ellipse cx="120" cy="210" rx="5" ry="3" fill="#3B82F6" opacity="0.7" transform="rotate(-20 120 210)" />
+      <ellipse cx="100" cy="195" rx="4" ry="3" fill="#F59E0B" opacity="0.6" />
+      {/* Overalls straps */}
+      <rect x="80" y="138" width="12" height="25" rx="5" fill="#6D28D9" />
+      <rect x="108" y="138" width="12" height="25" rx="5" fill="#6D28D9" />
+      {/* Shirt under */}
+      <path d="M 62 140 L 80 138 L 80 150 L 62 148 Z" fill="#FCD34D" />
+      <path d="M 120 138 L 138 140 L 138 148 L 120 150 Z" fill="#FCD34D" />
+      {/* Hair — wild colorful curls */}
+      <ellipse cx="100" cy="55" rx="56" ry="46" fill="#F97316" />
+      <circle cx="55" cy="62" r="20" fill="#F97316" />
+      <circle cx="145" cy="62" r="20" fill="#F97316" />
+      <ellipse cx="100" cy="30" rx="42" ry="28" fill="#FB923C" />
+      {/* Paint in hair */}
+      <ellipse cx="68" cy="40" rx="8" ry="5" fill="#A855F7" opacity="0.6" transform="rotate(-20 68 40)" />
+      <ellipse cx="132" cy="38" rx="7" ry="4" fill="#3B82F6" opacity="0.5" transform="rotate(15 132 38)" />
+      <ellipse cx="100" cy="18" rx="6" ry="4" fill="#EF4444" opacity="0.5" />
+      {/* Face */}
+      <ellipse cx="100" cy="100" rx="46" ry="50" fill="#FDDCB5" />
+      {/* Paint smudge on face */}
+      <ellipse cx="72" cy="110" rx="8" ry="5" fill="#A855F7" opacity="0.3" transform="rotate(-10 72 110)" />
+      <ellipse cx="130" cy="106" rx="6" ry="4" fill="#3B82F6" opacity="0.25" transform="rotate(5 130 106)" />
+      {/* Big happy eyes */}
+      <ellipse cx="82" cy="94" rx="8" ry="9" fill="#1E3A8A" />
+      <ellipse cx="118" cy="94" rx="8" ry="9" fill="#1E3A8A" />
+      <circle cx="85" cy="90" r="3.5" fill="white" opacity="0.9" />
+      <circle cx="121" cy="90" r="3.5" fill="white" opacity="0.9" />
+      {/* Eyebrows expressive */}
+      <path d="M 70 82 Q 82 74 94 80" fill="none" stroke="#9A3412" strokeWidth="3" strokeLinecap="round" />
+      <path d="M 106 80 Q 118 74 130 82" fill="none" stroke="#9A3412" strokeWidth="3" strokeLinecap="round" />
+      {/* Nose */}
+      <path d="M 97 102 Q 100 108 103 102" fill="none" stroke="#D4A574" strokeWidth="1.5" strokeLinecap="round" />
+      {/* Big grin */}
+      <path d="M 78 116 Q 100 138 122 116" fill="white" stroke="#9A3412" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Paint palette held up */}
+      <ellipse cx="158" cy="140" rx="22" ry="18" fill="url(#ar-palette)" />
+      <circle cx="148" cy="134" r="5" fill="#EF4444" />
+      <circle cx="162" cy="130" r="5" fill="#FBBF24" />
+      <circle cx="172" cy="140" r="5" fill="#10B981" />
+      <circle cx="168" cy="152" r="5" fill="#3B82F6" />
+      <circle cx="152" cy="154" r="5" fill="#A855F7" />
+      <circle cx="158" cy="142" r="8" fill="#92400E" opacity="0.6" />
+      {/* Paintbrush */}
+      <line x1="38" y1="155" x2="28" y2="125" stroke="#92400E" strokeWidth="3" strokeLinecap="round" />
+      <rect x="22" y="112" width="12" height="16" rx="2" fill="#EF4444" />
+      <path d="M 25 112 Q 28 104 31 112" fill="#EF4444" />
+      {/* Rainbow splash above */}
+      <path d="M 58 28 Q 100 5 142 28" fill="none" stroke="#EF4444" strokeWidth="3" opacity="0.4" strokeLinecap="round" />
+      <path d="M 62 34 Q 100 12 138 34" fill="none" stroke="#F97316" strokeWidth="3" opacity="0.35" strokeLinecap="round" />
+      <path d="M 66 40 Q 100 20 134 40" fill="none" stroke="#FBBF24" strokeWidth="3" opacity="0.3" strokeLinecap="round" />
+    </svg>
+  );
+};
+
 const CharacterPortrait = ({ character, size = "card" }: Props) => {
   switch (character.id) {
     case "grandma-rose":
@@ -640,6 +1138,20 @@ const CharacterPortrait = ({ character, size = "card" }: Props) => {
       return <Paati size={size} />;
     case "dadi":
       return <Dadi size={size} />;
+    case "ammamma":
+      return <Ammamma size={size} />;
+    case "aaji":
+      return <Aaji size={size} />;
+    case "dida":
+      return <Dida size={size} />;
+    case "count-cosmo":
+      return <CountCosmo size={size} />;
+    case "dr-luna":
+      return <DrLuna size={size} />;
+    case "professor-pip":
+      return <ProfessorPip size={size} />;
+    case "arty":
+      return <Arty size={size} />;
     default:
       return null;
   }
