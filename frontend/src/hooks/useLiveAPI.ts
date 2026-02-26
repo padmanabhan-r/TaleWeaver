@@ -24,13 +24,16 @@ function useAudioCapture(wsRef: React.RefObject<WebSocket | null>) {
   const audioContextRef = useRef<AudioContext | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
   const startCapture = useCallback(async () => {
     if (isCapturing) return;
 
+    // Do NOT specify sampleRate in getUserMedia — browsers (especially macOS) often
+    // ignore it or produce malformed audio when it conflicts with the native rate.
+    // AudioContext({ sampleRate: 16000 }) handles the resampling reliably instead.
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
-        sampleRate: 16000,
         channelCount: 1,
         echoCancellation: true,
         noiseSuppression: true,
@@ -65,6 +68,7 @@ function useAudioCapture(wsRef: React.RefObject<WebSocket | null>) {
     };
 
     const source = audioContext.createMediaStreamSource(stream);
+    sourceRef.current = source;
     source.connect(workletNode);
 
     setIsCapturing(true);
@@ -76,13 +80,14 @@ function useAudioCapture(wsRef: React.RefObject<WebSocket | null>) {
     streamRef.current = null;
     workletNodeRef.current?.disconnect();
     workletNodeRef.current = null;
+    sourceRef.current = null;
     audioContextRef.current?.close();
     audioContextRef.current = null;
     setIsCapturing(false);
     console.log("[audio-capture] Stopped");
   }, []);
 
-  return { startCapture, stopCapture, isCapturing };
+  return { startCapture, stopCapture, isCapturing, captureCtxRef: audioContextRef, captureSourceRef: sourceRef };
 }
 
 // ── Audio playback ───────────────────────────────────────────────────────────
@@ -91,6 +96,7 @@ function useAudioPlayback() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
+  const gainNodeRef = useRef<GainNode | null>(null);
   const initializedRef = useRef(false);
 
   const initPlayback = useCallback(async () => {
@@ -108,7 +114,11 @@ function useAudioPlayback() {
       if (event.data.type === "cleared") setIsPlaying(false);
     };
 
-    workletNode.connect(audioContext.destination);
+    const gainNode = audioContext.createGain();
+    gainNodeRef.current = gainNode;
+
+    workletNode.connect(gainNode);
+    gainNode.connect(audioContext.destination);
     initializedRef.current = true;
     console.log("[audio-playback] Initialized ✓");
   }, []);
@@ -136,7 +146,7 @@ function useAudioPlayback() {
     console.log("[audio-playback] Buffer cleared (interrupted)");
   }, []);
 
-  return { initPlayback, playChunk, clearBuffer, isPlaying };
+  return { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef: audioContextRef, playbackGainRef: gainNodeRef };
 }
 
 // ── Helper ───────────────────────────────────────────────────────────────────
@@ -156,9 +166,13 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
+  // Accumulates character speech across transcription chunks (finished flag unreliable in native audio)
+  const outputTextAccRef = useRef("");
+  // Tracks whether image gen was already fired mid-speech for the current turn
+  const imageTriggeredThisTurnRef = useRef(false);
 
-  const { startCapture, stopCapture, isCapturing } = useAudioCapture(wsRef);
-  const { initPlayback, playChunk, clearBuffer, isPlaying } = useAudioPlayback();
+  const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
+  const { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef, playbackGainRef } = useAudioPlayback();
 
   // Keep latest callbacks in refs so the WS onmessage closure never goes stale
   const playChunkRef = useRef(playChunk);
@@ -218,6 +232,8 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
 
           // Barge-in: child interrupted the character
           if (sc.interrupted) {
+            outputTextAccRef.current = "";
+            imageTriggeredThisTurnRef.current = false;
             clearBufferRef.current();
             setCharacterState("listening");
             return;
@@ -228,11 +244,17 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
             onTranscriptionRef.current?.({ type: "child", text: sc.inputTranscription.text });
           }
 
-          // What the character said — triggers image generation
-          if (sc.outputTranscription?.finished && sc.outputTranscription?.text) {
-            const text = sc.outputTranscription.text;
-            onTranscriptionRef.current?.({ type: "character", text });
-            onImageTriggerRef.current?.(text);
+          // Accumulate character speech transcription chunks
+          // Fire image gen early (~20 words in) so the image is ready when speech ends
+          if (sc.outputTranscription?.text) {
+            outputTextAccRef.current += sc.outputTranscription.text;
+            if (!imageTriggeredThisTurnRef.current) {
+              const wordCount = outputTextAccRef.current.trim().split(/\s+/).length;
+              if (wordCount >= 20) {
+                imageTriggeredThisTurnRef.current = true;
+                onImageTriggerRef.current?.(outputTextAccRef.current);
+              }
+            }
           }
 
           // Audio chunks from the character
@@ -245,8 +267,18 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
             }
           }
 
-          // Character finished speaking — wait for child
+          // Character finished speaking
           if (sc.turnComplete) {
+            const accText = outputTextAccRef.current.trim();
+            if (accText) {
+              onTranscriptionRef.current?.({ type: "character", text: accText });
+              // Only trigger image here if early trigger didn't fire (short responses < 20 words)
+              if (!imageTriggeredThisTurnRef.current) {
+                onImageTriggerRef.current?.(accText);
+              }
+              outputTextAccRef.current = "";
+            }
+            imageTriggeredThisTurnRef.current = false;
             setCharacterState("listening");
           }
 
@@ -290,5 +322,8 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return { connect, disconnect, sessionState, characterState, isCapturing, isPlaying };
+  return {
+    connect, disconnect, sessionState, characterState, isCapturing, isPlaying,
+    captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
+  };
 }

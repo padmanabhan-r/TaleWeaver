@@ -1,7 +1,11 @@
+import React, { useRef } from "react";
 import { Character } from "@/characters";
 import CharacterPortrait from "@/components/CharacterPortrait";
 import StorybookEmpty from "@/components/StorybookEmpty";
+import { StorySceneGrid } from "@/components/StorySceneGrid";
+import { AudioVisualizer } from "@/components/AudioVisualizer";
 import { useLiveAPI, CharacterState } from "@/hooks/useLiveAPI";
+import { useStoryImages } from "@/hooks/useStoryImages";
 
 interface Props {
   character: Character;
@@ -29,7 +33,21 @@ const STATUS_TEXT: Record<string, string> = {
 };
 
 const StoryScreen = ({ character, onBack, onBegin }: Props) => {
-  const { connect, disconnect, sessionState, characterState } = useLiveAPI({ character });
+  // Stable session ID for this screen mount
+  const sessionIdRef = useRef<string>(crypto.randomUUID());
+
+  const { scenes, triggerImageGeneration } = useStoryImages(
+    character.imageStyle,
+    sessionIdRef.current
+  );
+
+  const {
+    connect, disconnect, sessionState, characterState, isCapturing,
+    captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
+  } = useLiveAPI({
+    character,
+    onImageTrigger: triggerImageGeneration,
+  });
 
   const avatarClass = AVATAR_STATE_CLASS[characterState];
 
@@ -51,7 +69,7 @@ const StoryScreen = ({ character, onBack, onBegin }: Props) => {
 
   return (
     <div
-      className="min-h-screen w-full screen-fade-in"
+      className="min-h-screen w-full flex flex-col screen-fade-in"
       style={{
         background: `linear-gradient(to bottom, ${character.bgColor}40, #ffffff)`,
       }}
@@ -76,9 +94,9 @@ const StoryScreen = ({ character, onBack, onBegin }: Props) => {
       </header>
 
       {/* Main content */}
-      <main className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-12 px-4 md:px-12 py-8 max-w-6xl mx-auto">
+      <main className="flex flex-col md:flex-row gap-6 px-4 md:px-6 py-4 flex-1">
         {/* Left panel — character + controls */}
-        <div className="flex flex-col items-center gap-6 md:w-[40%] shrink-0">
+        <div className="flex flex-col items-center gap-6 md:w-[300px] shrink-0">
           {/* Character portrait with animated ring */}
           <div
             className={`rounded-full flex items-center justify-center ${avatarClass}`}
@@ -100,6 +118,28 @@ const StoryScreen = ({ character, onBack, onBegin }: Props) => {
           >
             {statusText}
           </p>
+
+          {/* Audio visualizers — shown while active */}
+          {isActive && (
+            <div className="flex flex-col gap-3 w-full px-2">
+              <div style={{ height: "48px", width: "100%" }}>
+                <AudioVisualizer
+                  active={isActive}
+                  ctxRef={playbackCtxRef}
+                  nodeRef={playbackGainRef as React.RefObject<AudioNode | null>}
+                  color={character.accentColor}
+                />
+              </div>
+              <div style={{ height: "48px", width: "100%" }}>
+                <AudioVisualizer
+                  active={isCapturing}
+                  ctxRef={captureCtxRef}
+                  nodeRef={captureSourceRef as React.RefObject<AudioNode | null>}
+                  color={character.textColor}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Begin button — shown when not yet active */}
           {!isActive && (
@@ -143,9 +183,17 @@ const StoryScreen = ({ character, onBack, onBegin }: Props) => {
           )}
         </div>
 
-        {/* Right panel — story scene images appear here (Phase 3) */}
-        <div className="md:w-[60%] w-full min-h-[400px] md:min-h-[500px] rounded-3xl border-4 border-dashed bg-white/40 flex flex-col items-center justify-center gap-4 p-8 border-cycle">
-          <StorybookEmpty />
+        {/* Right panel — story scene images */}
+        <div className="flex-1 flex flex-col min-h-[360px] rounded-3xl border-4 border-dashed bg-white/40 border-cycle overflow-hidden">
+          {scenes.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+              <StorybookEmpty />
+            </div>
+          ) : (
+            <div className="flex-1 relative">
+              <StorySceneGrid scenes={scenes} />
+            </div>
+          )}
         </div>
       </main>
     </div>
