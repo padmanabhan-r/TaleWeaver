@@ -65,7 +65,7 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   const [intervalSeconds, setIntervalSeconds] = useState(8);
 
-  const { scenes, triggerImageGeneration } = useStoryImages(
+  const { scenes, triggerImageGeneration, stop: stopImages } = useStoryImages(
     character.imageStyle,
     sessionIdRef.current,
     intervalSeconds
@@ -83,7 +83,8 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
   const statusKey = isActive ? `active_${characterState}` : sessionState;
   const statusText = STATUS_TEXT[statusKey] ?? "";
 
-  const handleBack = () => { disconnect(); onBack(); };
+  const handleBack = () => { disconnect(); stopImages(); onBack(); };
+  const handleEnd = () => { disconnect(); stopImages(); };
 
   return (
     <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
@@ -103,15 +104,20 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
             ← Change Storyteller
           </button>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
-          <div className="w-32 flex justify-end">
-            {theme && theme !== "camera_prop" && (
-              <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/30 font-body text-xs text-primary">
+          <div className="flex justify-end flex-shrink-0">
+            {theme && theme !== "camera_prop" && theme !== "sketch" && (
+              <span className="whitespace-nowrap px-3 py-1 rounded-full bg-primary/20 border border-primary/30 font-body text-xs text-primary">
                 {THEMES_EMOJI[theme] ?? "💭"} {theme}
               </span>
             )}
             {theme === "camera_prop" && (
-              <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/30 font-body text-xs text-primary">
+              <span className="whitespace-nowrap px-3 py-1 rounded-full bg-primary/20 border border-primary/30 font-body text-xs text-primary">
                 📸 Prop story
+              </span>
+            )}
+            {theme === "sketch" && (
+              <span className="whitespace-nowrap px-3 py-1 rounded-full bg-primary/20 border border-primary/30 font-body text-xs text-primary">
+                ✏️ Sketch story
               </span>
             )}
           </div>
@@ -175,105 +181,104 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
             {/* Status text */}
             <p className="font-body text-base text-foreground/70 text-center">{statusText}</p>
 
-            {/* Speaking indicator bars */}
-            {characterState === "speaking" && isActive && (
-              <div className="flex gap-1 items-end h-6">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="w-1.5 bg-primary rounded-full"
-                    animate={{ height: ["8px", "20px", "8px"] }}
-                    transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
-                  />
-                ))}
-              </div>
-            )}
+            {/* Speaking indicator bars — always in DOM, opacity only */}
+            {/* scaleY not height — avoids layout reflow that jitters siblings */}
+            <div className={`flex gap-1 items-end h-6 transition-opacity duration-300 ${characterState === "speaking" && isActive ? "opacity-100" : "opacity-0"}`}>
+              {[0, 1, 2, 3, 4].map((i) => (
+                <motion.div
+                  key={i}
+                  className="w-1.5 bg-primary rounded-full"
+                  style={{ height: "20px", transformOrigin: "bottom" }}
+                  animate={{ scaleY: [0.4, 1, 0.4] }}
+                  transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                />
+              ))}
+            </div>
 
-            {/* Audio visualizers */}
-            {isActive && (
-              <div className="flex flex-col gap-2 w-full px-2">
-                <div style={{ height: "40px" }}>
-                  <AudioVisualizer
-                    active={isActive}
-                    ctxRef={playbackCtxRef}
-                    nodeRef={playbackGainRef as React.RefObject<AudioNode | null>}
-                    color="hsl(42 100% 62%)"
-                  />
-                </div>
-                <div style={{ height: "40px" }}>
-                  <AudioVisualizer
-                    active={isCapturing}
-                    ctxRef={captureCtxRef}
-                    nodeRef={captureSourceRef as React.RefObject<AudioNode | null>}
-                    color="hsl(170 70% 50%)"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Begin button */}
-            {!isActive && (
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
-                whileHover={!isConnecting ? { scale: 1.05 } : {}}
-                whileTap={!isConnecting ? { scale: 0.95 } : {}}
-                onClick={connect}
-                disabled={isConnecting}
-                className="px-10 py-4 rounded-full bg-primary text-primary-foreground font-display text-xl font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
-              >
-                {isConnecting ? (
-                  <>
-                    <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Getting the story ready...
-                  </>
-                ) : (
-                  "🪄 Begin the Story!"
-                )}
-              </motion.button>
-            )}
-
-            {/* End button */}
-            {isActive && (
-              <button
-                onClick={disconnect}
-                className="font-body text-sm px-6 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-              >
-                End Story
-              </button>
-            )}
-
-            {/* Camera toggle — opt-in, only while active */}
-            {isActive && (
-              <button
-                onClick={toggleCamera}
-                className={`font-body text-xs px-4 py-1.5 rounded-full border transition-colors ${
-                  cameraEnabled
-                    ? "border-cyan-400/70 text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20"
-                    : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
-                }`}
-              >
-                {cameraEnabled ? "📷 Camera On" : "📷 Share Camera"}
-              </button>
-            )}
-
-            {/* Camera preview */}
-            {cameraEnabled && isActive && (
-              <div className="w-full rounded-xl overflow-hidden border border-cyan-400/30">
-                <video
-                  ref={cameraVideoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                  style={{ transform: "scaleX(-1)" }}
+            {/* Audio visualizers — always in DOM, opacity only */}
+            <div className={`flex flex-col gap-2 w-full px-2 transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}>
+              <div style={{ height: "40px" }}>
+                <AudioVisualizer
+                  active={isActive}
+                  ctxRef={playbackCtxRef}
+                  nodeRef={playbackGainRef as React.RefObject<AudioNode | null>}
+                  color="hsl(42 100% 62%)"
                 />
               </div>
-            )}
+              <div style={{ height: "40px" }}>
+                <AudioVisualizer
+                  active={isCapturing}
+                  ctxRef={captureCtxRef}
+                  nodeRef={captureSourceRef as React.RefObject<AudioNode | null>}
+                  color="hsl(170 70% 50%)"
+                />
+              </div>
+            </div>
+
+            {/* Button area — always reserve space, fade between states */}
+            <div className="flex flex-col items-center gap-2" style={{ minHeight: "80px" }}>
+              {!isActive ? (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: 0.8 }}
+                  whileHover={!isConnecting ? { scale: 1.05 } : {}}
+                  whileTap={!isConnecting ? { scale: 0.95 } : {}}
+                  onClick={connect}
+                  disabled={isConnecting}
+                  className="px-10 py-4 rounded-full bg-primary text-primary-foreground font-display text-xl font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
+                >
+                  {isConnecting ? (
+                    <>
+                      <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Getting the story ready...
+                    </>
+                  ) : (
+                    "🪄 Begin the Story!"
+                  )}
+                </motion.button>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <button
+                    onClick={handleEnd}
+                    className="font-body text-sm px-6 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                  >
+                    End Story
+                  </button>
+                  <button
+                    onClick={toggleCamera}
+                    className={`font-body text-xs px-4 py-1.5 rounded-full border transition-colors ${
+                      cameraEnabled
+                        ? "border-cyan-400/70 text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20"
+                        : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
+                    }`}
+                  >
+                    {cameraEnabled ? "📷 Camera On" : "📷 Share Camera"}
+                  </button>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Camera preview — always in DOM, opacity only */}
+            <div className={`w-full rounded-xl overflow-hidden border border-cyan-400/30 transition-opacity duration-300 ${cameraEnabled && isActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+              style={{ height: cameraEnabled && isActive ? undefined : 0 }}>
+              <video
+                ref={cameraVideoRef}
+                autoPlay
+                muted
+                playsInline
+                className="w-full h-full object-cover"
+                style={{ transform: "scaleX(-1)" }}
+              />
+            </div>
           </motion.div>
 
           {/* Right — story canvas */}
