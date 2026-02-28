@@ -14,6 +14,8 @@ interface Transcription {
 
 interface UseLiveAPIOptions {
   character: Character;
+  theme?: string;
+  propImage?: string;  // raw base64 JPEG, no data: prefix
   onImageTrigger?: ((text: string) => void) | null;
   onTranscription?: ((msg: Transcription) => void) | null;
 }
@@ -150,6 +152,70 @@ function useAudioPlayback() {
   return { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef: audioContextRef, playbackGainRef: gainNodeRef };
 }
 
+// ── Camera stream ────────────────────────────────────────────────────────────
+
+function useCameraStream(wsRef: React.RefObject<WebSocket | null>) {
+  const [enabled, setEnabled] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const intervalRef = useRef<number | null>(null);
+
+  // Once enabled=true the video element mounts — attach the stream
+  useEffect(() => {
+    if (enabled && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [enabled]);
+
+  const toggle = useCallback(async () => {
+    if (enabled) {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+      setEnabled(false);
+      console.log("[camera-stream] Stopped");
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        streamRef.current = stream;
+        const canvas = document.createElement("canvas");
+        intervalRef.current = window.setInterval(() => {
+          const video = videoRef.current;
+          const ws = wsRef.current;
+          if (!video || !ws || ws.readyState !== WebSocket.OPEN || video.videoWidth === 0) return;
+          const MAX = 512;
+          const scale = Math.min(1, MAX / Math.max(video.videoWidth, video.videoHeight));
+          canvas.width = Math.round(video.videoWidth * scale);
+          canvas.height = Math.round(video.videoHeight * scale);
+          canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const base64 = canvas.toDataURL("image/jpeg", 0.6).split(",")[1];
+          if (!base64) return;
+          ws.send(JSON.stringify({ realtime_input: { media_chunks: [{ mime_type: "image/jpeg", data: base64 }] } }));
+        }, 1000);
+        setEnabled(true); // triggers useEffect to set srcObject after video mounts
+        console.log("[camera-stream] Started ✓");
+      } catch (err) {
+        console.error("[camera-stream] getUserMedia failed:", err);
+      }
+    }
+  }, [enabled, wsRef]);
+
+  const stop = useCallback(() => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setEnabled(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    streamRef.current?.getTracks().forEach(t => t.stop());
+  }, []);
+
+  return { enabled, toggle, stop, videoRef };
+}
+
 // ── Helper ───────────────────────────────────────────────────────────────────
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -163,7 +229,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 // ── Main hook ────────────────────────────────────────────────────────────────
 
-export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLiveAPIOptions) {
+export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTranscription }: UseLiveAPIOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
@@ -172,6 +238,7 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
 
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
   const { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef, playbackGainRef } = useAudioPlayback();
+  const { enabled: cameraEnabled, toggle: toggleCamera, stop: stopCamera, videoRef: cameraVideoRef } = useCameraStream(wsRef);
 
   // Keep latest callbacks in refs so the WS onmessage closure never goes stale
   const playChunkRef = useRef(playChunk);
@@ -197,7 +264,11 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
 
       ws.onopen = () => {
         console.log("[live-api] WebSocket connected");
-        ws.send(JSON.stringify({ character_id: character.id }));
+        ws.send(JSON.stringify({
+          character_id: character.id,
+          theme: theme ?? null,
+          prop_image: propImage ?? null,
+        }));
       };
 
       ws.onmessage = (event) => {
@@ -294,11 +365,12 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
 
   const disconnect = useCallback(() => {
     stopCapture();
+    stopCamera();
     wsRef.current?.close(1000, "User ended session");
     wsRef.current = null;
     setSessionState("idle");
     setCharacterState("idle");
-  }, [stopCapture]);
+  }, [stopCapture, stopCamera]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -311,5 +383,6 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
   return {
     connect, disconnect, sessionState, characterState, isCapturing, isPlaying,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
+    cameraEnabled, toggleCamera, cameraVideoRef,
   };
 }

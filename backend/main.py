@@ -62,11 +62,13 @@ async def story_websocket(ws: WebSocket):
         init_message = await asyncio.wait_for(ws.receive_text(), timeout=10.0)
         init_data = json.loads(init_message)
         character_id = init_data.get("character_id", "grandma-rose")
+        theme = init_data.get("theme") or None
+        prop_image = init_data.get("prop_image") or None
 
-        print(f"[ws] Session {session_id}: character={character_id}")
+        print(f"[ws] Session {session_id}: character={character_id}" + (f", theme={theme}" if theme else "") + (" [prop image]" if prop_image else ""))
 
         # Run the proxy session (blocking until session ends)
-        await run_proxy_session(ws, character_id, session_id)
+        await run_proxy_session(ws, character_id, session_id, theme=theme, prop_image=prop_image)
 
     except asyncio.TimeoutError:
         print(f"[ws] Session {session_id}: timeout waiting for character selection")

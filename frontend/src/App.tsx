@@ -1,16 +1,19 @@
 import { useState } from "react";
 import LandingPage from "./screens/LandingPage";
 import CharacterSelect from "./screens/CharacterSelect";
+import ThemeSelect from "./screens/ThemeSelect";
 import StoryScreen from "./screens/StoryScreen";
 import MuteButton from "./components/MuteButton";
 import { Character } from "./characters";
 import { useAmbientSound } from "./hooks/useAmbientSound";
 
-type Screen = "landing" | "story-select" | "story";
+type Screen = "landing" | "story-select" | "theme-select" | "story";
 
 const App = () => {
   const [screen, setScreen] = useState<Screen>("landing");
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
+  const [theme, setTheme] = useState<string | undefined>();
+  const [propImage, setPropImage] = useState<string | undefined>();
   const [muted, setMuted] = useState(false);
 
   // Ambient music plays on landing + character select, stops during story or when muted
@@ -18,17 +21,31 @@ const App = () => {
 
   const handleCharacterSelect = (character: Character) => {
     setSelectedCharacter(character);
+    setScreen("theme-select");
+  };
+
+  const handleThemeConfirm = (t: string, img?: string) => {
+    setTheme(t);
+    setPropImage(img);
     setScreen("story");
   };
 
-  const handleBack = () => {
+  const handleBackFromTheme = () => {
     setSelectedCharacter(null);
     setScreen("story-select");
+  };
+
+  const handleBackFromStory = () => {
+    setTheme(undefined);
+    setPropImage(undefined);
+    setScreen("theme-select");
   };
 
   const handleBackToLanding = () => {
     setScreen("landing");
     setSelectedCharacter(null);
+    setTheme(undefined);
+    setPropImage(undefined);
   };
 
   return (
@@ -42,8 +59,20 @@ const App = () => {
           onBack={handleBackToLanding}
         />
       )}
+      {screen === "theme-select" && selectedCharacter && (
+        <ThemeSelect
+          character={selectedCharacter}
+          onBack={handleBackFromTheme}
+          onConfirm={handleThemeConfirm}
+        />
+      )}
       {screen === "story" && selectedCharacter && (
-        <StoryScreen character={selectedCharacter} onBack={handleBack} />
+        <StoryScreen
+          character={selectedCharacter}
+          theme={theme}
+          propImage={propImage}
+          onBack={handleBackFromStory}
+        />
       )}
       {screen !== "story" && (
         <MuteButton muted={muted} onToggle={() => setMuted((m) => !m)} />
