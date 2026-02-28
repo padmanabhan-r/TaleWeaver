@@ -196,7 +196,7 @@ GitHub  ──push to main──►  GitHub Actions (.github/workflows/deploy.ym
                           docker push → Artifact Registry
                           us-central1-docker.pkg.dev/.../taleweaver/backend
                                 │
-                          gcloud run deploy taleweaver-backend
+                          gcloud run deploy taleweaver
                                 │
                                 ▼
                     Cloud Run (us-central1)  — 1Gi / 2 vCPU / 3600s timeout
