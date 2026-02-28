@@ -5,9 +5,11 @@ import asyncio
 import json
 import os
 import uuid
+from pathlib import Path
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -73,3 +75,29 @@ async def story_websocket(ws: WebSocket):
             await ws.close(code=1011, reason="Internal error")
         except Exception:
             pass
+
+
+# ── Frontend SPA ──────────────────────────────────────────────────────────────
+
+FRONTEND_DIST = Path(__file__).parent / "frontend" / "dist"
+
+
+def _serve_spa(path: str = ""):
+    """Serve the React SPA — real files get served directly, everything else gets index.html."""
+    if not FRONTEND_DIST.exists():
+        return {"error": "Frontend not built", "path": str(FRONTEND_DIST)}
+    if path:
+        candidate = FRONTEND_DIST / path
+        if candidate.is_file():
+            return FileResponse(candidate)
+    return FileResponse(FRONTEND_DIST / "index.html")
+
+
+@app.get("/", include_in_schema=False)
+async def serve_root():
+    return _serve_spa()
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_frontend(full_path: str):
+    return _serve_spa(full_path)

@@ -1,162 +1,177 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Quicksand:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 210 100% 97%;
-    --foreground: 270 50% 15%;
-    --card: 0 0% 100%;
-    --card-foreground: 270 50% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 270 50% 15%;
-    --primary: 270 60% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 200 80% 85%;
-    --secondary-foreground: 210 60% 20%;
-    --muted: 270 30% 92%;
-    --muted-foreground: 270 10% 45%;
-    --accent: 45 100% 60%;
-    --accent-foreground: 30 80% 20%;
+    --background: 232 47% 13%;
+    --foreground: 45 100% 96%;
+
+    --card: 232 40% 18%;
+    --card-foreground: 45 100% 96%;
+
+    --popover: 232 40% 18%;
+    --popover-foreground: 45 100% 96%;
+
+    --primary: 42 100% 62%;
+    --primary-foreground: 232 47% 13%;
+
+    --secondary: 280 60% 65%;
+    --secondary-foreground: 45 100% 96%;
+
+    --muted: 232 30% 25%;
+    --muted-foreground: 230 20% 65%;
+
+    --accent: 170 70% 50%;
+    --accent-foreground: 232 47% 13%;
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 270 30% 85%;
-    --input: 270 30% 85%;
-    --ring: 270 60% 50%;
+
+    --border: 232 30% 28%;
+    --input: 232 30% 28%;
+    --ring: 42 100% 62%;
+
     --radius: 1rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* TaleWeaver design tokens */
+    --sky-top: 250 60% 12%;
+    --sky-bottom: 232 47% 20%;
+    --star-glow: 42 100% 75%;
+    --magic-pink: 330 80% 65%;
+    --magic-teal: 170 70% 50%;
+    --magic-orange: 25 95% 60%;
+    --cloud: 230 30% 85%;
+    --sparkle: 50 100% 80%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
-    font-family: "Comic Neue", cursive;
+    font-family: 'Quicksand', sans-serif;
+    overflow-x: hidden;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Baloo 2', cursive;
   }
 }
 
-/* Emoji bounce on hover */
-@keyframes emoji-bounce {
-  0%, 100% { transform: translateY(0) scale(1); }
-  30%      { transform: translateY(-12px) scale(1.15); }
-  60%      { transform: translateY(-5px) scale(1.05); }
+/* ── Sky gradient background ── */
+.bg-sky-gradient {
+  background: linear-gradient(
+    180deg,
+    hsl(var(--sky-top)) 0%,
+    hsl(var(--background)) 40%,
+    hsl(var(--sky-bottom)) 100%
+  );
 }
-.emoji-hover { animation: emoji-bounce 0.5s ease forwards; }
 
-/* Emoji big jump on selection */
-@keyframes emoji-jump {
-  0%   { transform: translateY(0) scale(1) rotate(0deg); }
-  25%  { transform: translateY(-20px) scale(1.2) rotate(-5deg); }
-  50%  { transform: translateY(-30px) scale(1.3) rotate(5deg); }
-  75%  { transform: translateY(-10px) scale(1.1) rotate(-2deg); }
-  100% { transform: translateY(0) scale(1) rotate(0deg); }
+/* ── Magic button glow ── */
+.magic-glow {
+  box-shadow:
+    0 0 20px hsl(var(--primary) / 0.4),
+    0 0 40px hsl(var(--primary) / 0.2),
+    0 0 80px hsl(var(--primary) / 0.1);
 }
-.emoji-selected { animation: emoji-jump 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-/* Gold ring pulse around selected card */
-@keyframes gold-ring-pulse {
-  0%   { box-shadow: 0 0 0 0px rgba(251, 191, 36, 0.7); }
-  70%  { box-shadow: 0 0 0 12px rgba(251, 191, 36, 0); }
-  100% { box-shadow: 0 0 0 0px rgba(251, 191, 36, 0); }
+/* ── Character card hover glow ── */
+.character-glow {
+  box-shadow: 0 8px 32px hsl(var(--primary) / 0.2);
+  transition: all 0.3s ease;
 }
-.ring-gold-pulse { animation: gold-ring-pulse 1s ease-out infinite; }
+.character-glow:hover {
+  box-shadow:
+    0 12px 40px hsl(var(--primary) / 0.4),
+    0 0 20px hsl(var(--secondary) / 0.2);
+}
 
-/* Sparkle float */
-@keyframes sparkle-float {
-  0%, 100% { transform: translateY(0px) scale(1); opacity: 0.6; }
-  50%      { transform: translateY(-15px) scale(1.1); opacity: 1; }
+/* ── Story canvas area ── */
+.story-canvas {
+  background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--muted)) 100%);
+  border: 2px solid hsl(var(--border));
+  border-radius: var(--radius);
 }
-.sparkle-float { animation: sparkle-float var(--duration, 3s) ease-in-out infinite; animation-delay: var(--delay, 0s); }
 
-/* Screen fade out transition */
-@keyframes fade-to-white {
-  from { opacity: 1; }
-  to   { opacity: 0; }
+/* ── Floating animations ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-20px) rotate(3deg); }
 }
-.screen-fade-out { animation: fade-to-white 0.4s ease forwards; }
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.3; transform: scale(0.7); }
+}
+@keyframes sparkle-spin {
+  0%   { transform: rotate(0deg) scale(1); opacity: 1; }
+  50%  { transform: rotate(180deg) scale(1.3); opacity: 0.6; }
+  100% { transform: rotate(360deg) scale(1); opacity: 1; }
+}
+@keyframes drift {
+  0%   { transform: translateX(0) translateY(0); }
+  25%  { transform: translateX(15px) translateY(-10px); }
+  50%  { transform: translateX(5px) translateY(-20px); }
+  75%  { transform: translateX(-10px) translateY(-10px); }
+  100% { transform: translateX(0) translateY(0); }
+}
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.1); }
+  50%       { box-shadow: 0 0 30px hsl(var(--primary) / 0.5), 0 0 60px hsl(var(--primary) / 0.2); }
+}
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
 
-/* Screen fade in */
-@keyframes fade-from-white {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.screen-fade-in { animation: fade-from-white 0.5s ease forwards; }
+.animate-float         { animation: float 6s ease-in-out infinite; }
+.animate-float-slow    { animation: float-slow 8s ease-in-out infinite; }
+.animate-twinkle       { animation: twinkle 3s ease-in-out infinite; }
+.animate-sparkle       { animation: sparkle-spin 4s linear infinite; }
+.animate-drift         { animation: drift 12s ease-in-out infinite; }
+.animate-glow-pulse    { animation: glow-pulse 3s ease-in-out infinite; }
+.animate-bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
 
-/* Card fade out (others when one selected) */
-@keyframes card-dismiss {
-  to { opacity: 0; transform: scale(0.85); }
-}
+/* ── Screen transitions ── */
+@keyframes fade-to-dark  { from { opacity: 1; } to { opacity: 0; } }
+@keyframes fade-from-dark { from { opacity: 0; } to { opacity: 1; } }
+.screen-fade-out { animation: fade-to-dark 0.4s ease forwards; }
+.screen-fade-in  { animation: fade-from-dark 0.5s ease forwards; }
+
+/* ── Card dismiss (character select) ── */
+@keyframes card-dismiss { to { opacity: 0; transform: scale(0.85); } }
 .card-dismissed { animation: card-dismiss 0.3s ease forwards; }
 
-/* Speaking ring pulse (story screen) */
+/* ── Story screen: avatar states ── */
 @keyframes speaking-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.5); }
-  50%      { box-shadow: 0 0 0 20px rgba(251, 191, 36, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.5); }
+  50%       { box-shadow: 0 0 0 20px hsl(var(--primary) / 0); }
 }
 .state-speaking { animation: speaking-pulse 0.8s ease infinite; }
 
-/* Listening ring glow (story screen) */
 @keyframes listening-glow {
-  0%   { box-shadow: 0 0 0 5px rgba(96, 165, 250, 0.2); }
-  100% { box-shadow: 0 0 0 20px rgba(96, 165, 250, 0.5); }
+  0%   { box-shadow: 0 0 0 5px hsl(var(--accent) / 0.2); }
+  100% { box-shadow: 0 0 0 20px hsl(var(--accent) / 0.5); }
 }
 .state-listening { animation: listening-glow 1.5s ease-in-out infinite alternate; }
 
-/* Dashed border color cycle on story right panel */
-@keyframes border-rainbow {
-  0%   { border-color: #C084FC; }
-  25%  { border-color: #60A5FA; }
-  50%  { border-color: #34D399; }
-  75%  { border-color: #FB923C; }
-  100% { border-color: #C084FC; }
-}
-.border-cycle { animation: border-rainbow 4s linear infinite; }
+.state-idle { box-shadow: 0 0 0 6px hsl(var(--muted) / 0.5); }
 
-/* Idle ring state */
-.state-idle {
-  box-shadow: 0 0 0 6px rgba(156, 163, 175, 0.3);
-}
-
-/* Atmospheric cloud drift */
-@keyframes cloud-drift {
-  0%   { transform: translateX(0); }
-  50%  { transform: translateX(30px); }
-  100% { transform: translateX(0); }
-}
-.cloud-drift { animation: cloud-drift 12s ease-in-out infinite; }
-
-@keyframes cloud-drift-slow {
-  0%   { transform: translateX(0); }
-  50%  { transform: translateX(-20px); }
-  100% { transform: translateX(0); }
-}
-.cloud-drift-slow { animation: cloud-drift-slow 18s ease-in-out infinite; }
-
-/* ── Story scene image animations ───────────────────────────────────────── */
-
-/* Pop-in when a scene image finishes loading */
+/* ── Story scene image animations ── */
 @keyframes scene-pop-in {
   0%   { transform: scale(0.7) rotate(-2deg); opacity: 0; }
-  60%  { transform: scale(1.05) rotate(1deg);  opacity: 1; }
+  60%  { transform: scale(1.05) rotate(1deg); opacity: 1; }
   80%  { transform: scale(0.98) rotate(-0.5deg); }
-  100% { transform: scale(1) rotate(0deg);     opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
-.scene-pop-in {
-  animation: scene-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
+.scene-pop-in { animation: scene-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-/* Shimmer gradient sweep for loading cards */
 @keyframes shimmer-sweep {
   0%   { background-position: -200% center; }
   100% { background-position:  200% center; }
@@ -165,33 +180,26 @@
   background-size: 200% auto;
   animation: shimmer-sweep 1.5s linear infinite;
 }
-
-/* White wave overlay on shimmer cards */
 .shimmer-wave {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.4) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
   background-size: 200% 100%;
   animation: shimmer-sweep 1.5s ease-in-out infinite;
 }
 
-/* Scene grid fade-up entrance */
 @keyframes fade-up {
   from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.story-scene-grid {
-  animation: fade-up 0.4s ease forwards;
-}
+.story-scene-grid { animation: fade-up 0.4s ease forwards; }
 
-/* Smooth crossfade for new scene images */
-@keyframes scene-crossfade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+@keyframes scene-crossfade { from { opacity: 0; } to { opacity: 1; } }
+.scene-fade-in { animation: scene-crossfade 800ms ease-in-out forwards; }
+
+/* ── Dashed border rainbow cycle (story canvas) ── */
+@keyframes border-rainbow {
+  0%   { border-color: hsl(var(--secondary)); }
+  33%  { border-color: hsl(var(--accent)); }
+  66%  { border-color: hsl(var(--magic-orange)); }
+  100% { border-color: hsl(var(--secondary)); }
 }
-.scene-fade-in {
-  animation: scene-crossfade 800ms ease-in-out forwards;
-}
+.border-cycle { animation: border-rainbow 4s linear infinite; }

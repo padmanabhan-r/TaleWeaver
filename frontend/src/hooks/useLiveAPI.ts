@@ -1,7 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { Character } from "@/characters";
 
-const WS_URL = import.meta.env.VITE_WS_URL ?? "ws://localhost:8000/ws/story";
+const WS_URL = import.meta.env.VITE_WS_URL ??
+  `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/story`;
 
 export type SessionState = "idle" | "connecting" | "ready" | "active" | "error" | "ended";
 export type CharacterState = "idle" | "thinking" | "speaking" | "listening";
@@ -168,8 +169,6 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
   // Accumulates character speech across transcription chunks (finished flag unreliable in native audio)
   const outputTextAccRef = useRef("");
-  // Tracks whether image gen was already fired mid-speech for the current turn
-  const imageTriggeredThisTurnRef = useRef(false);
 
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
   const { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef, playbackGainRef } = useAudioPlayback();
@@ -233,7 +232,6 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
           // Barge-in: child interrupted the character
           if (sc.interrupted) {
             outputTextAccRef.current = "";
-            imageTriggeredThisTurnRef.current = false;
             clearBufferRef.current();
             setCharacterState("listening");
             return;
@@ -245,16 +243,8 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
           }
 
           // Accumulate character speech transcription chunks
-          // Fire image gen early (~20 words in) so the image is ready when speech ends
           if (sc.outputTranscription?.text) {
             outputTextAccRef.current += sc.outputTranscription.text;
-            if (!imageTriggeredThisTurnRef.current) {
-              const wordCount = outputTextAccRef.current.trim().split(/\s+/).length;
-              if (wordCount >= 20) {
-                imageTriggeredThisTurnRef.current = true;
-                onImageTriggerRef.current?.(outputTextAccRef.current);
-              }
-            }
           }
 
           // Audio chunks from the character
@@ -267,18 +257,14 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
             }
           }
 
-          // Character finished speaking
+          // Character finished speaking — trigger image with the full turn text
           if (sc.turnComplete) {
             const accText = outputTextAccRef.current.trim();
             if (accText) {
               onTranscriptionRef.current?.({ type: "character", text: accText });
-              // Only trigger image here if early trigger didn't fire (short responses < 20 words)
-              if (!imageTriggeredThisTurnRef.current) {
-                onImageTriggerRef.current?.(accText);
-              }
+              onImageTriggerRef.current?.(accText);
               outputTextAccRef.current = "";
             }
-            imageTriggeredThisTurnRef.current = false;
             setCharacterState("listening");
           }
 
