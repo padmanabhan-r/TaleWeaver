@@ -164,10 +164,19 @@ async def run_proxy_session(
                 proxy_gemini_to_browser(gemini_ws, browser_ws)
             )
 
+            SESSION_TIMEOUT = 900  # 15 minutes
             done, pending = await asyncio.wait(
                 [browser_to_gemini, gemini_to_browser],
                 return_when=asyncio.FIRST_COMPLETED,
+                timeout=SESSION_TIMEOUT,
             )
+
+            if not done:
+                print(f"[proxy] Session {session_id} timed out after 15 minutes")
+                try:
+                    await browser_ws.close(code=1001, reason="Session timeout")
+                except Exception:
+                    pass
 
             for task in pending:
                 task.cancel()

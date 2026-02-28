@@ -21,7 +21,11 @@ app = FastAPI(title="TaleWeaver Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # Tighten to Firebase URL in production
+    allow_origins=[
+        "https://taleweaver-950758825854.us-central1.run.app",
+        "http://localhost:5173",   # Vite dev server
+        "http://localhost:8080",
+    ],
     allow_methods=["*"],
     allow_headers=["*"],
 )
