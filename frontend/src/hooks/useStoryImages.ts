@@ -1,27 +1,7 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 const MAX_SCENES = 8;
-
-// Client-side pre-filter — English, Tamil, and Hindi visual scene keywords
-const VISUAL_WORDS = [
-  // English
-  "castle", "dragon", "forest", "ocean", "mountain", "cave", "village",
-  "sky", "garden", "suddenly", "appeared", "imagine", "picture", "there was",
-  "stood", "glowed", "sparkled", "kingdom", "wizard", "fairy", "princess",
-  "knight", "ship", "robot", "once upon",
-  // Tamil (காடு=forest, மலை=mountain, கடல்=ocean, கோட்டை=castle,
-  //         திடீரென்று=suddenly, வாழ்ந்தது=lived, தோன்றியது=appeared,
-  //         கிராமம்=village, ஆகாயம்=sky, தோட்டம்=garden)
-  "காடு", "மலை", "கடல்", "கோட்டை", "திடீரென்று", "வாழ்ந்தது",
-  "தோன்றியது", "கிராமம்", "ஆகாயம்", "தோட்டம்", "ஒரு காட்டிலே",
-  "ஒரு நாள்", "அரண்மனை", "இளவரசி", "மந்திரி",
-  // Hindi (जंगल=forest, पहाड़=mountain, समुद्र=ocean, महल=castle,
-  //        अचानक=suddenly, रहता था=lived, गाँव=village, आकाश=sky,
-  //        बगीचा=garden, एक बार=once upon)
-  "जंगल", "पहाड़", "समुद्र", "महल", "अचानक", "रहता था", "रहती थी",
-  "गाँव", "आकाश", "बगीचा", "एक बार", "राजकुमारी", "राजकुमार", "जादू",
-];
 
 export interface StoryScene {
   id: string;
@@ -32,20 +12,25 @@ export interface StoryScene {
 }
 
 // Wait this long after session start before generating the first image
-const SESSION_START_DELAY_MS = 20_000;
+const SESSION_START_DELAY_MS = 8_000;
 
-export function useStoryImages(imageStyle: string, sessionId: string) {
+export function useStoryImages(imageStyle: string, sessionId: string, intervalSeconds: number = 10) {
   const [scenes, setScenes] = useState<StoryScene[]>([]);
   const sceneCountRef = useRef(0);
   const lastTriggerTimeRef = useRef(0);
   const sessionStartTimeRef = useRef(Date.now());
-  // Rolling story context — last ~600 chars of character speech across all turns
+  // Rolling story context — last ~2000 chars of character speech across all turns
   const storyContextRef = useRef("");
+  // Last successfully generated image + its scene description for context-aware continuity
+  const lastImageRef = useRef<{ data: string; mimeType: string; sceneDescription: string } | null>(null);
+  // Keep interval in a ref so changes take effect immediately without recreating callbacks
+  const intervalMsRef = useRef(intervalSeconds * 1000);
+  useEffect(() => { intervalMsRef.current = intervalSeconds * 1000; }, [intervalSeconds]);
 
   const triggerImageGeneration = useCallback(
     async (transcriptionText: string) => {
-      // Append this turn to the rolling context (keep last ~600 chars)
-      storyContextRef.current = (storyContextRef.current + " " + transcriptionText).slice(-600).trim();
+      // Append this turn to the rolling context (keep last ~2000 chars)
+      storyContextRef.current = (storyContextRef.current + " " + transcriptionText).slice(-2000).trim();
       // Cap at max scenes
       if (sceneCountRef.current >= MAX_SCENES) return;
 
@@ -53,18 +38,12 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
       const now = Date.now();
       if (now - sessionStartTimeRef.current < SESSION_START_DELAY_MS) return;
 
-      // Rate limit: 1 image per 30 seconds
-      if (now - lastTriggerTimeRef.current < 30_000) return;
-
-      // Client-side visual keyword pre-filter
-      const lower = transcriptionText.toLowerCase();
-      const isVisual =
-        VISUAL_WORDS.some((w) => transcriptionText.includes(w)) ||
-        transcriptionText.split(" ").length >= 10;
-      if (!isVisual) return;
+      // Rate limit — controlled by intervalMsRef
+      if (now - lastTriggerTimeRef.current < intervalMsRef.current) return;
 
       lastTriggerTimeRef.current = now;
       const sceneId = `scene-${++sceneCountRef.current}`;
+      const prevImage = lastImageRef.current;
 
       // Optimistically add a loading card
       setScenes((prev) => [
@@ -83,10 +62,13 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            scene_description: transcriptionText.slice(0, 400),
+            scene_description: transcriptionText.slice(0, 2000),
             story_context: storyContextRef.current,
             image_style: imageStyle,
             session_id: sessionId,
+            previous_image_data: prevImage?.data ?? "",
+            previous_image_mime_type: prevImage?.mimeType ?? "image/png",
+            previous_scene_description: prevImage?.sceneDescription ?? "",
           }),
         });
 
@@ -102,6 +84,7 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
 
         const data = await response.json();
 
+        lastImageRef.current = { data: data.image_data, mimeType: data.mime_type, sceneDescription: data.scene_description };
         setScenes((prev) =>
           prev.map((scene) =>
             scene.id === sceneId

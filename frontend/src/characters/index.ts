@@ -1,110 +1,138 @@
+import wizardImg from "@/assets/characters/wizard.png";
+import fairyImg from "@/assets/characters/fairy.png";
+import pirateImg from "@/assets/characters/pirate.png";
+import robotImg from "@/assets/characters/robot.png";
+import dragonImg from "@/assets/characters/dragon.png";
+import dadiImg from "@/assets/characters/dadi.png";
+import maharajaImg from "@/assets/characters/maharaja.png";
+import hanumanImg from "@/assets/characters/hanuman.png";
+import rajkumariImg from "@/assets/characters/rajkumari.png";
+import rishiImg from "@/assets/characters/rishi.png";
+
 export interface Character {
   id: string;
   name: string;
+  language: string;
   tagline: string;
-  emoji: string;
   description: string;
-  cardGradient: string;
-  bgColor: string;
-  accentColor: string;
-  textColor: string;
+  image: string;
   greeting: string;
   imageStyle: string;
+  category: "english" | "indian";
 }
 
 export const CHARACTERS: Character[] = [
+  // ── English storytellers ──────────────────────────────────────────────
   {
-    id: "grandma-rose",
-    name: "Grandma Rose",
-    tagline: "Cozy bedtime tales",
-    emoji: "👵",
-    description: "Warm, gentle, and full of love. She knows every fairy tale ever told.",
-    cardGradient: "from-pink-200 to-rose-300",
-    bgColor: "#FFD1DC",
-    accentColor: "#FF69B4",
-    textColor: "#9D174D",
-    greeting: "Hello sweetheart! I've been waiting for you. Shall we tell a story?",
-    imageStyle: "warm watercolor illustration, storybook style, soft pastel colors, cozy and gentle, children's picture book art, golden hour lighting, heartwarming, detailed backgrounds",
-  },
-  {
-    id: "captain-leo",
-    name: "Captain Leo",
-    tagline: "Bold adventures",
-    emoji: "🧑‍✈️",
-    description: "Brave, exciting, and ready for any adventure. Ahoy, young explorer!",
-    cardGradient: "from-blue-200 to-blue-400",
-    bgColor: "#B3D4FF",
-    accentColor: "#2563EB",
-    textColor: "#1E3A8A",
-    greeting: "Ahoy there, young explorer! Ready for an adventure on the high seas?",
-    imageStyle: "bold comic book illustration style, vibrant saturated colors, adventure and nautical themes, dynamic action poses, bright sky and ocean, children's adventure book art",
-  },
-  {
-    id: "fairy-sparkle",
-    name: "Fairy Sparkle",
+    id: "wizard",
+    name: "Wizard Wally",
+    language: "English",
     tagline: "Magical tales",
-    emoji: "🧚",
-    description: "Whimsical, magical, full of wonder. Every story she tells sparkles.",
-    cardGradient: "from-purple-200 to-violet-400",
-    bgColor: "#E8B4FF",
-    accentColor: "#A855F7",
-    textColor: "#6B21A8",
-    greeting: "Oh! A visitor! I have the most wonderful magical story just waiting to be told!",
-    imageStyle: "sparkly magical fantasy illustration, pastel rainbow colors, glitter and stars, enchanted forest, fairy tale art style, soft glowing light, magical creatures, flowers and butterflies",
+    description: "A wise and playful wizard who loves magical tales",
+    image: wizardImg,
+    greeting: "Greetings, young adventurer! Ready for a magical story?",
+    imageStyle: "magical wizard illustration, enchanted library, glowing spell books, starry backdrop, children's fantasy art, warm golden light",
+    category: "english",
   },
   {
-    id: "professor-whiz",
-    name: "Professor Whiz",
-    tagline: "Science adventures",
-    emoji: "🧑‍🔬",
-    description: "Curious, clever, and endearingly absent-minded. Science is his magic!",
-    cardGradient: "from-green-200 to-emerald-400",
-    bgColor: "#B3FFD4",
-    accentColor: "#10B981",
-    textColor: "#065F46",
-    greeting: "Fascinating! A young mind arrives! I have a most extraordinary story!",
-    imageStyle: "colorful cartoon science illustration, bright cheerful laboratory, inventor workshop style, children's STEM art, gadgets and gizmos, colorful experiments, friendly robots, clean bright backgrounds",
+    id: "fairy",
+    name: "Fairy Flora",
+    language: "English",
+    tagline: "Enchanted adventures",
+    description: "A kind fairy princess from the Enchanted Garden",
+    image: fairyImg,
+    greeting: "Hello, little one! Let me sprinkle some story magic!",
+    imageStyle: "enchanted garden illustration, fairy wings, flowers and butterflies, soft pastel colors, magical sparkles, children's picture book art",
+    category: "english",
   },
   {
-    id: "dragon-blaze",
-    name: "Dragon Blaze",
-    tagline: "Silly dragon fun",
-    emoji: "🐲",
-    description: "Big, enthusiastic, and VERY excited. Every story is the BEST story EVER!",
-    cardGradient: "from-orange-200 to-red-300",
-    bgColor: "#FFD4B3",
-    accentColor: "#F97316",
-    textColor: "#9A3412",
-    greeting: "ROAAARRR! Oh wait, I mean... hello! Ready for the most EPIC story EVER?!",
-    imageStyle: "bold vibrant cartoon style, fiery bright orange and red colors, funny expressive dragon characters, action-comedy illustration, big eyes and expressions, energetic and dynamic, children's cartoon style",
+    id: "pirate",
+    name: "Captain Coco",
+    language: "English",
+    tagline: "Bold sea adventures",
+    description: "A brave pirate captain with exciting sea adventures",
+    image: pirateImg,
+    greeting: "Ahoy, matey! Ready to sail into a grand adventure?",
+    imageStyle: "bold pirate adventure illustration, colorful ship and ocean, treasure chest, bright sunny day, children's adventure book art",
+    category: "english",
   },
-  // ── Indian language storytellers ─────────────────────────────────────────
   {
-    id: "paati",
-    name: "Paati",
-    tagline: "Tamil கதைகள்",
-    emoji: "👩‍🦳",
-    description: "அன்பான தமிழ் பாட்டி. Warm Tamil grandmother with a treasure chest of folk tales.",
-    cardGradient: "from-amber-100 to-orange-200",
-    bgColor: "#FFE0B2",
-    accentColor: "#C2410C",
-    textColor: "#7C2D12",
-    greeting: "வாங்க கண்ணா! என்னிடம் மிகவும் அழகான கதை இருக்கு. கேட்கணுமா?",
-    imageStyle: "warm watercolor illustration, traditional Tamil village setting, rich saffron and deep magenta colors, jasmine flowers, kolam patterns, children's picture book art, golden lamp light, heartwarming",
+    id: "robot",
+    name: "Robo Ricky",
+    language: "English",
+    tagline: "Futuristic fun",
+    description: "A friendly robot from the future with amazing stories",
+    image: robotImg,
+    greeting: "Beep boop! Story mode activated! Let's begin!",
+    imageStyle: "colorful cartoon robot illustration, friendly face, bright tech elements, futuristic city, children's science fiction art",
+    category: "english",
   },
+  {
+    id: "dragon",
+    name: "Draco the Dragon",
+    language: "English",
+    tagline: "Fiery fun tales",
+    description: "A gentle baby dragon who loves sharing tales",
+    image: dragonImg,
+    greeting: "Rawr! I mean... hello! Want to hear a fiery tale?",
+    imageStyle: "cute baby dragon illustration, colorful scales, friendly expression, magical cave, children's fantasy storybook art, warm lighting",
+    category: "english",
+  },
+  // ── Indian storytellers ───────────────────────────────────────────────
   {
     id: "dadi",
-    name: "Dadi",
+    name: "Dadi Maa",
+    language: "Hindi",
     tagline: "Hindi कहानियाँ",
-    emoji: "👵",
-    description: "प्यारी हिंदी दादी। A warm Hindi grandmother who knows every Panchatantra tale.",
-    cardGradient: "from-teal-100 to-cyan-200",
-    bgColor: "#B2EBF2",
-    accentColor: "#0E7490",
-    textColor: "#164E63",
-    greeting: "आओ बेटा! दादी के पास बहुत सारी कहानियाँ हैं। सुनोगे ना?",
-    imageStyle: "warm watercolor illustration, traditional North Indian village setting, rich teal and gold colors, marigold flowers, rangoli patterns, children's picture book art, soft evening lamp light, heartwarming",
+    description: "A loving grandmother with timeless Indian folktales",
+    image: dadiImg,
+    greeting: "आओ बच्चों, आज दादी एक कहानी सुनाएगी!",
+    imageStyle: "warm watercolor illustration, traditional Indian home, cozy evening lamp, marigold flowers, rangoli, children's picture book art, heartwarming",
+    category: "indian",
+  },
+  {
+    id: "maharaja",
+    name: "Raja Vikram",
+    language: "Marathi",
+    tagline: "Marathi गोष्टी",
+    description: "A brave and just king with tales of wisdom and courage",
+    image: maharajaImg,
+    greeting: "स्वागत आहे! आज आपण एक भव्य कथा ऐकूया!",
+    imageStyle: "vibrant Indian court illustration, royal palace, traditional Marathi attire, marigolds, golden lamp light, children's picture book art",
+    category: "indian",
+  },
+  {
+    id: "hanuman",
+    name: "Little Hanuman",
+    language: "Tamil",
+    tagline: "Tamil கதைகள்",
+    description: "The mighty and playful monkey hero of Indian mythology",
+    image: hanumanImg,
+    greeting: "வணக்கம்! ஒரு அற்புதமான கதை கேட்போம்!",
+    imageStyle: "bright Indian mythology illustration, lush jungle, lotus flowers, warm golden light, children's storybook art, Tamil style",
+    category: "indian",
+  },
+  {
+    id: "rajkumari",
+    name: "Rajkumari Meera",
+    language: "Telugu",
+    tagline: "Telugu కథలు",
+    description: "A graceful princess who shares tales of love and bravery",
+    image: rajkumariImg,
+    greeting: "నమస్కారం! రండి, మీకు అందమైన కథ చెప్తాను!",
+    imageStyle: "elegant Telugu princess illustration, palace garden, jasmine flowers, traditional jewelry, warm watercolor style, children's picture book art",
+    category: "indian",
+  },
+  {
+    id: "rishi",
+    name: "Rishi Bodhi",
+    language: "Bengali",
+    tagline: "Bengali গল্প",
+    description: "A peaceful sage who shares ancient wisdom through stories",
+    image: rishiImg,
+    greeting: "নমস্কার! এসো, একটি জ্ঞানের গল্প শুনি।",
+    imageStyle: "serene Bengali sage illustration, riverside setting, lotus flowers, golden sunset, mustard fields, warm watercolor, children's picture book art",
+    category: "indian",
   },
 ];
 
-export const getCharacter = (id: string) => CHARACTERS.find((c) => c.id === id);
