@@ -142,21 +142,19 @@ async def _generate_gemini(prompt: str, previous_image_data: str = "", previous_
 
 
 async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png", previous_scene_description: str = "") -> tuple[str, str]:
-    """Generate image using Gemini API key (for models not yet on Vertex AI)."""
+    """Generate image using Gemini API key (AI Studio — shorter rate limit intervals than Vertex AI)."""
     if not _api_key_client:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
-    async for chunk in await _api_key_client.aio.models.generate_content_stream(
+    response = await _api_key_client.aio.models.generate_content(
         model=IMAGE_MODEL,
         contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
         config=types.GenerateContentConfig(
-            thinking_config=types.ThinkingConfig(thinking_level="MINIMAL"),
             response_modalities=["IMAGE", "TEXT"],
-            image_config=types.ImageConfig(image_size="1K"),
         ),
-    ):
-        if chunk.parts and chunk.parts[0].inline_data and chunk.parts[0].inline_data.data:
-            data = chunk.parts[0].inline_data
-            return base64.b64encode(data.data).decode("utf-8"), data.mime_type or "image/png"
+    )
+    for part in response.candidates[0].content.parts:
+        if part.inline_data and part.inline_data.data:
+            return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
     raise HTTPException(status_code=500, detail="No image in response")
 
 
@@ -194,11 +192,13 @@ async def generate_scene_image(request: ImageRequest):
         prev_scene = request.previous_scene_description
 
         if IMAGE_MODEL.startswith("imagen-"):
-            # Imagen doesn't support reference images — text prompt only
+            # Imagen — text prompt only, no reference image support
             image_b64, mime_type = await _generate_imagen(prompt)
-        elif IMAGE_MODEL.startswith("gemini-3."):
+        elif _api_key_client:
+            # Gemini API key (AI Studio) — preferred: shorter rate limit intervals
             image_b64, mime_type = await _generate_gemini_api_key(prompt, prev_data, prev_mime, prev_scene)
         else:
+            # Fallback: Gemini via Vertex AI
             image_b64, mime_type = await _generate_gemini(prompt, prev_data, prev_mime, prev_scene)
 
         return ImageResponse(
