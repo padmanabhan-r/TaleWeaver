@@ -7,8 +7,8 @@ on:
 env:
   PROJECT_ID: project-a8efccb1-2720-4a48-948
   REGION: us-central1
-  IMAGE: us-central1-docker.pkg.dev/project-a8efccb1-2720-4a48-948/taleweaver/backend
   SERVICE: taleweaver-backend
+  IMAGE: us-central1-docker.pkg.dev/project-a8efccb1-2720-4a48-948/taleweaver/backend
 
 jobs:
   deploy:
@@ -44,6 +44,7 @@ jobs:
           gcloud run deploy $SERVICE \
             --image=$IMAGE:${{ github.sha }} \
             --region=$REGION \
+            --project=$PROJECT_ID \
             --platform=managed \
             --allow-unauthenticated \
             --timeout=3600 \
