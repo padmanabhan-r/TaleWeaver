@@ -1,0 +1,40 @@
+steps:
+  # Build multi-stage Docker image (Node frontend + Python backend)
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - --platform=linux/amd64
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/taleweaver/backend:$COMMIT_SHA
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/taleweaver/backend:latest
+      - .
+
+  # Push all tags to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - push
+      - --all-tags
+      - us-central1-docker.pkg.dev/$PROJECT_ID/taleweaver/backend
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - taleweaver
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/taleweaver/backend:$COMMIT_SHA
+      - --region=us-central1
+      - --platform=managed
+      - --allow-unauthenticated
+      - --timeout=3600
+      - --memory=1Gi
+      - --cpu=2
+      - --concurrency=80
+      - --set-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=us-central1,IMAGE_MODEL=gemini-2.0-flash-preview-image-generation,IMAGE_LOCATION=us-central1
+      - --update-secrets=GEMINI_API_KEY=gemini-api-key:latest
+      - --project=$PROJECT_ID
+
+options:
+  logging: CLOUD_LOGGING_ONLY
