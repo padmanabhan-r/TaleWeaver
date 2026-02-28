@@ -7,7 +7,7 @@ on:
 env:
   PROJECT_ID: project-a8efccb1-2720-4a48-948
   REGION: us-central1
-  SERVICE: taleweaver-backend
+  SERVICE: taleweaver
   IMAGE: us-central1-docker.pkg.dev/project-a8efccb1-2720-4a48-948/taleweaver/backend
 
 jobs:
