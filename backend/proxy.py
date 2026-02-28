@@ -79,6 +79,8 @@ async def run_proxy_session(
     browser_ws: WebSocket,
     character_id: str,
     session_id: str,
+    theme: str | None = None,
+    prop_image: str | None = None,
 ) -> None:
     """
     Establishes a Gemini Live API session for a character and proxies it to the browser.
@@ -147,14 +149,57 @@ async def run_proxy_session(
 
             print(f"[proxy] Session ready for {character.name} (session: {session_id})")
 
-            # Prompt the character to deliver their opening greeting.
+            # Prompt the character to deliver their opening story.
             # Without this, proactive_audio alone doesn't reliably trigger speech.
-            await gemini_ws.send(json.dumps({
-                "client_content": {
-                    "turns": [{"role": "user", "parts": [{"text": "Begin!"}]}],
-                    "turn_complete": True,
-                }
-            }))
+            if theme == "camera_prop" and prop_image:
+                # Send the captured image + instruction as a single multimodal turn
+                await gemini_ws.send(json.dumps({
+                    "client_content": {
+                        "turns": [{
+                            "role": "user",
+                            "parts": [
+                                {
+                                    "inline_data": {
+                                        "mime_type": "image/jpeg",
+                                        "data": prop_image,
+                                    }
+                                },
+                                {
+                                    "text": (
+                                        "Begin! Look closely at the object in this image. "
+                                        "The child is holding it up to show you. "
+                                        "Start your story RIGHT NOW making that object the main character or "
+                                        "central theme — introduce it in your very first sentence. "
+                                        "Do not mention the sea, space, or any default adventure unless the object suggests it."
+                                    )
+                                },
+                            ],
+                        }],
+                        "turn_complete": True,
+                    }
+                }))
+            elif theme:
+                await gemini_ws.send(json.dumps({
+                    "client_content": {
+                        "turns": [{
+                            "role": "user",
+                            "parts": [{"text": (
+                                f"Begin! Start your story RIGHT NOW. "
+                                f"The theme is: {theme}. "
+                                f"Your very first sentence must immediately introduce something about {theme}. "
+                                f"Keep {theme} as the central focus throughout the whole story."
+                            )}],
+                        }],
+                        "turn_complete": True,
+                    }
+                }))
+            else:
+                await gemini_ws.send(json.dumps({
+                    "client_content": {
+                        "turns": [{"role": "user", "parts": [{"text": "Begin!"}]}],
+                        "turn_complete": True,
+                    }
+                }))
 
             # Start bidirectional proxy
             browser_to_gemini = asyncio.create_task(

@@ -8,8 +8,16 @@ import { useLiveAPI, CharacterState } from "@/hooks/useLiveAPI";
 import { useStoryImages } from "@/hooks/useStoryImages";
 import FloatingElements from "@/components/FloatingElements";
 
+const THEMES_EMOJI: Record<string, string> = {
+  Animals: "🦁", Space: "🚀", Kingdoms: "🏰", Ocean: "🌊", Food: "🍕",
+  Jungle: "🌳", Magic: "🦄", Robots: "🤖", Spooky: "🎃", Adventure: "🏔️",
+  Circus: "🎪", Dinosaurs: "🦕",
+};
+
 interface Props {
   character: Character;
+  theme?: string;
+  propImage?: string;
   onBack: () => void;
 }
 
@@ -53,7 +61,7 @@ const STATUS_TEXT: Record<string, string> = {
   ended: "The end! That was a great story!",
 };
 
-const StoryScreen = ({ character, onBack }: Props) => {
+const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   const [intervalSeconds, setIntervalSeconds] = useState(8);
 
@@ -66,7 +74,8 @@ const StoryScreen = ({ character, onBack }: Props) => {
   const {
     connect, disconnect, sessionState, characterState, isCapturing,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
-  } = useLiveAPI({ character, onImageTrigger: triggerImageGeneration });
+    cameraEnabled, toggleCamera, cameraVideoRef,
+  } = useLiveAPI({ character, theme, propImage, onImageTrigger: triggerImageGeneration });
 
   const avatarStateClass = AVATAR_STATE_CLASS[characterState];
   const isConnecting = sessionState === "connecting" || sessionState === "ready";
@@ -94,7 +103,18 @@ const StoryScreen = ({ character, onBack }: Props) => {
             ← Change Storyteller
           </button>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
-          <div className="w-32" />
+          <div className="w-32 flex justify-end">
+            {theme && theme !== "camera_prop" && (
+              <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/30 font-body text-xs text-primary">
+                {THEMES_EMOJI[theme] ?? "💭"} {theme}
+              </span>
+            )}
+            {theme === "camera_prop" && (
+              <span className="px-3 py-1 rounded-full bg-primary/20 border border-primary/30 font-body text-xs text-primary">
+                📸 Prop story
+              </span>
+            )}
+          </div>
         </motion.header>
 
         {/* Main content */}
@@ -225,6 +245,34 @@ const StoryScreen = ({ character, onBack }: Props) => {
               >
                 End Story
               </button>
+            )}
+
+            {/* Camera toggle — opt-in, only while active */}
+            {isActive && (
+              <button
+                onClick={toggleCamera}
+                className={`font-body text-xs px-4 py-1.5 rounded-full border transition-colors ${
+                  cameraEnabled
+                    ? "border-cyan-400/70 text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20"
+                    : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
+                }`}
+              >
+                {cameraEnabled ? "📷 Camera On" : "📷 Share Camera"}
+              </button>
+            )}
+
+            {/* Camera preview */}
+            {cameraEnabled && isActive && (
+              <div className="w-full rounded-xl overflow-hidden border border-cyan-400/30">
+                <video
+                  ref={cameraVideoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                  style={{ transform: "scaleX(-1)" }}
+                />
+              </div>
             )}
           </motion.div>
 
