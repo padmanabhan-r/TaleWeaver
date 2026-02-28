@@ -189,6 +189,72 @@ See `PHASE_6_DEPLOYMENT.md` for details.
 
 ---
 
+## Phase 7 — Movement & Vision ⬜ PLANNED
+
+### 7.1 Camera Vision (Gemini sees the child)
+
+Pipe the webcam feed into the Gemini Live session alongside audio. Gemini Live supports real-time video input natively — one extra video media chunk stream alongside audio.
+
+**What it enables:**
+- Storyteller reacts to what the child is wearing or doing
+- Notices expressions ("You look surprised! Should I slow down?")
+- Verifies movement challenges visually
+
+**Implementation:**
+- `getUserMedia({ video: true, audio: true })`
+- Capture frames at ~1 FPS via `canvas.drawImage` + `toDataURL('image/jpeg', 0.6)`
+- Send as `realtime_input.media_chunks` with `mime_type: "image/jpeg"` alongside audio
+- No backend changes needed — Gemini Live handles multimodal natively
+- Camera toggle in StoryScreen (opt-in, off by default)
+
+**Effort:** Low-medium — frontend only.
+
+### 7.2 Movement Challenges ("Hero's Tasks")
+
+Storyteller embeds physical challenges into the narrative and waits for the child to complete them.
+
+**Approach A (prompt-only):** Add movement prompts to character system prompts. No code changes.
+**Approach B (vision-verified):** Gemini watches via camera and reacts when it detects movement. Requires 7.1.
+
+### 7.3 Story Branching (Choice Buttons)
+
+At key story moments Gemini presents 2–3 choices and the child picks what happens next.
+
+- Gemini calls a `showChoice` tool with `{ options: ["Option A", "Option B"] }`
+- Frontend renders tappable choice buttons
+- Tapped choice sent back as `client_content` text turn
+- Gemini weaves the choice into the continuing story
+
+**Effort:** Low — tool call infra exists, needs a UI component + system prompt change.
+
+### 7.4 Achievements / Badge System
+
+- Gemini Live calls an `awardBadge` tool at key moments (first jump, story redirect, etc.)
+- Frontend shows badge pop-up, persists to `localStorage`
+
+See `STRETCH_GOALS.md` for full stretch goal details.
+
+---
+
+## Phase 8 — Stretch Goals ⬜ FUTURE
+
+See `STRETCH_GOALS.md` for full details. Priority order:
+
+| # | Goal | Effort | Impact |
+|---|---|---|---|
+| 1 | Character animations (Rive) | High | Very High |
+| 2 | Interactive story choices | Medium | High |
+| 3 | Life skills themes | Low | High |
+| 4 | Story gallery (localStorage) | Low | Medium |
+| 5 | Tool calling during live story | High | High |
+| 6 | Cloud Storage for images | Medium | Medium |
+| 7 | Badge system | Medium | Medium |
+| 8 | uv package manager | Low | Low |
+| 9 | Multi-agent ADK pipeline | Very High | Medium |
+| 10 | OpenTelemetry observability | Medium | Low |
+
+---
+
 ## End-to-End Session Flow
 
 ```
