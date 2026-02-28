@@ -178,6 +178,29 @@ async def run_proxy_session(
                         "turn_complete": True,
                     }
                 }))
+            elif theme == "sketch" and prop_image:
+                # Child drew a picture — bring the drawing to life as the story
+                await gemini_ws.send(json.dumps({
+                    "client_content": {
+                        "turns": [{"role": "user", "parts": [
+                            {
+                                "inline_data": {
+                                    "mime_type": "image/jpeg",
+                                    "data": prop_image,
+                                }
+                            },
+                            {
+                                "text": (
+                                    "Begin! The child drew a picture and this is what it looks like. "
+                                    "React with wonder and delight about what they created, then immediately "
+                                    "launch into a story where the subject of this picture is the hero. "
+                                    "Your very first sentence must bring this picture to life."
+                                )
+                            },
+                        ]}],
+                        "turn_complete": True,
+                    }
+                }))
             elif theme:
                 await gemini_ws.send(json.dumps({
                     "client_content": {
