@@ -188,34 +188,30 @@ See `PHASE_4_CHARACTER_ANIMATION.md` for details.
 
 ---
 
-## Phase 5 — Study Mode Differentiation ⬜ TODO
+## Phase 5 — Study Mode ⏸ DEFERRED
 
-The 4 study characters exist and work (they use the same `StoryScreen` as story mode),
-but the experience is identical to story mode.
+Study mode removed from active scope. The 4 educational characters (Count Cosmo, Dr. Luna,
+Professor Pip, Arty) are documented in README as future plans. App is Story Time only.
 
-- **5.1** Prompt enhancement: Q&A cadence, wait for child's answer, positive feedback
-- **5.2** `StudyScreen` UI: concept panel (single featured image), green/teal theme
-- **5.3** End-of-session summary card: what we learned today
-
-See `PHASE_5_STORY_INTELLIGENCE.md` for details.
+See `PHASE_5_STORY_INTELLIGENCE.md` for the original plan when this is revisited.
 
 ---
 
-## Phase 6 — Deployment & Production Hardening 🔄 PARTIAL
+## Phase 6 — Deployment & Production Hardening ✅ DONE
 
-### Done ✅
-- Cloud Run service live: `https://taleweaver-backend-950758825854.us-central1.run.app`
-- Multi-stage Dockerfile at repo root (Node builds frontend, Python serves both)
-- GitHub Actions `deploy.yml` ready — needs `GCP_SA_KEY` secret added to repo
-- Frontend URL hooks use same-origin fallbacks (no env vars needed in production)
+- Cloud Run service live: `https://taleweaver-950758825854.us-central1.run.app`
+- Multi-stage Dockerfile: `node:22-slim` builds React → `python:3.13-slim` serves both
+- **Cloud Build** CI/CD via `cloudbuild.yaml` — auto-deploys on every push to `main`
+- `GEMINI_API_KEY` stored in Secret Manager, injected into Cloud Run at runtime
+- Image model: `gemini-3.1-flash-image-preview` via Gemini API key (shorter rate limit intervals)
+- Frontend same-origin fallbacks — no env vars needed in production
 
-### Remaining ⬜
-- Add `GCP_SA_KEY` to GitHub repo secrets → CI/CD activates
-- Rename service `taleweaver-backend` → `taleweaver`
-- Tighten CORS to Cloud Run URL
-- Remove dead code: `backend/scene_detector.py`
+### Remaining ⬜ (low priority)
+- Tighten CORS from `*` to Cloud Run URL
+- Delete dead code: `backend/scene_detector.py`
 - Backend rate limit on `/api/image`
 - WebSocket session timeout (15 min idle)
+- GCP token refresh for sessions > 50 min
 
 See `PHASE_6_DEPLOYMENT.md` for details.
 
@@ -246,7 +242,7 @@ Story begins
     → turnComplete fires → full turn text sent to useStoryImages
     → keyword pre-filter passes (story contains visual words)
     → 30s rate check passes → POST /api/image
-    → backend: Gemini Flash Lite extracts scene → Imagen generates
+    → backend: Gemini Flash Lite extracts scene → Gemini 3.1 Flash Image generates
     → base64 image returned → StorySceneGrid: shimmer → fade-in
 
 Child interrupts
@@ -266,7 +262,5 @@ Child interrupts
 | `scene_detector.py` never imported | Low | Dead code, safe to delete |
 | CORS `allow_origins=["*"]` | Medium | Tighten before public launch |
 | No backend rate limit on `/api/image` | Medium | Frontend throttles but backend is open |
-| Study mode = Story mode UI | High | Phase 5 addresses this |
 | No WebSocket session timeout | Low | Long-idle sessions waste Cloud Run resources |
-| Service named `taleweaver-backend` | Low | Rename to `taleweaver` when convenient |
-| CI/CD not active | High | Add `GCP_SA_KEY` GitHub secret to activate |
+| GCP token refresh for long sessions | Low | Reconnect Gemini WS with fresh token after 50 min |

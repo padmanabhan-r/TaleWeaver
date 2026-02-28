@@ -1,33 +1,41 @@
 # Phase 6 — Deployment & Production Hardening
 
-## Status: 🔄 PARTIAL
+## Status: ✅ DONE
 
 ---
 
-## What's Done
+## Live Service
 
-### Cloud Run — Live ✅
+**URL:** `https://taleweaver-950758825854.us-central1.run.app`
+**Service name:** `taleweaver`
+**Region:** `us-central1`
+**Config:** 1Gi RAM, 2 vCPU, concurrency 80, timeout 3600s, allow unauthenticated
 
-**Service URL:** `https://taleweaver-backend-950758825854.us-central1.run.app`
-(Note: name is `taleweaver-backend` from when Firebase hosting was planned — rename to `taleweaver` when convenient)
+---
 
-**Service config:**
-- Region: `us-central1`
-- Memory: 1Gi, CPU: 2, Concurrency: 80, Timeout: 3600s
-- Allow unauthenticated
-- Env vars: `GOOGLE_CLOUD_PROJECT`, `GOOGLE_CLOUD_LOCATION=us-central1`, `IMAGE_MODEL=imagen-3.0-fast-generate-001`, `IMAGE_LOCATION=us-central1`
+## CI/CD — Cloud Build
 
-**IAM:**
-- Service account: `taleweaver-deploy@project-a8efccb1-2720-4a48-948.iam.gserviceaccount.com`
-- Roles: `run.admin`, `artifactregistry.writer`, `iam.serviceAccountUser`, `aiplatform.user`
+Every push to `main` triggers an automatic build and deploy via `cloudbuild.yaml` at the repo root.
 
-**Artifact Registry:**
-- Repo: `us-central1-docker.pkg.dev/project-a8efccb1-2720-4a48-948/taleweaver/`
-- Image: `.../backend:latest`
+```
+push to main
+  └─► Cloud Build trigger (us-central1)
+        ├── docker build --platform linux/amd64 .
+        │     Stage 1: node:22-slim  → builds React frontend → dist/
+        │     Stage 2: python:3.13-slim → FastAPI + frontend/dist/
+        ├── docker push → Artifact Registry
+        │     us-central1-docker.pkg.dev/project-a8efccb1-2720-4a48-948/taleweaver/backend
+        └── gcloud run deploy taleweaver
+              --set-env-vars (project, location, image model)
+              --update-secrets GEMINI_API_KEY=gemini-api-key:latest
+```
 
-### Docker — Multi-Stage Build ✅
+**Cloud Build trigger:** `deploy-on-push-to-main` — connected to `padmanabhan-r/TaleWeaver`, branch `^main$`.
 
-**`Dockerfile`** (repo root):
+---
+
+## Dockerfile (repo root)
+
 ```dockerfile
 # Stage 1: Build React frontend
 FROM node:22-slim AS frontend-builder
@@ -38,7 +46,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Python backend with embedded frontend
-FROM python:3.12-slim
+FROM python:3.13-slim
 WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -51,61 +59,90 @@ CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", \
      "--workers", "1", "--loop", "uvloop", "--http", "h11"]
 ```
 
-Frontend assets built into the image. Backend serves them via `FileResponse` catch-all in `main.py`. No Firebase or separate frontend hosting needed.
+Python version matches local (3.13). Node 22 builds the frontend.
 
-### Frontend URL Strategy ✅
+---
+
+## Environment Variables
+
+| Variable | Value | How set |
+|---|---|---|
+| `GOOGLE_CLOUD_PROJECT` | `project-a8efccb1-2720-4a48-948` | `--set-env-vars` in cloudbuild.yaml |
+| `GOOGLE_CLOUD_LOCATION` | `us-central1` | `--set-env-vars` in cloudbuild.yaml |
+| `IMAGE_MODEL` | `gemini-3.1-flash-image-preview` | `--set-env-vars` in cloudbuild.yaml |
+| `IMAGE_LOCATION` | `global` | `--set-env-vars` in cloudbuild.yaml |
+| `GEMINI_API_KEY` | (secret) | Secret Manager → `gemini-api-key:latest` |
+
+`GEMINI_API_KEY` is stored in GCP Secret Manager and injected at runtime via `--update-secrets`.
+It uses the Gemini API (AI Studio) rather than Vertex AI for image generation — shorter rate limit intervals.
+
+---
+
+## Image Generation Routing (`backend/image_gen.py`)
+
+```python
+if IMAGE_MODEL.startswith("imagen-"):
+    # Vertex AI Imagen — text prompt only
+    _generate_imagen(prompt)
+elif _api_key_client:
+    # Gemini API key (AI Studio) — preferred, shorter rate limits
+    _generate_gemini_api_key(prompt, ...)
+else:
+    # Fallback: Gemini via Vertex AI ADC
+    _generate_gemini(prompt, ...)
+```
+
+---
+
+## Auth
+
+| Component | Auth method |
+|---|---|
+| Gemini Live API (proxy.py) | `google.auth.default()` — Cloud Run service account ADC |
+| Gemini Flash Lite scene extraction | `google.auth.default()` — Cloud Run service account ADC |
+| Gemini image generation (image_gen.py) | `GEMINI_API_KEY` from Secret Manager |
+
+No API keys in the Docker image or source code.
+
+---
+
+## IAM Summary
+
+| Service account | Roles |
+|---|---|
+| `taleweaver-deploy@...` (Cloud Build SA) | `run.admin`, `artifactregistry.writer`, `iam.serviceAccountUser`, `aiplatform.user`, `logging.logWriter`, `storage.admin`, `cloudbuild.builds.builder`, `secretmanager.secretAccessor` |
+| `950758825854-compute@developer.gserviceaccount.com` (Cloud Run runtime SA) | `secretmanager.secretAccessor` (for `gemini-api-key` secret) |
+
+---
+
+## Artifact Registry
+
+- Repo: `us-central1-docker.pkg.dev/project-a8efccb1-2720-4a48-948/taleweaver/`
+- Image: `.../backend:latest` and `.../backend:{COMMIT_SHA}`
+
+---
+
+## Frontend URL Strategy
 
 Both hooks use same-origin fallbacks — no env vars needed in production:
 - `useLiveAPI.ts`: `VITE_WS_URL` → falls back to `wss://${window.location.host}/ws/story`
-- `useStoryImages.ts`: `VITE_API_URL` → falls back to `""` (same-origin relative URLs)
+- `useStoryImages.ts`: `VITE_API_URL` → falls back to `""` (relative URLs)
 
-For local dev:
+For local dev, create `frontend/.env.local` (gitignored):
 ```
-# frontend/.env.local  (gitignored)
 VITE_WS_URL=ws://localhost:8000/ws/story
 VITE_API_URL=http://localhost:8000
 ```
 
-### GitHub Actions Workflow — Ready but not triggered ✅
-
-**`.github/workflows/deploy.yml`** — auto-deploy on push to `main`:
-- Authenticates to GCP via `google-github-actions/auth@v2`
-- Builds `linux/amd64` image and pushes to Artifact Registry
-- Deploys to Cloud Run
-
-**To activate:** Add `GCP_SA_KEY` secret to the GitHub repo:
-1. Go to `github.com/padmanabhan-r/TaleWeaver` → Settings → Secrets → Actions
-2. New secret: name = `GCP_SA_KEY`, value = contents of `/tmp/taleweaver-sa-key.json`
-
 ---
 
-## What Remains
-
-### ⬜ GitHub Actions Secret
-Add `GCP_SA_KEY` to repo secrets to activate the CI/CD pipeline.
-
-### ⬜ Service Rename
-Rename Cloud Run service from `taleweaver-backend` to `taleweaver`:
-```bash
-# Deploy new service with correct name, then delete old one
-gcloud run deploy taleweaver \
-  --image=us-central1-docker.pkg.dev/project-a8efccb1-2720-4a48-948/taleweaver/backend:latest \
-  --region=us-central1 [... same flags ...]
-
-gcloud run services delete taleweaver-backend --region=us-central1
-```
-Update `deploy.yml` `SERVICE` env var to `taleweaver`.
-
-### ⬜ Production Hardening
+## What Remains ⬜ (low priority)
 
 | Item | Priority | Action |
 |---|---|---|
-| CORS `allow_origins=["*"]` | Medium | Set to Cloud Run URL once renamed |
+| CORS `allow_origins=["*"]` | Medium | Set to Cloud Run URL |
 | Dead code `scene_detector.py` | Low | Delete the file |
-| No backend rate limit on `/api/image` | Medium | Add per-session rate limiting in `image_gen.py` |
-| WebSocket session timeout | Low | Close idle sessions after 15 minutes |
-| `IMAGE_LOCATION` quota region | Medium | Verify Imagen available in `us-central1`; fallback to `us-east4` if not |
-| GCP token refresh for long sessions | Low | Reconnect Gemini WS with fresh token after 50 minutes |
-
-### ⬜ Custom Domain (Optional)
-Point a custom domain (e.g., `taleweaver.app`) to the Cloud Run service via Cloud Run domain mapping.
+| No backend rate limit on `/api/image` | Medium | Add per-session limiting in `image_gen.py` |
+| WebSocket session timeout | Low | Close idle sessions after 15 min |
+| GCP token refresh | Low | Reconnect Gemini WS with fresh token after 50 min |
+| Custom domain | Optional | Cloud Run domain mapping → `taleweaver.app` |
