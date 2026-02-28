@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 const MAX_SCENES = 8;
@@ -14,15 +14,18 @@ export interface StoryScene {
 // Wait this long after session start before generating the first image
 const SESSION_START_DELAY_MS = 8_000;
 
-export function useStoryImages(imageStyle: string, sessionId: string) {
+export function useStoryImages(imageStyle: string, sessionId: string, intervalSeconds: number = 10) {
   const [scenes, setScenes] = useState<StoryScene[]>([]);
   const sceneCountRef = useRef(0);
   const lastTriggerTimeRef = useRef(0);
   const sessionStartTimeRef = useRef(Date.now());
   // Rolling story context — last ~2000 chars of character speech across all turns
   const storyContextRef = useRef("");
-  // Last successfully generated image for visual continuity
-  const lastImageRef = useRef<{ data: string; mimeType: string } | null>(null);
+  // Last successfully generated image + its scene description for context-aware continuity
+  const lastImageRef = useRef<{ data: string; mimeType: string; sceneDescription: string } | null>(null);
+  // Keep interval in a ref so changes take effect immediately without recreating callbacks
+  const intervalMsRef = useRef(intervalSeconds * 1000);
+  useEffect(() => { intervalMsRef.current = intervalSeconds * 1000; }, [intervalSeconds]);
 
   const triggerImageGeneration = useCallback(
     async (transcriptionText: string) => {
@@ -35,8 +38,8 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
       const now = Date.now();
       if (now - sessionStartTimeRef.current < SESSION_START_DELAY_MS) return;
 
-      // Rate limit: 1 image per 10 seconds
-      if (now - lastTriggerTimeRef.current < 10_000) return;
+      // Rate limit — controlled by intervalMsRef
+      if (now - lastTriggerTimeRef.current < intervalMsRef.current) return;
 
       lastTriggerTimeRef.current = now;
       const sceneId = `scene-${++sceneCountRef.current}`;
@@ -65,6 +68,7 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
             session_id: sessionId,
             previous_image_data: prevImage?.data ?? "",
             previous_image_mime_type: prevImage?.mimeType ?? "image/png",
+            previous_scene_description: prevImage?.sceneDescription ?? "",
           }),
         });
 
@@ -80,7 +84,7 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
 
         const data = await response.json();
 
-        lastImageRef.current = { data: data.image_data, mimeType: data.mime_type };
+        lastImageRef.current = { data: data.image_data, mimeType: data.mime_type, sceneDescription: data.scene_description };
         setScenes((prev) =>
           prev.map((scene) =>
             scene.id === sceneId

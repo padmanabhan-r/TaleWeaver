@@ -76,25 +76,54 @@ async def _generate_imagen(prompt: str) -> tuple[str, str]:
     raise HTTPException(status_code=500, detail="No image in response")
 
 
-def _build_contents(prompt: str, previous_image_data: str, previous_image_mime_type: str):
-    """Build multi-part contents with optional previous image for visual continuity."""
-    if previous_image_data:
-        return [
-            types.Part(text="Previous scene (maintain visual continuity — same characters, art style, color palette):"),
-            types.Part(inline_data=types.Blob(
-                mime_type=previous_image_mime_type,
-                data=base64.b64decode(previous_image_data),
-            )),
-            types.Part(text=f"Next scene: {prompt}"),
-        ]
-    return prompt
+def _build_contents(
+    prompt: str,
+    previous_image_data: str,
+    previous_image_mime_type: str,
+    previous_scene_description: str = "",
+):
+    """Build multi-part contents with context-aware visual continuity instructions."""
+    if not previous_image_data:
+        return prompt
+
+    prev_note = (
+        f'The previous scene showed: "{previous_scene_description[:300]}"\n'
+        if previous_scene_description else ""
+    )
+
+    instruction = (
+        f"{prev_note}"
+        "You are given the previous story illustration as a reference.\n\n"
+        "CONTINUITY RULES — read carefully before generating:\n"
+        "1. SAME CONTEXT (same characters, same setting, story is continuing): "
+        "Maintain full visual continuity — identical character designs, same color palette, "
+        "same art style, consistent lighting and mood.\n"
+        "2. SHIFTED CONTEXT (story has moved to a new location, new theme, or entirely new "
+        "characters — e.g. forest → space, animals → robots, daytime village → nighttime ocean): "
+        "Use the reference image ONLY to preserve the appearance of any characters that carry "
+        "over into the new scene. Build a completely fresh background and environment that matches "
+        "the new scene. Do NOT blend the old setting into the new one.\n"
+        "3. COMPLETELY NEW CAST (no characters from the previous scene appear): "
+        "Treat this as a fresh illustration. Use the reference only to maintain the overall "
+        "art style and color warmth.\n\n"
+        "ALWAYS prioritize the new scene description below over the reference image.\n"
+    )
+
+    return [
+        types.Part(text=instruction),
+        types.Part(inline_data=types.Blob(
+            mime_type=previous_image_mime_type,
+            data=base64.b64decode(previous_image_data),
+        )),
+        types.Part(text=f"New scene to illustrate: {prompt}"),
+    ]
 
 
-async def _generate_gemini(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png") -> tuple[str, str]:
+async def _generate_gemini(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png", previous_scene_description: str = "") -> tuple[str, str]:
     """Generate image using Gemini models via Vertex AI (generate_content API)."""
     response = await _client.aio.models.generate_content(
         model=IMAGE_MODEL,
-        contents=_build_contents(prompt, previous_image_data, previous_image_mime_type),
+        contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
         config=types.GenerateContentConfig(
             response_modalities=["IMAGE"],
             image_config=types.ImageConfig(aspect_ratio="4:3"),
@@ -112,13 +141,13 @@ async def _generate_gemini(prompt: str, previous_image_data: str = "", previous_
     raise HTTPException(status_code=500, detail="No image in response")
 
 
-async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png") -> tuple[str, str]:
+async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png", previous_scene_description: str = "") -> tuple[str, str]:
     """Generate image using Gemini API key (for models not yet on Vertex AI)."""
     if not _api_key_client:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
     async for chunk in await _api_key_client.aio.models.generate_content_stream(
         model=IMAGE_MODEL,
-        contents=_build_contents(prompt, previous_image_data, previous_image_mime_type),
+        contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
         config=types.GenerateContentConfig(
             thinking_config=types.ThinkingConfig(thinking_level="MINIMAL"),
             response_modalities=["IMAGE", "TEXT"],
@@ -138,6 +167,7 @@ class ImageRequest(BaseModel):
     session_id: str
     previous_image_data: str = ""
     previous_image_mime_type: str = "image/png"
+    previous_scene_description: str = ""
 
 
 class ImageResponse(BaseModel):
@@ -161,14 +191,15 @@ async def generate_scene_image(request: ImageRequest):
 
         prev_data = request.previous_image_data
         prev_mime = request.previous_image_mime_type
+        prev_scene = request.previous_scene_description
 
         if IMAGE_MODEL.startswith("imagen-"):
             # Imagen doesn't support reference images — text prompt only
             image_b64, mime_type = await _generate_imagen(prompt)
         elif IMAGE_MODEL.startswith("gemini-3."):
-            image_b64, mime_type = await _generate_gemini_api_key(prompt, prev_data, prev_mime)
+            image_b64, mime_type = await _generate_gemini_api_key(prompt, prev_data, prev_mime, prev_scene)
         else:
-            image_b64, mime_type = await _generate_gemini(prompt, prev_data, prev_mime)
+            image_b64, mime_type = await _generate_gemini(prompt, prev_data, prev_mime, prev_scene)
 
         return ImageResponse(
             image_data=image_b64,

@@ -142,7 +142,7 @@ CAPTAIN COCO SPECIFIC:
     "robot": Character(
         id="robot",
         name="Robo Ricky",
-        voice_name="Puck",
+        voice_name="Orbit",
         image_style=(
             "colorful cartoon robot illustration, friendly face, bright tech elements, "
             "futuristic city, children's science fiction art"
@@ -184,7 +184,7 @@ DRACO THE DRAGON SPECIFIC:
     "dadi": Character(
         id="dadi",
         name="Dadi Maa",
-        voice_name="Aoede",
+        voice_name="Autonoe",
         image_style=(
             "warm watercolor illustration, traditional Indian home, cozy evening lamp, "
             "marigold flowers, rangoli, children's picture book art, heartwarming"
@@ -238,7 +238,7 @@ RAJA VIKRAM SPECIFIC:
     "hanuman": Character(
         id="hanuman",
         name="Little Hanuman",
-        voice_name="Zephyr",
+        voice_name="Alnilam",
         image_style=(
             "bright Indian mythology illustration, lush jungle, lotus flowers, "
             "warm golden light, children's storybook art, Tamil style"
@@ -290,7 +290,7 @@ RAJKUMARI MEERA SPECIFIC:
     "rishi": Character(
         id="rishi",
         name="Rishi Bodhi",
-        voice_name="Autonoe",
+        voice_name="Puck",
         image_style=(
             "serene Bengali sage illustration, riverside setting, lotus flowers, "
             "golden sunset, mustard fields, warm watercolor, children's picture book art"

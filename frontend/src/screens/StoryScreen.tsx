@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Character } from "@/characters";
 import StorybookEmpty from "@/components/StorybookEmpty";
@@ -34,10 +34,12 @@ const STATUS_TEXT: Record<string, string> = {
 
 const StoryScreen = ({ character, onBack }: Props) => {
   const sessionIdRef = useRef<string>(crypto.randomUUID());
+  const [intervalSeconds, setIntervalSeconds] = useState(8);
 
   const { scenes, triggerImageGeneration } = useStoryImages(
     character.imageStyle,
-    sessionIdRef.current
+    sessionIdRef.current,
+    intervalSeconds
   );
 
   const {
@@ -185,17 +187,48 @@ const StoryScreen = ({ character, onBack }: Props) => {
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.5 }}
-            className="flex-1 md:w-4/5 story-canvas rounded-2xl border-2 border-dashed border-cycle overflow-hidden flex flex-col"
+            className="flex-1 md:w-4/5 flex flex-col gap-1.5"
           >
-            {scenes.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
-                <StorybookEmpty />
+            {/* Interval control — outside canvas so tooltip isn't clipped */}
+            <div className="flex items-center justify-end gap-2">
+              <div className="group relative">
+                <span className="text-muted-foreground/50 hover:text-muted-foreground cursor-help text-sm select-none">ℹ</span>
+                <div className="absolute top-full right-0 mt-1.5 w-60 bg-card border border-border/60 rounded-lg shadow-lg p-2.5 text-xs font-body text-muted-foreground leading-relaxed
+                  opacity-0 pointer-events-none scale-95 origin-top-right
+                  group-hover:opacity-100 group-hover:scale-100 group-hover:pointer-events-auto
+                  transition-all duration-150 z-50">
+                  On a free Gemini quota, rate limits will kick in and cause images to fail. With a free account, keep this at <span className="text-foreground font-semibold">30s or above</span> for best results.
+                </div>
               </div>
-            ) : (
-              <div className="flex-1 relative">
-                <StorySceneGrid scenes={scenes} />
+              <span className="font-body text-xs text-muted-foreground">image every</span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setIntervalSeconds((v) => Math.max(5, v - 1))}
+                  className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors text-sm leading-none"
+                >−</button>
+                <span className="font-body text-xs font-semibold text-foreground/80 w-8 text-center">{intervalSeconds}s</span>
+                <button
+                  onClick={() => setIntervalSeconds((v) => Math.min(60, v + 1))}
+                  className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors text-sm leading-none"
+                >+</button>
               </div>
-            )}
+              {intervalSeconds <= 7 && (
+                <span className="font-body text-xs text-magic-orange">⚠ too fast</span>
+              )}
+            </div>
+
+            {/* Canvas */}
+            <div className="flex-1 story-canvas rounded-2xl border-2 border-dashed border-cycle overflow-hidden flex flex-col">
+              {scenes.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
+                  <StorybookEmpty />
+                </div>
+              ) : (
+                <div className="flex-1 relative">
+                  <StorySceneGrid scenes={scenes} />
+                </div>
+              )}
+            </div>
           </motion.div>
         </div>
       </div>

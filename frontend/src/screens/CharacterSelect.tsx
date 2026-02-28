@@ -74,7 +74,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
     <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
       <FloatingElements />
 
-      <div className="relative z-10 container mx-auto px-4 py-8 sm:py-12">
+      <div className="relative z-10 container mx-auto px-4 py-3 sm:py-5">
         {/* Back button */}
         {onBack && (
           <motion.button
