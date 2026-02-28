@@ -1,14 +1,4 @@
 # TaleWeaver — Stretch Goals
-### Derived from competitor analysis: Storytopia + Gemini Tales (Feb 2026)
-
----
-
-## What competitors taught us
-
-| Project | Core pattern | Key differentiator |
-|---|---|---|
-| **Storytopia** | 3-agent ADK pipeline (Visionizer → Quest Creator → Illustrator) | Child draws a character → becomes the story hero |
-| **Gemini Tales** | 5-microservice A2A mesh (Researcher → Judge → Storysmith → Orchestrator) | Loop-based quality refinement with a Judge agent |
 
 ---
 
@@ -37,8 +27,6 @@ Illustrator Agent  (gemini-3.1-flash-image-preview)
 ```
 
 **Why:** Agents can run with different temperatures, models, and retry logic independently. Judge agent catches bad images before the child sees them.
-
-**Inspired by:** Storytopia's 3-agent pipeline, Gemini Tales' Judge agent with structured pass/fail output.
 
 ---
 
@@ -71,9 +59,7 @@ tools = [
 
 Frontend listens for `toolCall` events from the WebSocket and renders accordingly.
 
-**Why:** Character decides *when* an image is needed — not keyword matching. More story-aware timing.
-
-**Inspired by:** Gemini Tales `generateIllustration`, `awardBadge`, `showChoice` tool calls.
+**Why:** Character decides *when* an image is needed — more story-aware timing than client-side triggering.
 
 ---
 
@@ -95,8 +81,6 @@ Child taps → useLiveAPI sends text back → story continues that branch
 
 **Implementation:** `show_choice` tool call from Gemini → frontend renders choice overlay → child taps → `client_content` message sent back.
 
-**Inspired by:** Storytopia's 8-scene quiz format, Gemini Tales' `showChoice` tool.
-
 ---
 
 ## Stretch Goal 4 — Badge & Achievement System
@@ -114,8 +98,6 @@ Child taps → useLiveAPI sends text back → story continues that branch
 
 Badges rendered as a pop-up animation, persisted to localStorage.
 
-**Inspired by:** Gemini Tales `awardBadge` tool call pattern.
-
 ---
 
 ## Stretch Goal 5 — Google Cloud Storage for Images
@@ -125,7 +107,7 @@ Badges rendered as a pop-up animation, persisted to localStorage.
 **Target:** Backend saves generated images to GCS, returns a signed URL. Frontend loads from URL.
 
 ```
-Imagen generates image bytes
+Image generated
   → upload to gs://taleweaver-images/{session_id}/{timestamp}.png
   → generate signed URL (1 hour TTL)
   → return URL to frontend
@@ -135,9 +117,7 @@ Imagen generates image bytes
 **Benefits:**
 - Images persist across page refreshes
 - Can build a "Story Gallery" showing past sessions
-- Reduces WebSocket/HTTP payload size dramatically
-
-**Inspired by:** Both Storytopia and Gemini Tales use GCS for all generated assets.
+- Reduces HTTP payload size dramatically
 
 ---
 
@@ -184,8 +164,6 @@ with tracer.start_as_current_span("image_generation") as span:
 - Gemini Live API setup time
 - Per-session image count
 
-**Inspired by:** Gemini Tales full OpenTelemetry + Cloud Trace integration.
-
 ---
 
 ## Stretch Goal 8 — uv Package Manager
@@ -206,8 +184,6 @@ CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
 
 Already have `pyproject.toml` and `uv.lock` at repo root. Just need to wire the Dockerfile.
 
-**Inspired by:** Gemini Tales uses `uv` throughout.
-
 ---
 
 ## Stretch Goal 9 — Life Skills Story Themes
@@ -225,8 +201,6 @@ Already have `pyproject.toml` and `uv.lock` at repo root. Just need to wire the 
 | 🌍 Kindness | "Tell a story about being kind to someone different" |
 
 Theme is injected as an additional `client_content` message after setup, before "Begin!".
-
-**Inspired by:** Storytopia's 12-lesson life skills library.
 
 ---
 
