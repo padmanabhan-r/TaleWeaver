@@ -1,5 +1,5 @@
 # TaleWeaver — Interactive Storytelling for Kids
-### Build Plan (updated 26 Feb 2026)
+### Build Plan (updated 28 Feb 2026)
 
 ---
 
@@ -7,13 +7,12 @@
 
 A voice-driven, kid-friendly web app where a child talks with a beloved storyteller character
 and listens to a live, improvised story — with AI-generated illustrations appearing as the
-tale unfolds. Two modes: **Story Time** (narrative characters) and **Learn & Explore**
-(educational characters).
+tale unfolds.
 
 **Challenge category:** Creative Storyteller
 **Key differentiator:** Gemini Live native audio API — true bidirectional conversation,
 the child can interrupt, redirect, or react at any moment. Illustrations are generated
-asynchronously against the live story context, so images actually match what's being told.
+asynchronously against the live story context so images actually match what's being told.
 
 ---
 
@@ -21,15 +20,16 @@ asynchronously against the live story context, so images actually match what's b
 
 | Layer | Technology |
 |---|---|
-| Conversation model | `gemini-live-2.5-flash-native-audio` via Vertex AI (Gemini Live WebSocket API) |
-| Image extraction | `gemini-2.0-flash-lite` (scene description extraction, any language → English) |
-| Image generation | `imagen-3.0-fast-generate-001` (env-selectable via `IMAGE_MODEL`) |
-| Backend | Python 3.12 + FastAPI + google-genai SDK |
+| Conversation | `gemini-live-2.5-flash-native-audio` via Vertex AI |
+| Scene extraction | `gemini-2.0-flash-lite` (narration → English visual scene) |
+| Image generation | `gemini-3.1-flash-image-preview` via Gemini API key (AI Studio) |
+| Backend | Python 3.13 + FastAPI + google-genai SDK |
 | Transport | WebSocket (bidirectional proxy: browser ↔ backend ↔ Gemini Live) |
-| Frontend | React 18 + Vite + TailwindCSS v3 + TypeScript |
-| Audio I/O | Web Audio API + custom AudioWorklet (16kHz capture, 24kHz playback) |
-| Auth | Application Default Credentials / GCP service account (no API key exposure) |
-| Hosting | Cloud Run (backend + frontend served from same service) |
+| Frontend | React 19 + Vite + TailwindCSS v4 + TypeScript + Framer Motion |
+| Audio I/O | Web Audio API + AudioWorklet (16kHz capture, 24kHz playback) |
+| Auth | GCP Application Default Credentials (Vertex AI) + Gemini API key (image gen) |
+| Hosting | Cloud Run — single service, frontend embedded in Python container |
+| CI/CD | Google Cloud Build — `cloudbuild.yaml`, triggers on push to `main` |
 
 ---
 
@@ -38,44 +38,36 @@ asynchronously against the live story context, so images actually match what's b
 ```
 /
 ├── backend/
-│   ├── main.py            # FastAPI app — /ws/story, /api/image, /api/health, SPA catch-all
-│   ├── proxy.py           # Bidirectional WS proxy: browser ↔ Gemini Live API
-│   ├── characters.py      # 14 character configs (system prompts, voices, image styles)
+│   ├── main.py            # FastAPI: /ws/story, /api/image, /api/health, SPA catch-all
+│   ├── proxy.py           # Bidirectional WS proxy: browser ↔ Gemini Live (15min timeout)
+│   ├── characters.py      # 10 character configs: system prompts, voices, image styles
 │   ├── image_gen.py       # POST /api/image — scene extraction + image generation
-│   ├── scene_detector.py  # DEAD CODE — never imported, safe to delete
-│   ├── Dockerfile         # (old, backend-only — superseded by root Dockerfile)
 │   └── requirements.txt
 ├── frontend/
-│   ├── index.html         # Title: TaleWeaver, book emoji favicon, Google Fonts
-│   ├── public/
-│   │   └── audio-processors/
-│   │       ├── capture.worklet.js   # 16kHz PCM mic capture
-│   │       └── playback.worklet.js  # 24kHz PCM speaker playback
+│   ├── public/audio-processors/
+│   │   ├── capture.worklet.js   # 16kHz PCM mic capture
+│   │   └── playback.worklet.js  # 24kHz PCM speaker playback
 │   └── src/
-│       ├── App.tsx                        # Router: landing | story-select | story | study-select | study
-│       ├── characters/index.ts            # 14 character definitions (+ isStudy flag)
+│       ├── App.tsx                   # Router: landing | story-select | story
+│       ├── characters/index.ts       # 10 character definitions (PNG portraits)
+│       ├── assets/characters/        # 10 PNG character portraits
 │       ├── screens/
-│       │   ├── LandingPage.tsx            # Mode selector (Story / Study)
-│       │   ├── CharacterSelect.tsx        # 5 English + 5 Indian chars (two rows with divider)
-│       │   ├── StudyCharacterSelect.tsx   # 4 study chars (2×2 grid)
-│       │   └── StoryScreen.tsx            # Live session UI (portrait, visualiser, scenes)
+│       │   ├── LandingPage.tsx       # Ambient landing: CTA, Gemini branding, music
+│       │   ├── CharacterSelect.tsx   # 5 English + 5 Indian rows with divider
+│       │   └── StoryScreen.tsx       # Live session: portrait + scene canvas
 │       ├── components/
-│       │   ├── CharacterPortrait.tsx      # Hand-crafted SVG for all 14 characters
-│       │   ├── StorySceneGrid.tsx         # Image grid panel
-│       │   ├── StorySceneCard.tsx         # Single scene card (shimmer → image)
-│       │   ├── AudioVisualizer.tsx        # Real-time amplitude waveform
-│       │   └── StorybookEmpty.tsx         # Empty state illustration
+│       │   ├── FloatingElements.tsx  # Framer Motion stars/sparkles/clouds
+│       │   ├── MuteButton.tsx        # Ambient sound toggle
+│       │   ├── StorySceneGrid.tsx    # Scrollable image grid
+│       │   ├── StorySceneCard.tsx    # Shimmer → loaded image card
+│       │   ├── AudioVisualizer.tsx   # Real-time waveform
+│       │   └── StorybookEmpty.tsx    # Empty state illustration
 │       └── hooks/
-│           ├── useLiveAPI.ts              # WebSocket + AudioWorklet orchestration
-│           └── useStoryImages.ts          # Image trigger, scene context, rate limiting
-├── Dockerfile             # Multi-stage: Node builds frontend, Python serves both
-├── .dockerignore
-├── .github/
-│   └── workflows/
-│       └── deploy.yml     # Auto-deploy to Cloud Run on push to main (needs GCP_SA_KEY secret)
-├── implementation/
-│   └── PLAN.md            # This file
-└── .gitignore
+│           ├── useLiveAPI.ts         # WebSocket + AudioWorklet state machine
+│           └── useStoryImages.ts     # Image trigger, rate limiting (8s), story context
+├── cloudbuild.yaml        # Cloud Build CI/CD pipeline
+├── Dockerfile             # Multi-stage: node:22-slim builds frontend, python:3.13-slim serves both
+└── implementation/        # Phase plans and architecture docs
 ```
 
 ---
@@ -97,28 +89,15 @@ asynchronously against the live story context, so images actually match what's b
 | aaji | Aaji | Marathi मराठी | Autonoe |
 | dida | Dida | Bengali বাংলা | Umbriel |
 
-### Study Mode (4)
-
-| ID | Name | Subject | Voice |
-|---|---|---|---|
-| count-cosmo | Count Cosmo | Maths | Puck |
-| dr-luna | Dr. Luna | Science & Nature | Kore |
-| professor-pip | Professor Pip | Words & Reading | Aoede |
-| arty | Arty | Art & Colours | Fenrir |
-
 ---
 
 ## Phase 0 — Landing Page & Character Selection ✅ DONE
 
-- Kid-friendly landing page: Story Time / Learn & Explore mode cards
-- `CharacterSelect`: 5 English + 5 Indian storytellers in two rows with 🇮🇳 Indian Languages divider
-- `StudyCharacterSelect`: 4 study characters in 2×2 grid
-- Full App.tsx routing: `landing | story-select | story | study-select | study`
+- Ambient landing page: Framer Motion floating elements (stars, sparkles, clouds), background music, Gemini branding, single "Begin Your Adventure" CTA
+- `CharacterSelect`: 5 English + 5 Indian storytellers in two rows with Indian Languages divider
+- PNG character portraits (replaced planned SVGs)
+- Screen transitions: fade-out on select, fade-in on story screen
 - Back navigation throughout
-- Character cards: gradient backgrounds, hover lift, selection pulse ring, dismiss animation
-- `CharacterPortrait`: 14 hand-crafted SVG portraits
-- Screen transitions: fade-out on character select, fade-in on story screen
-- Browser tab: `<title>TaleWeaver</title>` + book emoji favicon
 
 See `PHASE_0_CHARACTER_SELECTION.md` for details.
 
@@ -130,11 +109,11 @@ See `PHASE_0_CHARACTER_SELECTION.md` for details.
 - Bidirectional proxy: browser ↔ Gemini Live API
 - GCP OAuth2 auth server-side (credentials never leave backend)
 - Character config loaded from `characters.py` by `character_id`
-- Full Gemini Live setup: system prompt, voice, affective dialog, activity detection, proactive audio
+- Full Gemini Live setup: system prompt, voice, affective dialog, VAD, proactive audio
 - "Begin!" trigger sent after setup to start proactive character speech
 - Graceful teardown on disconnect from either side
-- `POST /api/image`: two-stage pipeline (Gemini Flash Lite scene extraction → Imagen)
-- Frontend SPA served via `FileResponse` catch-all in `main.py`
+- `POST /api/image`: two-stage pipeline (Flash Lite scene extraction → Gemini image gen)
+- React SPA served via `FileResponse` catch-all in `main.py`
 
 See `PHASE_1_LIVE_API_BACKEND.md` for details.
 
@@ -142,14 +121,11 @@ See `PHASE_1_LIVE_API_BACKEND.md` for details.
 
 ## Phase 2 — Frontend Audio Pipeline ✅ DONE
 
-- Custom AudioWorklet (`capture.worklet.js`) captures mic at 16kHz PCM
-- Chunks base64-encoded and sent over WebSocket as `realtime_input.media_chunks`
-- Playback worklet (`playback.worklet.js`) queues 24kHz PCM chunks, supports interrupt/clear
-- AudioContext manages capture (16kHz) and playback (24kHz) separately
-- `useLiveAPI` hook manages full session state machine:
-  `idle → connecting → ready → active (idle/thinking/speaking/listening) → ended`
-- Barge-in: child can interrupt at any time (Gemini handles VAD)
-- Real-time audio visualiser on both mic and playback streams
+- `capture.worklet.js`: Float32 → Int16, 16kHz, 1024-sample chunks → base64 → WebSocket
+- `playback.worklet.js`: FIFO queue, Int16 → Float32, 24kHz, instant clear on interrupt
+- `useLiveAPI` hook: full session state machine (`idle → connecting → ready → active → ended`)
+- Barge-in: child interrupts at any time, Gemini VAD handles it natively
+- Real-time audio visualiser on mic and playback streams
 
 See `PHASE_2_AUDIO_STREAMING.md` for details.
 
@@ -157,19 +133,12 @@ See `PHASE_2_AUDIO_STREAMING.md` for details.
 
 ## Phase 3 — Story Scene Images ✅ DONE
 
-**Pipeline:**
-1. Character speech accumulates in `outputTextAccRef` (useLiveAPI)
-2. On `turnComplete`: full turn text (100–300 words) sent to `useStoryImages`
-3. Client-side keyword pre-filter (visual words in EN/Tamil/Hindi/Telugu/Marathi/Bengali)
-4. 30-second rate limit + 20-second session startup delay + 8 image cap
-5. `POST /api/image { scene_description, story_context, image_style, session_id }`
-6. Backend: `gemini-2.0-flash-lite` extracts specific English visual scene from narration
-   — forced to be painter-specific: exact character, exact setting, exact moment
-7. Safety prefix + character image style + extracted scene → image model
-8. Returned as base64, displayed in `StorySceneGrid` with shimmer → fade-in transition
-
-**Key fix (Feb 2026):** Previously fired at 20 words mid-turn (incomplete fragment).
-Now fires at `turnComplete` with full turn text. Story context extended to 2000 chars.
+- Image trigger fires at `turnComplete` with full accumulated turn text (100–300 words)
+- Client-side visual keyword pre-filter (EN / Tamil / Hindi / Telugu / Marathi / Bengali)
+- Rate limit: 1 image per 8 seconds, 8 images max per session, 20s startup delay
+- `POST /api/image` → Flash Lite extracts specific English visual scene → Gemini 3.1 generates image
+- Character continuity: negative prompts + reference image passed for scene-to-scene consistency
+- `StorySceneGrid`: horizontally scrollable, shimmer skeleton → fade-in
 
 See `PHASE_3_STORY_VISUALIZATION.md` for details.
 
@@ -177,12 +146,15 @@ See `PHASE_3_STORY_VISUALIZATION.md` for details.
 
 ## Phase 4 — Characters & UI ✅ DONE
 
-- Landing page with Story Time / Learn & Explore mode cards
-- `CharacterSelect`: two rows of 5 with Indian Languages divider
-- `StudyCharacterSelect`: 4 study characters in 2×2 grid
-- `StoryScreen`: portrait + audio visualiser + scene grid
-- `CharacterPortrait`: 14 hand-crafted SVG portraits (static — no animation yet)
-- Screen transitions: fade-out on select, fade-in on story
+- `StoryScreen`: 1/5 character portrait panel + 4/5 scene canvas
+- PNG portraits for all 10 story characters
+- `characterState` label: idle / thinking / speaking / listening
+- `AudioVisualizer`: real-time waveform
+- Ambient landing page with `FloatingElements` and `MuteButton`
+
+**Not built (deferred):**
+- Rive/Lottie animated avatars (breathing, lip-sync, state animations)
+- Character hover animations on selection cards
 
 See `PHASE_4_CHARACTER_ANIMATION.md` for details.
 
@@ -191,27 +163,27 @@ See `PHASE_4_CHARACTER_ANIMATION.md` for details.
 ## Phase 5 — Study Mode ⏸ DEFERRED
 
 Study mode removed from active scope. The 4 educational characters (Count Cosmo, Dr. Luna,
-Professor Pip, Arty) are documented in README as future plans. App is Story Time only.
+Professor Pip, Arty) are documented in README as a future plan.
 
-See `PHASE_5_STORY_INTELLIGENCE.md` for the original plan when this is revisited.
+Original plan covered:
+- `StudyScreen` with single concept image panel (vs scrollable grid)
+- Green/teal visual theme
+- Prompt Q&A cadence — character asks questions, waits for child's answer
+- End-of-session summary card generated by Gemini
+
+See `PHASE_5_STORY_INTELLIGENCE.md` for full details when revisited.
 
 ---
 
 ## Phase 6 — Deployment & Production Hardening ✅ DONE
 
-- Cloud Run service live: `https://taleweaver-950758825854.us-central1.run.app`
+- Cloud Run service: `https://taleweaver-950758825854.us-central1.run.app`
 - Multi-stage Dockerfile: `node:22-slim` builds React → `python:3.13-slim` serves both
-- **Cloud Build** CI/CD via `cloudbuild.yaml` — auto-deploys on every push to `main`
-- `GEMINI_API_KEY` stored in Secret Manager, injected into Cloud Run at runtime
-- Image model: `gemini-3.1-flash-image-preview` via Gemini API key (shorter rate limit intervals)
-- Frontend same-origin fallbacks — no env vars needed in production
-
-### Remaining ⬜ (low priority)
-- Tighten CORS from `*` to Cloud Run URL
-- Delete dead code: `backend/scene_detector.py`
-- Backend rate limit on `/api/image`
-- WebSocket session timeout (15 min idle)
-- GCP token refresh for sessions > 50 min
+- Cloud Build CI/CD via `cloudbuild.yaml` — auto-deploys on push to `main`
+- `GEMINI_API_KEY` in GCP Secret Manager, injected at runtime via `--update-secrets`
+- CORS locked to Cloud Run URL + localhost dev ports
+- 15-minute WebSocket session timeout
+- Same-origin frontend/backend — no CORS issues in production
 
 See `PHASE_6_DEPLOYMENT.md` for details.
 
@@ -220,16 +192,16 @@ See `PHASE_6_DEPLOYMENT.md` for details.
 ## End-to-End Session Flow
 
 ```
-Child opens app → Landing page
-    → taps "Let's Go!" → CharacterSelect
-    → selects Grandma Rose → StoryScreen mounts
-    → taps "Begin the Story!"
+Child opens app → Landing page (ambient music, floating animations)
+    → "Begin Your Adventure" → CharacterSelect
+    → selects a character → StoryScreen mounts
+    → "Begin the Story!"
     → useLiveAPI.connect()
         → WebSocket → backend /ws/story
-        → backend: load grandma-rose character config
+        → backend: load character config
         → backend: get GCP OAuth2 token
         → backend: connect to Gemini Live API
-        → backend: send setup (system prompt + Aoede voice + all config)
+        → backend: send setup (system prompt + voice + affective dialog + VAD)
         → backend: send "Begin!" client_content turn
         → Gemini: setupComplete
         → frontend: sessionState = "active"
@@ -237,30 +209,30 @@ Child opens app → Landing page
 
 Story begins
     → Gemini proactively speaks the story opening
-    → backend proxies audio chunks → browser playback worklet
+    → backend proxies audio chunks → browser playback worklet → speakers
     → outputTranscription chunks accumulate in outputTextAccRef
     → turnComplete fires → full turn text sent to useStoryImages
     → keyword pre-filter passes (story contains visual words)
-    → 30s rate check passes → POST /api/image
-    → backend: Gemini Flash Lite extracts scene → Gemini 3.1 Flash Image generates
+    → 8s rate check passes → POST /api/image
+    → backend: Flash Lite extracts scene → Gemini 3.1 Flash Image generates
     → base64 image returned → StorySceneGrid: shimmer → fade-in
 
 Child interrupts
     → VAD detects speech → Gemini sends interrupted signal
     → playback buffer cleared, characterState = "listening"
     → child's audio streamed to Gemini in real time
-    → Gemini responds, weaving child's words into the story
+    → Gemini weaves child's words into the story
     → new audio chunks → new turn → new image triggered
 ```
 
 ---
 
-## Known Issues / Tech Debt
+## What Remains
 
 | Item | Priority | Notes |
 |---|---|---|
-| `scene_detector.py` never imported | Low | Dead code, safe to delete |
-| CORS `allow_origins=["*"]` | Medium | Tighten before public launch |
-| No backend rate limit on `/api/image` | Medium | Frontend throttles but backend is open |
-| No WebSocket session timeout | Low | Long-idle sessions waste Cloud Run resources |
+| Character animations (Rive/Framer Motion) | High | Biggest visual upgrade — portraits react to speaking/listening/thinking |
+| Study mode | Medium | Deferred — 4 chars exist, need distinct UI + prompt tuning |
+| Backend rate limit on `/api/image` | Low | Frontend throttles at 8s; Gemini API is secondary backstop |
 | GCP token refresh for long sessions | Low | Reconnect Gemini WS with fresh token after 50 min |
+| Custom domain | Optional | Cloud Run domain mapping → `taleweaver.app` |
