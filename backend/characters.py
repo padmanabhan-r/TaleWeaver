@@ -142,7 +142,7 @@ CAPTAIN COCO SPECIFIC:
     "robot": Character(
         id="robot",
         name="Robo Ricky",
-        voice_name="Orbit",
+        voice_name="Laomedeia",
         image_style=(
             "colorful cartoon robot illustration, friendly face, bright tech elements, "
             "futuristic city, children's science fiction art"
@@ -348,10 +348,10 @@ def build_gemini_setup_message(character: Character, project_id: str, location: 
             "realtime_input_config": {
                 "automatic_activity_detection": {
                     "disabled": False,
-                    "silence_duration_ms": 1500,
+                    "silence_duration_ms": 2000,
                     "prefix_padding_ms": 300,
-                    "end_of_speech_sensitivity": "END_SENSITIVITY_HIGH",
-                    "start_of_speech_sensitivity": "START_SENSITIVITY_HIGH",
+                    "end_of_speech_sensitivity": "END_SENSITIVITY_LOW",
+                    "start_of_speech_sensitivity": "START_SENSITIVITY_LOW",
                 }
             },
             "proactivity": {
