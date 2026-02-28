@@ -14,10 +14,31 @@ interface Props {
 }
 
 const AVATAR_STATE_CLASS: Record<CharacterState, string> = {
-  idle: "state-idle",
-  thinking: "state-idle",
-  speaking: "state-speaking",
+  idle:      "state-idle",
+  thinking:  "state-thinking",
+  speaking:  "state-speaking",
   listening: "state-listening",
+};
+
+const BORDER_CLASS: Record<CharacterState, string> = {
+  idle:      "border-primary/40",
+  thinking:  "border-violet-400/60",
+  speaking:  "border-primary",
+  listening: "border-cyan-400/70",
+};
+
+const PORTRAIT_ANIMATE: Record<CharacterState, object> = {
+  idle:      { scale: [1, 1.018, 1] },
+  thinking:  { rotate: [0, 3, -3, 3, -3, 0] },
+  speaking:  { scale: [1, 1.06, 1] },
+  listening: { y: [0, -5, 0] },
+};
+
+const PORTRAIT_TRANSITION: Record<CharacterState, object> = {
+  idle:      { duration: 4,    repeat: Infinity, ease: "easeInOut" },
+  thinking:  { duration: 2,    repeat: Infinity, ease: "easeInOut" },
+  speaking:  { duration: 0.45, repeat: Infinity, ease: "easeInOut" },
+  listening: { duration: 2.5,  repeat: Infinity, ease: "easeInOut" },
 };
 
 const STATUS_TEXT: Record<string, string> = {
@@ -86,17 +107,42 @@ const StoryScreen = ({ character, onBack }: Props) => {
             className="flex flex-col items-center justify-center md:w-1/5 gap-5"
           >
             {/* Avatar */}
-            <motion.div
-              className={`w-36 h-36 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 border-primary/40 shadow-xl ${avatarStateClass}`}
-              animate={characterState === "speaking" ? { scale: [1, 1.03, 1] } : {}}
-              transition={{ duration: 0.5, repeat: characterState === "speaking" ? Infinity : 0 }}
-            >
-              <img
-                src={character.image}
-                alt={character.name}
-                className="w-full h-full object-cover"
-              />
-            </motion.div>
+            <div className="relative flex items-center justify-center">
+
+              {/* Sound wave rings — speaking only */}
+              {characterState === "speaking" && [0, 0.4, 0.8].map((delay, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute inset-0 rounded-full border-2 border-primary/50"
+                  animate={{ scale: [1, 1.75], opacity: [0.6, 0] }}
+                  transition={{ duration: 1.2, repeat: Infinity, delay, ease: "easeOut" }}
+                />
+              ))}
+
+              {/* Thinking bubble — thinking only */}
+              {characterState === "thinking" && (
+                <motion.div
+                  className="absolute -top-2 -right-2 text-xl pointer-events-none select-none"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: [0.5, 1, 0.5], y: [0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  💭
+                </motion.div>
+              )}
+
+              {/* Portrait */}
+              <motion.div
+                key={characterState}
+                className={`w-36 h-36 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 shadow-xl transition-colors duration-500 ${BORDER_CLASS[characterState]} ${avatarStateClass}`}
+                initial={{ scale: 1, rotate: 0, y: 0 }}
+                animate={PORTRAIT_ANIMATE[characterState]}
+                transition={PORTRAIT_TRANSITION[characterState]}
+              >
+                <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
+              </motion.div>
+
+            </div>
 
             {/* Name + language */}
             <div className="text-center">
