@@ -232,7 +232,6 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
           // Barge-in: child interrupted the character
           if (sc.interrupted) {
             outputTextAccRef.current = "";
-            imageTriggeredThisTurnRef.current = false;
             clearBufferRef.current();
             setCharacterState("listening");
             return;

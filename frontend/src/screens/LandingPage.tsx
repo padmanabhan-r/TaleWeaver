@@ -1,131 +1,106 @@
+import { motion } from "framer-motion";
+import heroBg from "@/assets/hero-bg.jpg";
+import geminiIcon from "@/assets/google-gemini-icon.svg";
+import FloatingElements from "@/components/FloatingElements";
+
 interface Props {
   onStoryMode: () => void;
-  onStudyMode: () => void;
 }
 
-const LandingPage = ({ onStoryMode, onStudyMode }: Props) => {
+const LandingPage = ({ onStoryMode }: Props) => {
   return (
-    <div
-      className="h-screen w-full flex flex-col items-center justify-center px-4 py-6 relative overflow-hidden"
-      style={{
-        background: `
-          radial-gradient(ellipse 70% 50% at 20% 90%, rgba(134, 239, 172, 0.35) 0%, transparent 70%),
-          radial-gradient(ellipse 60% 40% at 80% 10%, rgba(186, 230, 253, 0.45) 0%, transparent 70%),
-          linear-gradient(175deg, #BAE6FD 0%, #E0F2FE 30%, #DCFCE7 70%, #BBF7D0 100%)
-        `,
-      }}
-    >
-      {/* Atmospheric clouds */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-        <div
-          className="absolute rounded-full cloud-drift"
-          style={{ width: "500px", height: "130px", top: "5%", left: "-10%", background: "radial-gradient(ellipse, rgba(255,255,255,0.28) 0%, transparent 70%)" }}
-        />
-        <div
-          className="absolute rounded-full cloud-drift-slow"
-          style={{ width: "600px", height: "120px", top: "60%", right: "-15%", background: "radial-gradient(ellipse, rgba(255,255,255,0.2) 0%, transparent 70%)" }}
-        />
-        <div
-          className="absolute rounded-full cloud-drift-slow"
-          style={{ width: "350px", height: "90px", bottom: "12%", left: "5%", background: "radial-gradient(ellipse, rgba(255,255,255,0.15) 0%, transparent 70%)" }}
-        />
+    <div className="relative min-h-screen overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0">
+        <img src={heroBg} alt="Magical night sky" className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-background/50" />
       </div>
 
-      {/* Decorative stars */}
-      <div className="absolute inset-0 pointer-events-none z-0">
-        {["14%,18%", "82%,12%", "8%,55%", "92%,60%", "50%,8%", "70%,82%", "28%,88%"].map((pos, i) => {
-          const [left, top] = pos.split(",");
-          return (
-            <span
-              key={i}
-              className="absolute text-yellow-300 select-none"
-              style={{ left, top, fontSize: `${14 + (i % 3) * 6}px`, opacity: 0.6 + (i % 3) * 0.1 }}
-            >
-              ✦
-            </span>
-          );
-        })}
-      </div>
+      <FloatingElements />
 
-      {/* Title */}
-      <div className="z-10 text-center mb-8">
-        <h1
-          className="font-bangers tracking-wide mb-2"
-          style={{
-            fontSize: "clamp(3rem, 8vw, 5.5rem)",
-            background: "linear-gradient(135deg, #7C3AED 0%, #DB2777 40%, #D97706 70%, #059669 100%)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-            textShadow: "none",
-            filter: "drop-shadow(2px 3px 0px rgba(124, 58, 237, 0.2))",
-          }}
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 text-center">
+        {/* Moon glow */}
+        <motion.div
+          className="absolute top-8 sm:top-16 w-24 h-24 sm:w-32 sm:h-32 rounded-full"
+          style={{ background: "radial-gradient(circle, hsl(42 100% 75% / 0.3) 0%, transparent 70%)" }}
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        />
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="font-display text-6xl sm:text-7xl md:text-8xl font-extrabold text-primary drop-shadow-lg mb-3"
         >
           TaleWeaver
-        </h1>
-        <p className="font-comic-neue text-lg md:text-xl text-teal-700/80 font-bold">
-          Where every child's story begins
-        </p>
-      </div>
+        </motion.h1>
 
-      {/* Mode cards */}
-      <div className="z-10 flex flex-col sm:flex-row gap-5 w-full max-w-2xl px-2">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7, duration: 0.8 }}
+          className="text-lg sm:text-xl md:text-2xl text-foreground/80 font-body max-w-lg mb-12"
+        >
+          Where magical stories come alive ✨
+        </motion.p>
 
-        {/* Story Mode */}
-        <button
+        {/* Floating creatures */}
+        <motion.div
+          className="absolute left-[8%] top-[30%] text-4xl sm:text-5xl select-none"
+          animate={{ y: [0, -15, 0], rotate: [0, 10, 0] }}
+          transition={{ duration: 5, repeat: Infinity }}
+        >
+          🦉
+        </motion.div>
+        <motion.div
+          className="absolute right-[10%] top-[25%] text-4xl sm:text-5xl select-none"
+          animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+          transition={{ duration: 6, repeat: Infinity }}
+        >
+          🧚
+        </motion.div>
+        <motion.div
+          className="absolute left-[15%] bottom-[20%] text-3xl sm:text-4xl select-none"
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 4, repeat: Infinity }}
+        >
+          🌙
+        </motion.div>
+        <motion.div
+          className="absolute right-[15%] bottom-[25%] text-3xl sm:text-4xl select-none"
+          animate={{ y: [0, -12, 0], rotate: [0, -5, 0] }}
+          transition={{ duration: 5, repeat: Infinity, delay: 1 }}
+        >
+          🐉
+        </motion.div>
+
+        {/* CTA */}
+        <motion.button
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1, duration: 0.5 }}
+          whileHover={{ scale: 1.08 }}
+          whileTap={{ scale: 0.95 }}
           onClick={onStoryMode}
-          className="flex-1 rounded-3xl p-6 flex flex-col items-center gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-3 hover:scale-105 hover:shadow-2xl active:scale-95"
-          style={{
-            background: "linear-gradient(145deg, #F3E8FF 0%, #FDF2F8 40%, #FCE7F3 100%)",
-            border: "3px solid rgba(168, 85, 247, 0.3)",
-            boxShadow: "0 8px 32px rgba(168, 85, 247, 0.2)",
-          }}
+          className="px-10 py-5 rounded-full bg-primary text-primary-foreground font-display text-xl sm:text-2xl font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all"
         >
-          <span style={{ fontSize: "4rem" }}>📖</span>
-          <div className="text-center">
-            <h2 className="font-bangers text-3xl text-purple-800 tracking-wide mb-1">Story Time</h2>
-            <p className="font-comic-neue text-sm text-purple-600 leading-snug max-w-[200px]">
-              Listen to magical tales with your favourite storyteller
-            </p>
-          </div>
-          <span
-            className="font-bangers text-lg tracking-wide px-8 py-2 rounded-full transition-all duration-200 hover:scale-105"
-            style={{ background: "linear-gradient(135deg, #FBBF24, #F59E0B)", color: "#451A03" }}
-          >
-            Let's Go!
-          </span>
-        </button>
+          ✨ Begin Your Adventure ✨
+        </motion.button>
 
-        {/* Study Mode */}
-        <button
-          onClick={onStudyMode}
-          className="flex-1 rounded-3xl p-6 flex flex-col items-center gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-3 hover:scale-105 hover:shadow-2xl active:scale-95"
-          style={{
-            background: "linear-gradient(145deg, #ECFDF5 0%, #F0FFF4 40%, #D1FAE5 100%)",
-            border: "3px solid rgba(16, 185, 129, 0.3)",
-            boxShadow: "0 8px 32px rgba(16, 185, 129, 0.2)",
-          }}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+          className="mt-8 flex items-center gap-2.5"
         >
-          <span style={{ fontSize: "4rem" }}>🌟</span>
-          <div className="text-center">
-            <h2 className="font-bangers text-3xl text-emerald-800 tracking-wide mb-1">Learn & Explore</h2>
-            <p className="font-comic-neue text-sm text-emerald-600 leading-snug max-w-[200px]">
-              Discover maths, science, reading and art through fun adventures
-            </p>
-          </div>
-          <span
-            className="font-bangers text-lg tracking-wide px-8 py-2 rounded-full transition-all duration-200 hover:scale-105"
-            style={{ background: "linear-gradient(135deg, #FBBF24, #F59E0B)", color: "#451A03" }}
-          >
-            Let's Learn!
+          <img src={geminiIcon} alt="Google Gemini" className="w-7 h-7" />
+          <span className="font-body text-lg sm:text-xl text-foreground/70 font-semibold">
+            Powered by Google Gemini's AI magic ✨
           </span>
-        </button>
-
-      </div>
-
-      {/* Bottom flower row */}
-      <div className="z-10 mt-8 text-2xl select-none tracking-widest">
-        🌸🌼🌻🌺🌸
+        </motion.div>
       </div>
     </div>
   );

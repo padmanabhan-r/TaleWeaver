@@ -1,25 +1,27 @@
 import { useState } from "react";
 import LandingPage from "./screens/LandingPage";
 import CharacterSelect from "./screens/CharacterSelect";
-import StudyCharacterSelect from "./screens/StudyCharacterSelect";
 import StoryScreen from "./screens/StoryScreen";
 import { Character } from "./characters";
+import { useAmbientSound } from "./hooks/useAmbientSound";
 
-type Screen = "landing" | "story-select" | "story" | "study-select" | "study";
+type Screen = "landing" | "story-select" | "story";
 
 const App = () => {
   const [screen, setScreen] = useState<Screen>("landing");
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
 
-  const handleCharacterSelect = (character: Character, mode: "story" | "study") => {
+  // Ambient music plays on landing + character select, stops during story
+  useAmbientSound(screen !== "story");
+
+  const handleCharacterSelect = (character: Character) => {
     setSelectedCharacter(character);
-    setScreen(mode);
+    setScreen("story");
   };
 
   const handleBack = () => {
     setSelectedCharacter(null);
-    if (screen === "story") setScreen("story-select");
-    else if (screen === "study") setScreen("study-select");
+    setScreen("story-select");
   };
 
   const handleBackToLanding = () => {
@@ -30,24 +32,15 @@ const App = () => {
   return (
     <>
       {screen === "landing" && (
-        <LandingPage
-          onStoryMode={() => setScreen("story-select")}
-          onStudyMode={() => setScreen("study-select")}
-        />
+        <LandingPage onStoryMode={() => setScreen("story-select")} />
       )}
       {screen === "story-select" && (
         <CharacterSelect
-          onSelect={(c) => handleCharacterSelect(c, "story")}
+          onSelect={handleCharacterSelect}
           onBack={handleBackToLanding}
         />
       )}
-      {screen === "study-select" && (
-        <StudyCharacterSelect
-          onSelect={(c) => handleCharacterSelect(c, "study")}
-          onBack={handleBackToLanding}
-        />
-      )}
-      {(screen === "story" || screen === "study") && selectedCharacter && (
+      {screen === "story" && selectedCharacter && (
         <StoryScreen character={selectedCharacter} onBack={handleBack} />
       )}
     </>

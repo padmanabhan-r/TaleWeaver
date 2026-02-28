@@ -3,38 +3,6 @@ import { useState, useCallback, useRef } from "react";
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 const MAX_SCENES = 8;
 
-// Client-side pre-filter — English, Tamil, and Hindi visual scene keywords
-const VISUAL_WORDS = [
-  // English
-  "castle", "dragon", "forest", "ocean", "mountain", "cave", "village",
-  "sky", "garden", "suddenly", "appeared", "imagine", "picture", "there was",
-  "stood", "glowed", "sparkled", "kingdom", "wizard", "fairy", "princess",
-  "knight", "ship", "robot", "once upon",
-  // Tamil (காடு=forest, மலை=mountain, கடல்=ocean, கோட்டை=castle,
-  //         திடீரென்று=suddenly, வாழ்ந்தது=lived, தோன்றியது=appeared,
-  //         கிராமம்=village, ஆகாயம்=sky, தோட்டம்=garden)
-  "காடு", "மலை", "கடல்", "கோட்டை", "திடீரென்று", "வாழ்ந்தது",
-  "தோன்றியது", "கிராமம்", "ஆகாயம்", "தோட்டம்", "ஒரு காட்டிலே",
-  "ஒரு நாள்", "அரண்மனை", "இளவரசி", "மந்திரி",
-  // Hindi (जंगल=forest, पहाड़=mountain, समुद्र=ocean, महल=castle,
-  //        अचानक=suddenly, रहता था=lived, गाँव=village, आकाश=sky,
-  //        बगीचा=garden, एक बार=once upon)
-  "जंगल", "पहाड़", "समुद्र", "महल", "अचानक", "रहता था", "रहती थी",
-  "गाँव", "आकाश", "बगीचा", "एक बार", "राजकुमारी", "राजकुमार", "जादू",
-  // Telugu (అడవి=forest, పర్వతం=mountain, సముద్రం=ocean, రాజ్యం=kingdom,
-  //          అకస్మాత్తుగా=suddenly, గ్రామం=village, ఆకాశం=sky, తోట=garden)
-  "అడవి", "పర్వతం", "సముద్రం", "రాజ్యం", "అకస్మాత్తుగా", "గ్రామం",
-  "ఆకాశం", "తోట", "రాకుమారి", "మాంత్రికుడు", "ఒకసారి",
-  // Marathi (जंगल=forest, डोंगर=mountain, समुद्र=ocean, राज्य=kingdom,
-  //           अचानक=suddenly, गाव=village, आकाश=sky, बाग=garden)
-  "जंगल", "डोंगर", "समुद्र", "राज्य", "अचानक", "गाव", "आकाश", "बाग",
-  "राजकन्या", "जादूगार", "एकदा",
-  // Bengali (জঙ্গল=forest, পাহাড়=mountain, সমুদ্র=ocean, রাজ্য=kingdom,
-  //          হঠাৎ=suddenly, গ্রাম=village, আকাশ=sky, বাগান=garden)
-  "জঙ্গল", "পাহাড়", "সমুদ্র", "রাজ্য", "হঠাৎ", "গ্রাম", "আকাশ", "বাগান",
-  "রাজকন্যা", "জাদুকর", "একদিন",
-];
-
 export interface StoryScene {
   id: string;
   status: "loading" | "loaded";
@@ -44,15 +12,17 @@ export interface StoryScene {
 }
 
 // Wait this long after session start before generating the first image
-const SESSION_START_DELAY_MS = 20_000;
+const SESSION_START_DELAY_MS = 8_000;
 
 export function useStoryImages(imageStyle: string, sessionId: string) {
   const [scenes, setScenes] = useState<StoryScene[]>([]);
   const sceneCountRef = useRef(0);
   const lastTriggerTimeRef = useRef(0);
   const sessionStartTimeRef = useRef(Date.now());
-  // Rolling story context — last ~600 chars of character speech across all turns
+  // Rolling story context — last ~2000 chars of character speech across all turns
   const storyContextRef = useRef("");
+  // Last successfully generated image for visual continuity
+  const lastImageRef = useRef<{ data: string; mimeType: string } | null>(null);
 
   const triggerImageGeneration = useCallback(
     async (transcriptionText: string) => {
@@ -65,15 +35,12 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
       const now = Date.now();
       if (now - sessionStartTimeRef.current < SESSION_START_DELAY_MS) return;
 
-      // Rate limit: 1 image per 30 seconds
-      if (now - lastTriggerTimeRef.current < 30_000) return;
-
-      // Client-side visual keyword pre-filter — require actual visual content keywords
-      const isVisual = VISUAL_WORDS.some((w) => transcriptionText.includes(w));
-      if (!isVisual) return;
+      // Rate limit: 1 image per 10 seconds
+      if (now - lastTriggerTimeRef.current < 10_000) return;
 
       lastTriggerTimeRef.current = now;
       const sceneId = `scene-${++sceneCountRef.current}`;
+      const prevImage = lastImageRef.current;
 
       // Optimistically add a loading card
       setScenes((prev) => [
@@ -96,6 +63,8 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
             story_context: storyContextRef.current,
             image_style: imageStyle,
             session_id: sessionId,
+            previous_image_data: prevImage?.data ?? "",
+            previous_image_mime_type: prevImage?.mimeType ?? "image/png",
           }),
         });
 
@@ -111,6 +80,7 @@ export function useStoryImages(imageStyle: string, sessionId: string) {
 
         const data = await response.json();
 
+        lastImageRef.current = { data: data.image_data, mimeType: data.mime_type };
         setScenes((prev) =>
           prev.map((scene) =>
             scene.id === sceneId
