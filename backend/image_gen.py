@@ -158,6 +158,61 @@ async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", p
     raise HTTPException(status_code=500, detail="No image in response")
 
 
+class SketchPreviewRequest(BaseModel):
+    sketch_data: str   # raw base64 JPEG — no data: prefix
+    image_style: str
+
+
+class SketchPreviewResponse(BaseModel):
+    label: str         # "a friendly blue dragon"
+    image_data: str    # base64 illustration
+    mime_type: str
+
+
+@router.post("/api/sketch-preview", response_model=SketchPreviewResponse)
+async def sketch_preview(request: SketchPreviewRequest):
+    """Identify what a child drew, then generate a clean storybook illustration of it."""
+    try:
+        sketch_bytes = base64.b64decode(request.sketch_data)
+
+        # Step 1 — ask Flash Lite what the child drew
+        analysis = await _extract_client.aio.models.generate_content(
+            model=EXTRACT_MODEL,
+            contents=[
+                types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=sketch_bytes)),
+                types.Part(text=(
+                    "A young child drew this picture. In 3–6 simple, friendly words describe "
+                    "the main thing they drew — e.g. 'a friendly blue dragon', 'a big rainbow castle', "
+                    "'a fluffy bunny in a hat'. No punctuation at the end. Keep it imaginative and warm."
+                )),
+            ],
+        )
+        label = analysis.text.strip().rstrip(".")
+
+        # Step 2 — generate a clean storybook illustration of what was identified
+        prompt = (
+            f"{SAFETY_PREFIX}"
+            f"{request.image_style}, "
+            f"a charming storybook illustration of {label}, "
+            f"colorful, warm, friendly, simple clean background"
+        )
+        if IMAGE_MODEL.startswith("imagen-"):
+            image_b64, mime_type = await _generate_imagen(prompt)
+        elif _api_key_client:
+            image_b64, mime_type = await _generate_gemini_api_key(prompt)
+        else:
+            image_b64, mime_type = await _generate_gemini(prompt)
+
+        print(f"[sketch-preview] Identified: {label!r}")
+        return SketchPreviewResponse(label=label, image_data=image_b64, mime_type=mime_type)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[sketch-preview] Error: {e}")
+        raise HTTPException(status_code=500, detail="Sketch preview failed")
+
+
 class ImageRequest(BaseModel):
     scene_description: str
     story_context: str = ""

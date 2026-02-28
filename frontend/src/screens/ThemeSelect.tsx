@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Character } from "@/characters";
 import FloatingElements from "@/components/FloatingElements";
 
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+
 interface Props {
   character: Character;
   onBack: () => void;
@@ -87,6 +89,154 @@ const CustomThemeInput = ({
     />
   </div>
 );
+
+/* ── Sketch canvas ── */
+const SKETCH_COLORS = [
+  { hex: "#111827", label: "Black" },
+  { hex: "#ef4444", label: "Red" },
+  { hex: "#f97316", label: "Orange" },
+  { hex: "#eab308", label: "Yellow" },
+  { hex: "#22c55e", label: "Green" },
+  { hex: "#06b6d4", label: "Teal" },
+  { hex: "#3b82f6", label: "Blue" },
+  { hex: "#a855f7", label: "Purple" },
+  { hex: "#ec4899", label: "Pink" },
+];
+
+const SketchCanvas = ({ onSketch }: { onSketch: (base64: string) => void }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [color, setColor] = useState("#111827");
+  const [isEraser, setIsEraser] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
+  const isDrawingRef = useRef(false);
+  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  // Fill white background on mount
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }, []);
+
+  const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+  };
+
+  const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.preventDefault();
+    isDrawingRef.current = true;
+    lastPosRef.current = getPos(e, canvas);
+    setHasDrawn(true);
+  };
+
+  const draw = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isDrawingRef.current || !lastPosRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.preventDefault();
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const pos = getPos(e, canvas);
+    ctx.beginPath();
+    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.strokeStyle = isEraser ? "#ffffff" : color;
+    ctx.lineWidth = isEraser ? 28 : 7;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.stroke();
+    lastPosRef.current = pos;
+  };
+
+  const stopDraw = () => {
+    if (!isDrawingRef.current) return;
+    isDrawingRef.current = false;
+    lastPosRef.current = null;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+    if (base64) onSketch(base64);
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setHasDrawn(false);
+    onSketch("");
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Drawing surface */}
+      <div className="relative rounded-2xl overflow-hidden border-2 border-border/40 bg-white shadow-inner" style={{ touchAction: "none" }}>
+        <canvas
+          ref={canvasRef}
+          width={800}
+          height={380}
+          className="w-full block"
+          style={{ cursor: isEraser ? "cell" : "crosshair", touchAction: "none" }}
+          onMouseDown={startDraw}
+          onMouseMove={draw}
+          onMouseUp={stopDraw}
+          onMouseLeave={stopDraw}
+          onTouchStart={startDraw}
+          onTouchMove={draw}
+          onTouchEnd={stopDraw}
+        />
+        {!hasDrawn && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+            <p className="font-display text-2xl text-gray-300">Draw anything! ✏️</p>
+          </div>
+        )}
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {SKETCH_COLORS.map((c) => (
+          <button
+            key={c.hex}
+            onClick={() => { setColor(c.hex); setIsEraser(false); }}
+            title={c.label}
+            className="w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 flex-shrink-0"
+            style={{
+              backgroundColor: c.hex,
+              borderColor: !isEraser && color === c.hex ? "hsl(42 100% 62%)" : "rgba(0,0,0,0.15)",
+              boxShadow: !isEraser && color === c.hex ? "0 0 0 2px hsl(42 100% 62% / 0.4)" : undefined,
+            }}
+          />
+        ))}
+        <button
+          onClick={() => setIsEraser((v) => !v)}
+          className={`ml-1 px-3 py-1 rounded-full font-body text-xs border transition-colors ${
+            isEraser ? "border-primary bg-primary/20 text-primary" : "border-border/60 text-muted-foreground hover:border-border"
+          }`}
+        >
+          🧹 Erase
+        </button>
+        <button
+          onClick={clearCanvas}
+          className="ml-auto px-3 py-1 rounded-full font-body text-xs border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+        >
+          🗑 Clear
+        </button>
+      </div>
+    </div>
+  );
+};
 
 /* ── Camera viewfinder ── */
 const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void }) => {
@@ -199,7 +349,7 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
 const OPTION_CARDS: { id: OptionId; emoji: string; title: string; description: string; locked?: boolean }[] = [
   { id: "pick",   emoji: "🎨", title: "Pick a Theme",    description: "Choose from magical worlds or make up your own!" },
   { id: "camera", emoji: "📷", title: "Magic Camera",    description: "Hold up a toy or anything — I'll look at it and build the story around it!" },
-  { id: "sketch", emoji: "✏️", title: "Sketch a Theme",  description: "Draw what you imagine — coming very soon!", locked: true },
+  { id: "sketch", emoji: "✏️", title: "Sketch a Theme",  description: "Draw whatever's in your head — I'll bring it to life as your story!" },
 ];
 
 /* ── Main screen ── */
@@ -208,22 +358,60 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [customText, setCustomText] = useState("");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [sketchImage, setSketchImage] = useState<string | null>(null);
+  const [sketchPreview, setSketchPreview] = useState<{
+    loading: boolean;
+    label: string | null;
+    imageData: string | null;
+    mimeType: string;
+  } | null>(null);
 
   const toggleExpand = (id: OptionId) => {
-    if (id === "sketch") return;
-    setExpanded((prev) => (prev === id ? null : id));
-    if (id === "pick") setCapturedImage(null);
-    if (id === "camera") { setSelectedTheme(null); setCustomText(""); }
+    setExpanded(id);
+    if (id === "pick") { setCapturedImage(null); setSketchImage(null); setSketchPreview(null); }
+    if (id === "camera") { setSelectedTheme(null); setCustomText(""); setSketchImage(null); setSketchPreview(null); }
+    if (id === "sketch") { setSelectedTheme(null); setCustomText(""); setCapturedImage(null); }
+  };
+
+  const handleBack = () => {
+    if (expanded) {
+      setExpanded(null);
+      setSketchPreview(null);
+      setSketchImage(null);
+      setCapturedImage(null);
+    } else {
+      onBack();
+    }
   };
 
   const canConfirmPick   = !!(selectedTheme || customText.trim());
-  const canConfirmCamera = !!capturedImage;
+  const canConfirmSketch = !!sketchImage && !sketchPreview;
+
+  const handleSketchPreview = async () => {
+    if (!sketchImage) return;
+    setSketchPreview({ loading: true, label: null, imageData: null, mimeType: "" });
+    try {
+      const res = await fetch(`${API_BASE}/api/sketch-preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sketch_data: sketchImage, image_style: character.imageStyle }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setSketchPreview({ loading: false, label: data.label, imageData: data.image_data, mimeType: data.mime_type });
+    } catch (err) {
+      console.error("[sketch-preview] failed:", err);
+      setSketchPreview(null);
+    }
+  };
 
   const handleGo = () => {
     if (expanded === "pick") {
       onConfirm(customText.trim() || selectedTheme || "");
     } else if (expanded === "camera") {
       onConfirm("camera_prop", capturedImage ?? undefined);
+    } else if (expanded === "sketch" && sketchPreview?.imageData) {
+      onConfirm("sketch", sketchPreview.imageData);
     }
   };
 
@@ -239,7 +427,7 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
           className="flex items-center justify-between mb-6"
         >
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="text-muted-foreground hover:text-foreground font-body transition-colors"
           >
             ← Back
@@ -262,16 +450,16 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
           className="text-center mb-8"
         >
           <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-primary mb-2">
-            What's Your Story About?
+            {expanded ? OPTION_CARDS.find(c => c.id === expanded)?.title : "What's Your Story About?"}
           </h2>
           <p className="text-foreground/70 font-body text-base sm:text-lg">
-            Choose how you want to spark your adventure ✨
+            {expanded ? "← Back to change your choice" : "Choose how you want to spark your adventure ✨"}
           </p>
         </motion.div>
 
         {/* Option cards */}
         <div className="max-w-3xl mx-auto flex flex-col gap-5">
-          {OPTION_CARDS.map((card, i) => {
+          {(expanded ? OPTION_CARDS.filter(c => c.id === expanded) : OPTION_CARDS).map((card, i) => {
             const isExpanded = expanded === card.id;
             const isLocked = !!card.locked;
 
@@ -391,6 +579,90 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                                   </motion.button>
                                 </div>
                               )}
+                            </div>
+                          )}
+
+                          {card.id === "sketch" && (
+                            <div className="pt-5">
+
+                              {/* Phase 1 — draw */}
+                              {!sketchPreview && (
+                                <>
+                                  <SketchCanvas onSketch={(b64) => setSketchImage(b64 || null)} />
+                                  <div className="mt-5 flex justify-center">
+                                    <motion.button
+                                      whileHover={canConfirmSketch ? { scale: 1.05 } : {}}
+                                      whileTap={canConfirmSketch ? { scale: 0.95 } : {}}
+                                      onClick={handleSketchPreview}
+                                      disabled={!canConfirmSketch}
+                                      className={`px-10 py-4 rounded-full font-display text-xl font-bold transition-all ${
+                                        canConfirmSketch
+                                          ? "bg-primary text-primary-foreground magic-glow animate-glow-pulse hover:brightness-110"
+                                          : "bg-muted text-muted-foreground cursor-not-allowed"
+                                      }`}
+                                    >
+                                      🔍 See What I Drew!
+                                    </motion.button>
+                                  </div>
+                                </>
+                              )}
+
+                              {/* Phase 2 — loading */}
+                              {sketchPreview?.loading && (
+                                <div className="flex flex-col items-center gap-4 py-10">
+                                  <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                    className="text-5xl"
+                                  >
+                                    🎨
+                                  </motion.div>
+                                  <p className="font-display text-xl font-bold text-foreground">Looking at your drawing...</p>
+                                  <p className="font-body text-sm text-muted-foreground">Bringing it to life ✨</p>
+                                </div>
+                              )}
+
+                              {/* Phase 3 — preview */}
+                              {sketchPreview && !sketchPreview.loading && sketchPreview.imageData && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className="flex flex-col items-center gap-5"
+                                >
+                                  <div className="w-full max-w-sm rounded-2xl overflow-hidden border-2 border-primary/50 shadow-xl">
+                                    <img
+                                      src={`data:${sketchPreview.mimeType};base64,${sketchPreview.imageData}`}
+                                      alt={sketchPreview.label ?? "Your drawing"}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="font-display text-2xl font-bold text-foreground">
+                                      I see {sketchPreview.label}! 🌟
+                                    </p>
+                                    <p className="font-body text-sm text-muted-foreground mt-1">
+                                      Your story will be all about this!
+                                    </p>
+                                  </div>
+                                  <div className="flex gap-3">
+                                    <button
+                                      onClick={() => { setSketchPreview(null); setSketchImage(null); }}
+                                      className="px-5 py-2 rounded-full font-body text-sm border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                                    >
+                                      ✏️ Draw Again
+                                    </button>
+                                    <motion.button
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={handleGo}
+                                      className="px-10 py-3 rounded-full bg-primary text-primary-foreground font-display text-lg font-bold magic-glow animate-glow-pulse hover:brightness-110"
+                                    >
+                                      🪄 Start the Story!
+                                    </motion.button>
+                                  </div>
+                                </motion.div>
+                              )}
+
                             </div>
                           )}
 

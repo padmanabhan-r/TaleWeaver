@@ -366,11 +366,12 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
   const disconnect = useCallback(() => {
     stopCapture();
     stopCamera();
+    clearBuffer();
     wsRef.current?.close(1000, "User ended session");
     wsRef.current = null;
     setSessionState("idle");
     setCharacterState("idle");
-  }, [stopCapture, stopCamera]);
+  }, [stopCapture, stopCamera, clearBuffer]);
 
   // Cleanup on unmount
   useEffect(() => {
