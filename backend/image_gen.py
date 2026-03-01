@@ -159,6 +159,44 @@ async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", p
     raise HTTPException(status_code=500, detail="No image in response")
 
 
+async def _is_safe_for_children(content: str) -> bool:
+    """Return True if the content is appropriate for children aged 4-10."""
+    prompt = (
+        f"Is this content appropriate for a children's story app for ages 4-10?\n"
+        f"Content: \"{content}\"\n\n"
+        "Reply with exactly one word: SAFE or UNSAFE.\n"
+        "Mark UNSAFE for: violence, weapons, blood, death, horror, adult/sexual themes, "
+        "drugs, hate speech, self-harm, war, terrorism, or anything frightening or dangerous.\n"
+        "Mark SAFE for: animals, magic, adventure, friendship, food, space, nature, fantasy, everyday life."
+    )
+    try:
+        response = await asyncio.wait_for(
+            _extract_client.aio.models.generate_content(model=EXTRACT_MODEL, contents=prompt),
+            timeout=6.0,
+        )
+        return "UNSAFE" not in response.text.strip().upper()
+    except Exception:
+        return True  # fail open — don't block on classifier error
+
+
+class ThemeCheckRequest(BaseModel):
+    theme: str
+
+
+class ThemeCheckResponse(BaseModel):
+    safe: bool
+
+
+@router.post("/api/check-theme", response_model=ThemeCheckResponse)
+async def check_theme(request: ThemeCheckRequest):
+    """Check whether a custom story theme is appropriate for children."""
+    if not request.theme.strip():
+        return ThemeCheckResponse(safe=True)
+    safe = await _is_safe_for_children(request.theme.strip())
+    print(f"[check-theme] '{request.theme}' → {'SAFE' if safe else 'UNSAFE'}")
+    return ThemeCheckResponse(safe=safe)
+
+
 class SketchPreviewRequest(BaseModel):
     sketch_data: str   # raw base64 JPEG — no data: prefix
     image_style: str
@@ -229,6 +267,11 @@ async def sketch_preview(request: SketchPreviewRequest):
         label_result = await asyncio.wait_for(label_coro, timeout=15.0)
         label = label_result.text.strip().rstrip(".")
         print(f"[sketch-preview] Label: {label!r}")
+
+        # Safety check — reject inappropriate content before generating an image
+        if not await _is_safe_for_children(label):
+            print(f"[sketch-preview] Blocked unsafe content: {label!r}")
+            raise HTTPException(status_code=400, detail="unsafe_content")
 
         if IMAGE_MODEL.startswith("imagen-"):
             # Imagen is text-only — use label as prompt
