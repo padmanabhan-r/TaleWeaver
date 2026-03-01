@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
-const MAX_SCENES = 8;
+const MAX_SCENES = Infinity;
 
 export interface StoryScene {
   id: string;
