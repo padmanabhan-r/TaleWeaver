@@ -1,6 +1,7 @@
 # backend/image_gen.py
 """Story scene image generation — model controlled via IMAGE_MODEL env var."""
 
+import asyncio
 import base64
 import os
 from google import genai
@@ -156,6 +157,107 @@ async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", p
         if part.inline_data and part.inline_data.data:
             return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
     raise HTTPException(status_code=500, detail="No image in response")
+
+
+class SketchPreviewRequest(BaseModel):
+    sketch_data: str   # raw base64 JPEG — no data: prefix
+    image_style: str
+
+
+class SketchPreviewResponse(BaseModel):
+    label: str         # "a friendly blue dragon"
+    image_data: str    # base64 illustration
+    mime_type: str
+
+
+async def _generate_from_sketch(sketch_bytes: bytes, image_style: str, label: str = "") -> tuple[str, str]:
+    """Recreate a child's sketch as a storybook illustration using the sketch as direct input."""
+    subject_hint = f"The subject is: {label}. " if label else ""
+    contents = [
+        types.Part(text=(
+            f"{SAFETY_PREFIX}"
+            f"{image_style}, "
+            f"{subject_hint}"
+            "recreate this child's drawing as a colorful storybook illustration. "
+            "Keep the exact same subject and composition as the sketch. "
+            "Warm, friendly, simple clean background, no text, no words."
+        )),
+        types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=sketch_bytes)),
+    ]
+    if _api_key_client:
+        response = await _api_key_client.aio.models.generate_content(
+            model=IMAGE_MODEL,
+            contents=contents,
+            config=types.GenerateContentConfig(response_modalities=["IMAGE", "TEXT"]),
+        )
+    else:
+        response = await _client.aio.models.generate_content(
+            model=IMAGE_MODEL,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE"],
+                image_config=types.ImageConfig(aspect_ratio="4:3"),
+            ),
+        )
+    for part in response.candidates[0].content.parts:
+        if part.inline_data and part.inline_data.data:
+            return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
+    raise HTTPException(status_code=500, detail="No image in sketch response")
+
+
+@router.post("/api/sketch-preview", response_model=SketchPreviewResponse)
+async def sketch_preview(request: SketchPreviewRequest):
+    """Recreate a child's sketch/photo as a storybook illustration."""
+    try:
+        sketch_bytes = base64.b64decode(request.sketch_data)
+        print(f"[sketch-preview] Starting — image size: {len(sketch_bytes)} bytes, model: {IMAGE_MODEL}")
+
+        label_coro = _extract_client.aio.models.generate_content(
+            model=EXTRACT_MODEL,
+            contents=[
+                types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=sketch_bytes)),
+                types.Part(text=(
+                    "A young child drew or photographed this. In 3–6 simple, friendly words describe "
+                    "the main subject — e.g. 'a friendly blue dragon', 'a big rainbow castle', "
+                    "'a red toy car'. No punctuation at the end. Keep it imaginative and warm."
+                )),
+            ],
+        )
+
+        # Always get label first so image generation is guided by the same description
+        print("[sketch-preview] Step 1 — extracting label")
+        label_result = await asyncio.wait_for(label_coro, timeout=15.0)
+        label = label_result.text.strip().rstrip(".")
+        print(f"[sketch-preview] Label: {label!r}")
+
+        if IMAGE_MODEL.startswith("imagen-"):
+            # Imagen is text-only — use label as prompt
+            print("[sketch-preview] Using Imagen — generating from label")
+            prompt = (
+                f"{SAFETY_PREFIX}{request.image_style}, "
+                f"a charming storybook illustration of {label}, "
+                "colorful, warm, friendly, simple clean background"
+            )
+            image_b64, mime_type = await asyncio.wait_for(_generate_imagen(prompt), timeout=30.0)
+        else:
+            # Gemini image models — pass label + sketch so image matches the label exactly
+            print("[sketch-preview] Using Gemini — generating image-from-sketch with label hint")
+            image_b64, mime_type = await asyncio.wait_for(
+                _generate_from_sketch(sketch_bytes, request.image_style, label),
+                timeout=45.0,
+            )
+
+        print(f"[sketch-preview] Done — label: {label!r}, image: {len(image_b64)} chars")
+        return SketchPreviewResponse(label=label, image_data=image_b64, mime_type=mime_type)
+
+    except asyncio.TimeoutError:
+        print("[sketch-preview] Timed out after 45s")
+        raise HTTPException(status_code=504, detail="Preview timed out — please try again")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[sketch-preview] Error: {type(e).__name__}: {e}")
+        raise HTTPException(status_code=500, detail="Sketch preview failed")
 
 
 class ImageRequest(BaseModel):

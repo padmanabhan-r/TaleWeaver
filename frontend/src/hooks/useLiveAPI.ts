@@ -12,10 +12,26 @@ interface Transcription {
   text: string;
 }
 
+export interface ChoiceRequest {
+  callId: string;
+  options: string[];
+}
+
+export interface BadgeAward {
+  emoji: string;
+  name: string;
+  reason: string;
+}
+
 interface UseLiveAPIOptions {
   character: Character;
+  theme?: string;
+  propImage?: string;  // raw base64 JPEG, no data: prefix
   onImageTrigger?: ((text: string) => void) | null;
   onTranscription?: ((msg: Transcription) => void) | null;
+  onChoiceRequest?: ((choice: ChoiceRequest) => void) | null;
+  onBadgeAwarded?: ((badge: BadgeAward) => void) | null;
+  onChildSpoke?: (() => void) | null;
 }
 
 // ── Audio capture ────────────────────────────────────────────────────────────
@@ -150,6 +166,70 @@ function useAudioPlayback() {
   return { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef: audioContextRef, playbackGainRef: gainNodeRef };
 }
 
+// ── Camera stream ────────────────────────────────────────────────────────────
+
+function useCameraStream(wsRef: React.RefObject<WebSocket | null>) {
+  const [enabled, setEnabled] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const intervalRef = useRef<number | null>(null);
+
+  // Once enabled=true the video element mounts — attach the stream
+  useEffect(() => {
+    if (enabled && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [enabled]);
+
+  const toggle = useCallback(async () => {
+    if (enabled) {
+      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+      streamRef.current?.getTracks().forEach(t => t.stop());
+      streamRef.current = null;
+      setEnabled(false);
+      console.log("[camera-stream] Stopped");
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+        streamRef.current = stream;
+        const canvas = document.createElement("canvas");
+        intervalRef.current = window.setInterval(() => {
+          const video = videoRef.current;
+          const ws = wsRef.current;
+          if (!video || !ws || ws.readyState !== WebSocket.OPEN || video.videoWidth === 0) return;
+          const MAX = 512;
+          const scale = Math.min(1, MAX / Math.max(video.videoWidth, video.videoHeight));
+          canvas.width = Math.round(video.videoWidth * scale);
+          canvas.height = Math.round(video.videoHeight * scale);
+          canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const base64 = canvas.toDataURL("image/jpeg", 0.6).split(",")[1];
+          if (!base64) return;
+          ws.send(JSON.stringify({ realtime_input: { media_chunks: [{ mime_type: "image/jpeg", data: base64 }] } }));
+        }, 1000);
+        setEnabled(true); // triggers useEffect to set srcObject after video mounts
+        console.log("[camera-stream] Started ✓");
+      } catch (err) {
+        console.error("[camera-stream] getUserMedia failed:", err);
+      }
+    }
+  }, [enabled, wsRef]);
+
+  const stop = useCallback(() => {
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    streamRef.current = null;
+    setEnabled(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    streamRef.current?.getTracks().forEach(t => t.stop());
+  }, []);
+
+  return { enabled, toggle, stop, videoRef };
+}
+
 // ── Helper ───────────────────────────────────────────────────────────────────
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
@@ -163,15 +243,18 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 // ── Main hook ────────────────────────────────────────────────────────────────
 
-export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLiveAPIOptions) {
+export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTranscription, onChoiceRequest, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
   // Accumulates character speech across transcription chunks (finished flag unreliable in native audio)
   const outputTextAccRef = useRef("");
+  // Queued choice — held until turnComplete so it never overlaps the character's speech
+  const pendingChoiceRef = useRef<ChoiceRequest | null>(null);
 
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
   const { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef, playbackGainRef } = useAudioPlayback();
+  const { enabled: cameraEnabled, toggle: toggleCamera, stop: stopCamera, videoRef: cameraVideoRef } = useCameraStream(wsRef);
 
   // Keep latest callbacks in refs so the WS onmessage closure never goes stale
   const playChunkRef = useRef(playChunk);
@@ -179,11 +262,17 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
   const startCaptureRef = useRef(startCapture);
   const onImageTriggerRef = useRef(onImageTrigger);
   const onTranscriptionRef = useRef(onTranscription);
+  const onChoiceRequestRef = useRef(onChoiceRequest);
+  const onBadgeAwardedRef = useRef(onBadgeAwarded);
+  const onChildSpokeRef = useRef(onChildSpoke);
   useEffect(() => { playChunkRef.current = playChunk; }, [playChunk]);
   useEffect(() => { clearBufferRef.current = clearBuffer; }, [clearBuffer]);
   useEffect(() => { startCaptureRef.current = startCapture; }, [startCapture]);
   useEffect(() => { onImageTriggerRef.current = onImageTrigger; }, [onImageTrigger]);
   useEffect(() => { onTranscriptionRef.current = onTranscription; }, [onTranscription]);
+  useEffect(() => { onChoiceRequestRef.current = onChoiceRequest; }, [onChoiceRequest]);
+  useEffect(() => { onBadgeAwardedRef.current = onBadgeAwarded; }, [onBadgeAwarded]);
+  useEffect(() => { onChildSpokeRef.current = onChildSpoke; }, [onChildSpoke]);
 
   const connect = useCallback(async () => {
     if (sessionState !== "idle") return;
@@ -197,7 +286,11 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
 
       ws.onopen = () => {
         console.log("[live-api] WebSocket connected");
-        ws.send(JSON.stringify({ character_id: character.id }));
+        ws.send(JSON.stringify({
+          character_id: character.id,
+          theme: theme ?? null,
+          prop_image: propImage ?? null,
+        }));
       };
 
       ws.onmessage = (event) => {
@@ -226,6 +319,25 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
             return;
           }
 
+          // Tool calls: showChoice (wait for user pick) or awardBadge (respond immediately)
+          if (data.toolCall?.functionCalls) {
+            for (const call of data.toolCall.functionCalls) {
+              if (call.name === "showChoice") {
+                // Queue — dispatched after turnComplete so audio finishes first
+                pendingChoiceRef.current = { callId: call.id, options: call.args?.options ?? [] };
+              } else if (call.name === "awardBadge") {
+                onBadgeAwardedRef.current?.(call.args as BadgeAward);
+                // Respond immediately so Gemini can continue narrating
+                ws.send(JSON.stringify({
+                  toolResponse: {
+                    functionResponses: [{ id: call.id, response: { output: "Badge awarded!" } }],
+                  },
+                }));
+              }
+            }
+            return;
+          }
+
           const sc = data.serverContent;
           if (!sc) return;
 
@@ -234,12 +346,14 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
             outputTextAccRef.current = "";
             clearBufferRef.current();
             setCharacterState("listening");
+            onChildSpokeRef.current?.();
             return;
           }
 
           // What the child said
           if (sc.inputTranscription?.finished && sc.inputTranscription?.text) {
             onTranscriptionRef.current?.({ type: "child", text: sc.inputTranscription.text });
+            onChildSpokeRef.current?.();
           }
 
           // Accumulate character speech transcription chunks
@@ -266,6 +380,13 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
               outputTextAccRef.current = "";
             }
             setCharacterState("listening");
+
+            // Dispatch any queued choice now — small delay lets the audio buffer finish draining
+            if (pendingChoiceRef.current) {
+              const pending = pendingChoiceRef.current;
+              pendingChoiceRef.current = null;
+              setTimeout(() => onChoiceRequestRef.current?.(pending), 700);
+            }
           }
 
         } catch (e) {
@@ -292,13 +413,35 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
     }
   }, [character.id, sessionState, initPlayback, stopCapture]);
 
+  // Send the child's chosen option back as a tool response so Gemini can continue
+  const answerChoice = useCallback((callId: string, choice: string) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    // Tool response — required by the function calling protocol
+    ws.send(JSON.stringify({
+      toolResponse: {
+        functionResponses: [{ id: callId, response: { output: choice } }],
+      },
+    }));
+    // Also send as user content so Gemini immediately continues narrating
+    // (without this, Gemini waits for audio input before resuming)
+    ws.send(JSON.stringify({
+      client_content: {
+        turns: [{ role: "user", parts: [{ text: choice }] }],
+        turn_complete: true,
+      },
+    }));
+  }, []);
+
   const disconnect = useCallback(() => {
     stopCapture();
+    stopCamera();
+    clearBuffer();
     wsRef.current?.close(1000, "User ended session");
     wsRef.current = null;
     setSessionState("idle");
     setCharacterState("idle");
-  }, [stopCapture]);
+  }, [stopCapture, stopCamera, clearBuffer]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -309,7 +452,8 @@ export function useLiveAPI({ character, onImageTrigger, onTranscription }: UseLi
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    connect, disconnect, sessionState, characterState, isCapturing, isPlaying,
+    connect, disconnect, answerChoice, sessionState, characterState, isCapturing, isPlaying,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
+    cameraEnabled, toggleCamera, cameraVideoRef,
   };
 }
