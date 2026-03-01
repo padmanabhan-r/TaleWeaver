@@ -22,6 +22,8 @@ app = FastAPI(title="TaleWeaver Backend")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://taleweaver.online",
+        "https://www.taleweaver.online",
         "https://taleweaver-950758825854.us-central1.run.app",
         "http://localhost:5173",   # Vite dev server
         "http://localhost:8080",
