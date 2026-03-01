@@ -395,12 +395,14 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [sketchImage, setSketchImage] = useState<string | null>(null);
 
-  type Preview = { loading: boolean; label: string | null; imageData: string | null; mimeType: string };
+  type Preview = { loading: boolean; label: string | null; imageData: string | null; mimeType: string; unsafe?: boolean };
   const [sketchPreview, setSketchPreview] = useState<Preview | null>(null);
   const [cameraPreview, setCameraPreview] = useState<Preview | null>(null);
+  const [contentWarning, setContentWarning] = useState<string | null>(null);
 
   const toggleExpand = (id: OptionId) => {
     setExpanded(id);
+    setContentWarning(null);
     if (id === "pick")   { setCapturedImage(null); setCameraPreview(null); setSketchImage(null); setSketchPreview(null); }
     if (id === "camera") { setSelectedTheme(null); setCustomText(""); setSketchImage(null); setSketchPreview(null); }
     if (id === "sketch") { setSelectedTheme(null); setCustomText(""); setCapturedImage(null); setCameraPreview(null); }
@@ -432,12 +434,20 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
         body: JSON.stringify({ sketch_data: imageData, image_style: character.imageStyle }),
         signal: controller.signal,
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        if (res.status === 400) {
+          const body = await res.json().catch(() => ({}));
+          if (body.detail === "unsafe_content") {
+            setter({ loading: false, label: null, imageData: null, mimeType: "", unsafe: true });
+            return;
+          }
+        }
+        throw new Error(`HTTP ${res.status}`);
+      }
       const data = await res.json();
       setter({ loading: false, label: data.label, imageData: data.image_data, mimeType: data.mime_type });
     } catch (err) {
       console.error("[preview] failed:", err);
-      // On any failure show a recoverable error state rather than leaving the user stuck
       setter({ loading: false, label: null, imageData: null, mimeType: "" });
     } finally {
       clearTimeout(timeout);
@@ -447,9 +457,29 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
   const handleSketchPreview = () => sketchImage && callPreviewAPI(sketchImage, setSketchPreview);
   const handleCameraCapture = (base64: string) => { setCapturedImage(base64); callPreviewAPI(base64, setCameraPreview); };
 
-  const handleGo = () => {
+  const handleGo = async () => {
     if (expanded === "pick") {
-      onConfirm(customText.trim() || selectedTheme || "");
+      const text = customText.trim();
+      if (text) {
+        try {
+          const res = await fetch(`${API_BASE}/api/check-theme`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ theme: text }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (!data.safe) {
+              setContentWarning("Oops! That theme isn't right for our stories. Try something fun like animals, magic, or space! 🌟");
+              return;
+            }
+          }
+        } catch {
+          // fail open — don't block on network error
+        }
+      }
+      setContentWarning(null);
+      onConfirm(text || selectedTheme || "");
     } else if (expanded === "camera" && cameraPreview?.imageData) {
       onConfirm("camera_prop", cameraPreview.imageData);
     } else if (expanded === "sketch" && sketchPreview?.imageData) {
@@ -592,8 +622,18 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                                 onChange={(v) => {
                                   setCustomText(v);
                                   if (v.trim()) setSelectedTheme(null);
+                                  setContentWarning(null);
                                 }}
                               />
+                              {contentWarning && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: -8 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="mt-2 px-4 py-2.5 rounded-xl bg-destructive/10 border border-destructive/30 text-center"
+                                >
+                                  <p className="font-body text-sm text-destructive font-semibold">{contentWarning}</p>
+                                </motion.div>
+                              )}
                               <div className="mt-3 flex justify-center">
                                 <motion.button
                                   whileHover={canConfirmPick ? { scale: 1.05 } : {}}
@@ -633,11 +673,20 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                                 </div>
                               )}
 
-                              {/* Error state */}
+                              {/* Error / unsafe state */}
                               {cameraPreview && !cameraPreview.loading && !cameraPreview.label && (
                                 <div className="flex flex-col items-center gap-4 py-6 text-center">
-                                  <span className="text-4xl">😕</span>
-                                  <p className="font-display text-lg font-bold text-foreground">Hmm, something went wrong!</p>
+                                  <span className="text-4xl">{cameraPreview.unsafe ? "🚫" : "😕"}</span>
+                                  <p className="font-display text-lg font-bold text-foreground">
+                                    {cameraPreview.unsafe
+                                      ? "That's not okay for our stories!"
+                                      : "Hmm, something went wrong!"}
+                                  </p>
+                                  {cameraPreview.unsafe && (
+                                    <p className="font-body text-sm text-muted-foreground max-w-xs">
+                                      Please show me something else — like a toy, a book, or anything fun and friendly! 🌟
+                                    </p>
+                                  )}
                                   <button
                                     onClick={() => { setCapturedImage(null); setCameraPreview(null); }}
                                     className="px-6 py-2 rounded-full font-body text-sm border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
@@ -731,11 +780,20 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                                 </div>
                               )}
 
-                              {/* Error state */}
+                              {/* Error / unsafe state */}
                               {sketchPreview && !sketchPreview.loading && !sketchPreview.label && (
                                 <div className="flex flex-col items-center gap-4 py-6 text-center">
-                                  <span className="text-4xl">😕</span>
-                                  <p className="font-display text-lg font-bold text-foreground">Hmm, something went wrong!</p>
+                                  <span className="text-4xl">{sketchPreview.unsafe ? "🚫" : "😕"}</span>
+                                  <p className="font-display text-lg font-bold text-foreground">
+                                    {sketchPreview.unsafe
+                                      ? "That's not okay for our stories!"
+                                      : "Hmm, something went wrong!"}
+                                  </p>
+                                  {sketchPreview.unsafe && (
+                                    <p className="font-body text-sm text-muted-foreground max-w-xs">
+                                      Please draw something else — like a friendly animal, a magical place, or anything fun! 🌟
+                                    </p>
+                                  )}
                                   <button
                                     onClick={() => { setSketchPreview(null); setSketchImage(null); }}
                                     className="px-6 py-2 rounded-full font-body text-sm border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
