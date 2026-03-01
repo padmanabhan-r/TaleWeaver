@@ -11,3 +11,4 @@ wheels/
 .env*
 .backup/
 Current Steps.md
+CLAUDE.md

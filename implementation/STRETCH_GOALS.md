@@ -63,7 +63,7 @@ Frontend listens for `toolCall` events from the WebSocket and renders accordingl
 
 ---
 
-## Stretch Goal 3 — Interactive Story Choices
+## Stretch Goal 3 — Interactive Story Choices (Phase 7.3)
 
 **Current:** Story is fully linear — Gemini narrates, child can only interrupt with voice.
 
@@ -83,7 +83,7 @@ Child taps → useLiveAPI sends text back → story continues that branch
 
 ---
 
-## Stretch Goal 4 — Badge & Achievement System
+## Stretch Goal 4 — Badge & Achievement System (Phase 7.4)
 
 **Current:** No engagement mechanics beyond the story itself.
 
@@ -204,11 +204,15 @@ Theme is injected as an additional `client_content` message after setup, before 
 
 ---
 
-## Stretch Goal 10 — Character Animations (Rive)
+## Stretch Goal 10 — Rive Animated Avatars (Lip-sync)
 
-**Current:** Static PNG portraits. `characterState` (idle/speaking/listening/thinking) exists but does nothing visually.
+**Current:** PNG portraits with Framer Motion per-state animations (idle breathing, thinking sway,
+speaking scale pulse + sound waves, listening bob). `characterState` drives all visual states.
 
-**Target:** Replace PNGs with Rive state machine animations wired to `characterState`.
+**What's done:** Framer Motion approach fully implemented — characters visually react to all 4 states
+with smooth Framer Motion transitions. This covers the core use case without Rive.
+
+**Target (remaining):** Replace PNGs with Rive state machine animations for true lip-sync.
 
 ```
 characterState = "speaking"
@@ -223,21 +227,23 @@ characterState = "idle"
 
 Audio amplitude from `AudioVisualizer` drives mouth animation intensity in real time.
 
-This is the **highest visual impact** stretch goal — transforms the app from "nice UI" to "living character".
+**Effort:** Very High — requires creating Rive assets for all 10 characters.
+**Impact:** Very High — transforms from "nice animations" to "living character".
 
 ---
 
-## Priority Order
+## Priority Order (Updated)
 
-| # | Goal | Effort | Impact |
-|---|---|---|---|
-| 1 | Character animations (Rive) | High | Very High |
-| 2 | Interactive story choices | Medium | High |
-| 3 | Life skills themes | Low | High |
-| 4 | Story gallery (localStorage) | Low | Medium |
-| 5 | Tool calling during live story | High | High |
-| 6 | Cloud Storage for images | Medium | Medium |
-| 7 | Badge system | Medium | Medium |
-| 8 | uv package manager | Low | Low |
-| 9 | Multi-agent ADK pipeline | Very High | Medium |
-| 10 | OpenTelemetry observability | Medium | Low |
+| # | Goal | Effort | Impact | Status |
+|---|---|---|---|---|
+| 1 | Interactive story choices (7.3) | Medium | High | ⬜ Planned |
+| 2 | Life skills themes | Low | High | ⬜ Not started |
+| 3 | Movement challenges (7.2) | Low–Medium | High | ⬜ Camera ready (7.1 ✅) |
+| 4 | Badge system (7.4) | Medium | Medium | ⬜ Planned |
+| 5 | Story gallery (localStorage) | Low | Medium | ⬜ Not started |
+| 6 | Rive lip-sync avatars | Very High | Very High | ⬜ Framer Motion covers it for now |
+| 7 | Tool calling during live story | High | High | ⬜ Not started |
+| 8 | Cloud Storage for images | Medium | Medium | ⬜ Not started |
+| 9 | uv package manager | Low | Low | ⬜ Files exist, just wire Dockerfile |
+| 10 | Multi-agent ADK pipeline | Very High | Medium | ⬜ Not started |
+| 11 | OpenTelemetry observability | Medium | Low | ⬜ Not started |

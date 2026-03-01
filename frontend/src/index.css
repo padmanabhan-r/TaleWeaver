@@ -163,6 +163,12 @@
 
 .state-idle { box-shadow: 0 0 0 6px hsl(var(--muted) / 0.5); }
 
+@keyframes thinking-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px hsl(270 60% 60% / 0.25); }
+  50%       { box-shadow: 0 0 0 12px hsl(270 60% 60% / 0.0); }
+}
+.state-thinking { animation: thinking-pulse 2s ease-in-out infinite; }
+
 /* ── Story scene image animations ── */
 @keyframes scene-pop-in {
   0%   { transform: scale(0.7) rotate(-2deg); opacity: 0; }

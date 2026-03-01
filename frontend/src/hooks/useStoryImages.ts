@@ -26,9 +26,18 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
   // Keep interval in a ref so changes take effect immediately without recreating callbacks
   const intervalMsRef = useRef(intervalSeconds * 1000);
   useEffect(() => { intervalMsRef.current = intervalSeconds * 1000; }, [intervalSeconds]);
+  // Stop flag + abort controller — set by stop(), prevents new triggers and cancels in-flight fetch
+  const stoppedRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const stop = useCallback(() => {
+    stoppedRef.current = true;
+    abortControllerRef.current?.abort();
+  }, []);
 
   const triggerImageGeneration = useCallback(
     async (transcriptionText: string) => {
+      if (stoppedRef.current) return;
       // Append this turn to the rolling context (keep last ~2000 chars)
       storyContextRef.current = (storyContextRef.current + " " + transcriptionText).slice(-2000).trim();
       // Cap at max scenes
@@ -57,10 +66,14 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
         },
       ]);
 
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
       try {
         const response = await fetch(`${API_BASE}/api/image`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
           body: JSON.stringify({
             scene_description: transcriptionText.slice(0, 2000),
             story_context: storyContextRef.current,
@@ -71,6 +84,8 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
             previous_scene_description: prevImage?.sceneDescription ?? "",
           }),
         });
+
+        if (stoppedRef.current) return;
 
         if (response.status === 429) {
           // Vertex AI rate-limited — silently discard, reset timer so next turn can retry
@@ -83,6 +98,8 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
+
+        if (stoppedRef.current) return;
 
         lastImageRef.current = { data: data.image_data, mimeType: data.mime_type, sceneDescription: data.scene_description };
         setScenes((prev) =>
@@ -98,6 +115,7 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
           )
         );
       } catch (err) {
+        if ((err as Error).name === "AbortError") return; // session ended — discard silently
         console.error("[story-images] Generation failed:", err);
         // Silently remove the failed loading card
         setScenes((prev) => prev.filter((s) => s.id !== sceneId));
@@ -107,5 +125,5 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
     [imageStyle, sessionId]
   );
 
-  return { scenes, triggerImageGeneration };
+  return { scenes, triggerImageGeneration, stop };
 }
