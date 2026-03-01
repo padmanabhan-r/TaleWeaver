@@ -44,9 +44,11 @@ STORY VARIETY (CRITICAL):
 STORY STRUCTURE:
 - Begin every story with a captivating opening that immediately drops the child into the scene.
 - Build to exciting moments and gentle surprises.
-- Always include a warm, satisfying resolution.
-- After 3-4 minutes of storytelling, naturally invite the child to participate:
-  "What do you think happens next?" or "Should we make the dragon bigger or smaller?"
+- NEVER end or wrap up the story on your own. The story keeps going until the child says "stop", "bye", or "end" — or presses the End Story button.
+- Do NOT say things like "and that's the end", "they lived happily ever after", "the story is over", or any closing phrase unless the child has explicitly asked to stop.
+- Instead of ending, keep expanding: introduce a new character, a new location, a new little problem to solve, or a fun twist. The adventure always continues.
+- Every few minutes, naturally invite the child to steer the story:
+  "What do you think happens next?" or "Should we go left or right?" or "Who should we meet now?"
 
 RESPONDING TO THE CHILD:
 - If the child interrupts or speaks, ALWAYS acknowledge what they said warmly before continuing.
@@ -69,6 +71,36 @@ SCENE MARKERS (IMPORTANT):
 - When you describe a new scene or location in the story, naturally say something
   like "picture this..." or "imagine you can see..." before the description.
 - This helps paint a vivid mental image for the child.
+
+INTERACTIVE MOMENTS:
+- Once per story (roughly 3-4 minutes in), invite the child to do something small while seated.
+  Examples: "Can you make your best surprised face?", "Show me your biggest smile!",
+  "Can you clap three times?", "Make a scary face like the monster!", "Give me a thumbs up!",
+  "Can you wave hello to the dragon?", "Show me your thinking face!", "Wiggle your fingers like magic!"
+- NEVER ask the child to stand up, jump, spin, or move from where they are sitting.
+- Say it warmly, then PAUSE and wait.
+- If the camera is on, watch for them to do it and react with delight: "I saw that! Wonderful!"
+- If no response after ~20 seconds, continue the story warmly without making them feel bad.
+- Never do this more than once per story.
+
+STORY CHOICES (using showChoice tool):
+- Use this tool AT MOST ONCE per entire session. Do NOT call it again after it has been used once.
+- Only call it at a single, genuinely pivotal story moment — a real fork where the choice meaningfully changes what happens next.
+- Do NOT call it just to fill silence, as a routine check-in, or when the story is flowing naturally.
+- Do NOT repeat similar choices or recycle options from earlier in the session.
+- When you do use it, say the options aloud first: "Should we [A], or [B]?" — then call the tool.
+- After the child's choice comes back, weave it into the story immediately and keep going.
+
+ACHIEVEMENT BADGES (using awardBadge tool):
+- Award a badge (max 2 per session) ONLY for genuinely meaningful contributions:
+  • Child verbally suggests a story idea or character → emoji "⭐", name "Story Spark"
+  • Child clearly and enthusiastically completes the ONE interactive moment you asked for → emoji "🌟", name "Active Listener"
+  • Child chooses to end the story themselves → emoji "🌟", name "Story Finisher"
+  • Child says something especially imaginative or creative out loud → emoji "🎨", name "Super Creative"
+- NEVER award a badge for: turning on the camera, random movement, being quiet, joining the session, or just being present.
+- Only award if you are genuinely certain the child did something badge-worthy. When in doubt, do NOT award.
+- Say it warmly first: "Oh! You just earned a special badge!" then call the tool.
+- Keep reason to one short phrase (max 8 words).
 
 LANGUAGE:
 - Use English unless the child speaks to you in another language,
@@ -357,5 +389,54 @@ def build_gemini_setup_message(character: Character, project_id: str, location: 
             "proactivity": {
                 "proactive_audio": True,
             },
+            "tools": [
+                {
+                    "function_declarations": [
+                        {
+                            "name": "showChoice",
+                            "description": (
+                                "Present 2-3 story choice buttons to the child at a key story moment. "
+                                "Call this once when the child should decide what happens next."
+                            ),
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "options": {
+                                        "type": "array",
+                                        "items": {"type": "string"},
+                                        "description": "2-3 short, exciting story choices (max 8 words each)",
+                                    }
+                                },
+                                "required": ["options"],
+                            },
+                        },
+                        {
+                            "name": "awardBadge",
+                            "description": (
+                                "Award an achievement badge to the child. "
+                                "Call this at key moments of achievement (max 2 per session)."
+                            ),
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "emoji": {
+                                        "type": "string",
+                                        "description": "Single emoji representing the badge",
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "description": "Short badge name (max 4 words)",
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "description": "Why the child earned it (max 8 words)",
+                                    },
+                                },
+                                "required": ["emoji", "name", "reason"],
+                            },
+                        },
+                    ]
+                }
+            ],
         }
     }

@@ -12,12 +12,26 @@ interface Transcription {
   text: string;
 }
 
+export interface ChoiceRequest {
+  callId: string;
+  options: string[];
+}
+
+export interface BadgeAward {
+  emoji: string;
+  name: string;
+  reason: string;
+}
+
 interface UseLiveAPIOptions {
   character: Character;
   theme?: string;
   propImage?: string;  // raw base64 JPEG, no data: prefix
   onImageTrigger?: ((text: string) => void) | null;
   onTranscription?: ((msg: Transcription) => void) | null;
+  onChoiceRequest?: ((choice: ChoiceRequest) => void) | null;
+  onBadgeAwarded?: ((badge: BadgeAward) => void) | null;
+  onChildSpoke?: (() => void) | null;
 }
 
 // ── Audio capture ────────────────────────────────────────────────────────────
@@ -229,12 +243,14 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 // ── Main hook ────────────────────────────────────────────────────────────────
 
-export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTranscription }: UseLiveAPIOptions) {
+export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTranscription, onChoiceRequest, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
   // Accumulates character speech across transcription chunks (finished flag unreliable in native audio)
   const outputTextAccRef = useRef("");
+  // Queued choice — held until turnComplete so it never overlaps the character's speech
+  const pendingChoiceRef = useRef<ChoiceRequest | null>(null);
 
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
   const { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef, playbackGainRef } = useAudioPlayback();
@@ -246,11 +262,17 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
   const startCaptureRef = useRef(startCapture);
   const onImageTriggerRef = useRef(onImageTrigger);
   const onTranscriptionRef = useRef(onTranscription);
+  const onChoiceRequestRef = useRef(onChoiceRequest);
+  const onBadgeAwardedRef = useRef(onBadgeAwarded);
+  const onChildSpokeRef = useRef(onChildSpoke);
   useEffect(() => { playChunkRef.current = playChunk; }, [playChunk]);
   useEffect(() => { clearBufferRef.current = clearBuffer; }, [clearBuffer]);
   useEffect(() => { startCaptureRef.current = startCapture; }, [startCapture]);
   useEffect(() => { onImageTriggerRef.current = onImageTrigger; }, [onImageTrigger]);
   useEffect(() => { onTranscriptionRef.current = onTranscription; }, [onTranscription]);
+  useEffect(() => { onChoiceRequestRef.current = onChoiceRequest; }, [onChoiceRequest]);
+  useEffect(() => { onBadgeAwardedRef.current = onBadgeAwarded; }, [onBadgeAwarded]);
+  useEffect(() => { onChildSpokeRef.current = onChildSpoke; }, [onChildSpoke]);
 
   const connect = useCallback(async () => {
     if (sessionState !== "idle") return;
@@ -297,6 +319,25 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
             return;
           }
 
+          // Tool calls: showChoice (wait for user pick) or awardBadge (respond immediately)
+          if (data.toolCall?.functionCalls) {
+            for (const call of data.toolCall.functionCalls) {
+              if (call.name === "showChoice") {
+                // Queue — dispatched after turnComplete so audio finishes first
+                pendingChoiceRef.current = { callId: call.id, options: call.args?.options ?? [] };
+              } else if (call.name === "awardBadge") {
+                onBadgeAwardedRef.current?.(call.args as BadgeAward);
+                // Respond immediately so Gemini can continue narrating
+                ws.send(JSON.stringify({
+                  toolResponse: {
+                    functionResponses: [{ id: call.id, response: { output: "Badge awarded!" } }],
+                  },
+                }));
+              }
+            }
+            return;
+          }
+
           const sc = data.serverContent;
           if (!sc) return;
 
@@ -305,12 +346,14 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
             outputTextAccRef.current = "";
             clearBufferRef.current();
             setCharacterState("listening");
+            onChildSpokeRef.current?.();
             return;
           }
 
           // What the child said
           if (sc.inputTranscription?.finished && sc.inputTranscription?.text) {
             onTranscriptionRef.current?.({ type: "child", text: sc.inputTranscription.text });
+            onChildSpokeRef.current?.();
           }
 
           // Accumulate character speech transcription chunks
@@ -337,6 +380,13 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
               outputTextAccRef.current = "";
             }
             setCharacterState("listening");
+
+            // Dispatch any queued choice now — small delay lets the audio buffer finish draining
+            if (pendingChoiceRef.current) {
+              const pending = pendingChoiceRef.current;
+              pendingChoiceRef.current = null;
+              setTimeout(() => onChoiceRequestRef.current?.(pending), 700);
+            }
           }
 
         } catch (e) {
@@ -363,6 +413,26 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
     }
   }, [character.id, sessionState, initPlayback, stopCapture]);
 
+  // Send the child's chosen option back as a tool response so Gemini can continue
+  const answerChoice = useCallback((callId: string, choice: string) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    // Tool response — required by the function calling protocol
+    ws.send(JSON.stringify({
+      toolResponse: {
+        functionResponses: [{ id: callId, response: { output: choice } }],
+      },
+    }));
+    // Also send as user content so Gemini immediately continues narrating
+    // (without this, Gemini waits for audio input before resuming)
+    ws.send(JSON.stringify({
+      client_content: {
+        turns: [{ role: "user", parts: [{ text: choice }] }],
+        turn_complete: true,
+      },
+    }));
+  }, []);
+
   const disconnect = useCallback(() => {
     stopCapture();
     stopCamera();
@@ -382,7 +452,7 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    connect, disconnect, sessionState, characterState, isCapturing, isPlaying,
+    connect, disconnect, answerChoice, sessionState, characterState, isCapturing, isPlaying,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
     cameraEnabled, toggleCamera, cameraVideoRef,
   };

@@ -1,18 +1,72 @@
-import React, { useRef, useState } from "react";
-import { motion } from "framer-motion";
+import React, { useRef, useState, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Character } from "@/characters";
 import StorybookEmpty from "@/components/StorybookEmpty";
 import { StorySceneGrid } from "@/components/StorySceneGrid";
 import { AudioVisualizer } from "@/components/AudioVisualizer";
-import { useLiveAPI, CharacterState } from "@/hooks/useLiveAPI";
-import { useStoryImages } from "@/hooks/useStoryImages";
+import { useLiveAPI, CharacterState, ChoiceRequest, BadgeAward } from "@/hooks/useLiveAPI";
+import { useStoryImages, StoryScene } from "@/hooks/useStoryImages";
 import FloatingElements from "@/components/FloatingElements";
+import ChoiceOverlay from "@/components/ChoiceOverlay";
+import BadgePopup from "@/components/BadgePopup";
 
 const THEMES_EMOJI: Record<string, string> = {
   Animals: "🦁", Space: "🚀", Kingdoms: "🏰", Ocean: "🌊", Food: "🍕",
   Jungle: "🌳", Magic: "🦄", Robots: "🤖", Spooky: "🎃", Adventure: "🏔️",
   Circus: "🎪", Dinosaurs: "🦕",
+  Sharing: "🤝", Courage: "💪", Gratitude: "🙏", Creativity: "🎨", Kindness: "🌍",
 };
+
+// ── localStorage gallery ──────────────────────────────────────────────────────
+
+export interface StoryGalleryEntry {
+  id: string;
+  characterId: string;
+  characterName: string;
+  characterImage: string;
+  title: string;
+  images: { imageData: string; mimeType: string }[];
+  timestamp: number;
+}
+
+function saveToGallery(
+  sessionId: string,
+  character: Character,
+  scenes: StoryScene[],
+  storyFirstLine: string,
+) {
+  const images = scenes
+    .filter((s) => s.status === "loaded" && s.imageData)
+    .map((s) => ({ imageData: s.imageData!, mimeType: s.mimeType! }));
+
+  if (images.length === 0) return;
+
+  const title = storyFirstLine
+    ? storyFirstLine.split(" ").slice(0, 7).join(" ") + "…"
+    : `A story with ${character.name}`;
+
+  const entry: StoryGalleryEntry = {
+    id: sessionId,
+    characterId: character.id,
+    characterName: character.name,
+    characterImage: character.image,
+    title,
+    images,
+    timestamp: Date.now(),
+  };
+
+  try {
+    const existing: StoryGalleryEntry[] = JSON.parse(
+      localStorage.getItem("taleweaver_gallery") ?? "[]"
+    );
+    const updated = [entry, ...existing.filter((e) => e.id !== entry.id)].slice(0, 20);
+    localStorage.setItem("taleweaver_gallery", JSON.stringify(updated));
+  } catch {
+    // localStorage unavailable — ignore
+  }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
   character: Character;
@@ -65,17 +119,83 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   const [intervalSeconds, setIntervalSeconds] = useState(8);
 
+  // Choice overlay state
+  const [activeChoice, setActiveChoice] = useState<ChoiceRequest | null>(null);
+  // Badge popup state (queue: show one at a time)
+  const [activeBadge, setActiveBadge] = useState<BadgeAward | null>(null);
+  const badgeQueueRef = useRef<BadgeAward[]>([]);
+
+  // Capture first story line for gallery title
+  const storyFirstLineRef = useRef("");
+
   const { scenes, triggerImageGeneration, stop: stopImages } = useStoryImages(
     character.imageStyle,
     sessionIdRef.current,
     intervalSeconds
   );
+  // Keep a stable ref to scenes for saving on end (state snapshot)
+  const scenesRef = useRef<StoryScene[]>(scenes);
+  scenesRef.current = scenes;
+
+  const handleChoiceRequest = useCallback((choice: ChoiceRequest) => {
+    setActiveChoice(choice);
+  }, []);
+
+  const handleChildSpoke = useCallback(() => {
+    setActiveChoice(null);
+  }, []);
+
+  const handleBadgeAwarded = useCallback((badge: BadgeAward) => {
+    badgeQueueRef.current.push(badge);
+    // Only show if nothing is currently displayed
+    setActiveBadge((prev) => prev ?? badgeQueueRef.current.shift() ?? null);
+  }, []);
+
+  const handleBadgeDismiss = useCallback(() => {
+    const next = badgeQueueRef.current.shift() ?? null;
+    setActiveBadge(next);
+  }, []);
 
   const {
-    connect, disconnect, sessionState, characterState, isCapturing,
+    connect, disconnect, answerChoice, sessionState, characterState, isCapturing,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
     cameraEnabled, toggleCamera, cameraVideoRef,
-  } = useLiveAPI({ character, theme, propImage, onImageTrigger: triggerImageGeneration });
+  } = useLiveAPI({
+    character,
+    theme,
+    propImage,
+    onImageTrigger: triggerImageGeneration,
+    onTranscription: (msg) => {
+      if (msg.type === "character" && !storyFirstLineRef.current) {
+        storyFirstLineRef.current = msg.text;
+      }
+    },
+    onChoiceRequest: handleChoiceRequest,
+    onBadgeAwarded: handleBadgeAwarded,
+    onChildSpoke: handleChildSpoke,
+  });
+
+  const handleChoice = useCallback(
+    (option: string) => {
+      if (!activeChoice) return;
+      answerChoice(activeChoice.callId, option);
+      setActiveChoice(null);
+    },
+    [activeChoice, answerChoice]
+  );
+
+  const endAndSave = useCallback(() => {
+    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current);
+    stopImages();
+    disconnect();
+  }, [character, disconnect, stopImages]);
+
+  const handleBack = () => {
+    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current);
+    stopImages();
+    disconnect();
+    onBack();
+  };
 
   const avatarStateClass = AVATAR_STATE_CLASS[characterState];
   const isConnecting = sessionState === "connecting" || sessionState === "ready";
@@ -83,12 +203,16 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
   const statusKey = isActive ? `active_${characterState}` : sessionState;
   const statusText = STATUS_TEXT[statusKey] ?? "";
 
-  const handleBack = () => { disconnect(); stopImages(); onBack(); };
-  const handleEnd = () => { disconnect(); stopImages(); };
-
   return (
     <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
       <FloatingElements />
+
+      {/* Badge popup — rendered at fixed position, above everything */}
+      <AnimatePresence>
+        {activeBadge && (
+          <BadgePopup badge={activeBadge} onDismiss={handleBadgeDismiss} />
+        )}
+      </AnimatePresence>
 
       <div className="relative z-10 h-screen flex flex-col">
         {/* Header */}
@@ -182,7 +306,6 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
             <p className="font-body text-base text-foreground/70 text-center">{statusText}</p>
 
             {/* Speaking indicator bars — always in DOM, opacity only */}
-            {/* scaleY not height — avoids layout reflow that jitters siblings */}
             <div className={`flex gap-1 items-end h-6 transition-opacity duration-300 ${characterState === "speaking" && isActive ? "opacity-100" : "opacity-0"}`}>
               {[0, 1, 2, 3, 4].map((i) => (
                 <motion.div
@@ -215,7 +338,7 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
               </div>
             </div>
 
-            {/* Button area — always reserve space, fade between states */}
+            {/* Button area */}
             <div className="flex flex-col items-center gap-2" style={{ minHeight: "80px" }}>
               {!isActive ? (
                 <motion.button
@@ -248,7 +371,7 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
                   className="flex flex-col items-center gap-2"
                 >
                   <button
-                    onClick={handleEnd}
+                    onClick={endAndSave}
                     className="font-body text-sm px-6 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
                   >
                     End Story
@@ -267,7 +390,7 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
               )}
             </div>
 
-            {/* Camera preview — always in DOM, opacity only */}
+            {/* Camera preview */}
             <div className={`w-full rounded-xl overflow-hidden border border-cyan-400/30 transition-opacity duration-300 ${cameraEnabled && isActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}
               style={{ height: cameraEnabled && isActive ? undefined : 0 }}>
               <video
@@ -288,7 +411,7 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
             transition={{ delay: 0.5 }}
             className="flex-1 md:w-4/5 flex flex-col gap-1.5"
           >
-            {/* Interval control — outside canvas so tooltip isn't clipped */}
+            {/* Interval control */}
             <div className="flex items-center justify-end gap-2">
               <div className="group relative">
                 <span className="text-muted-foreground/50 hover:text-muted-foreground cursor-help text-sm select-none">ℹ</span>
@@ -316,8 +439,8 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
               )}
             </div>
 
-            {/* Canvas */}
-            <div className="flex-1 story-canvas rounded-2xl border-2 border-dashed border-cycle overflow-hidden flex flex-col">
+            {/* Canvas — relative so ChoiceOverlay can be positioned inside */}
+            <div className="flex-1 story-canvas rounded-2xl border-2 border-dashed border-cycle overflow-hidden flex flex-col relative">
               {scenes.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
                   <StorybookEmpty />
@@ -327,6 +450,13 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
                   <StorySceneGrid scenes={scenes} />
                 </div>
               )}
+
+              {/* Choice overlay — inside the canvas so it's contextually placed */}
+              <AnimatePresence>
+                {activeChoice && isActive && (
+                  <ChoiceOverlay options={activeChoice.options} onChoice={handleChoice} />
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
         </div>

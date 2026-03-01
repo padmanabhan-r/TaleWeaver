@@ -27,7 +27,44 @@ const THEMES = [
   { emoji: "🦕", label: "Dinosaurs", gradient: "from-lime-500/30 to-green-600/30" },
 ];
 
+const LIFE_SKILLS_THEMES = [
+  { emoji: "🤝", label: "Sharing",    gradient: "from-rose-400/30 to-pink-500/30" },
+  { emoji: "💪", label: "Courage",    gradient: "from-orange-500/30 to-red-500/30" },
+  { emoji: "🙏", label: "Gratitude",  gradient: "from-amber-400/30 to-yellow-500/30" },
+  { emoji: "🎨", label: "Creativity", gradient: "from-purple-500/30 to-pink-500/30" },
+  { emoji: "🌍", label: "Kindness",   gradient: "from-green-400/30 to-teal-500/30" },
+];
+
 type OptionId = "pick" | "camera" | "sketch";
+
+/* ── Reusable tile ── */
+const ThemeTile = ({
+  emoji, label, gradient, selected, onSelect,
+}: { emoji: string; label: string; gradient: string; selected: boolean; onSelect: (l: string) => void }) => (
+  <motion.button
+    whileHover={{ scale: 1.06 }}
+    whileTap={{ scale: 0.95 }}
+    onClick={() => onSelect(label)}
+    className={`relative flex flex-col items-center justify-center gap-0.5 rounded-xl p-2 border-2 transition-all duration-300 bg-gradient-to-br ${gradient} ${
+      selected
+        ? "border-primary ring-2 ring-primary/40 scale-105 magic-glow"
+        : "border-border/40 hover:border-primary/50"
+    }`}
+  >
+    <span className="text-3xl">{emoji}</span>
+    <span className="font-display text-xs font-bold text-foreground leading-tight">{label}</span>
+    {selected && (
+      <motion.div
+        className="absolute -top-1 -right-1 text-sm"
+        initial={{ scale: 0 }}
+        animate={{ scale: [1, 1.3, 1] }}
+        transition={{ duration: 0.4 }}
+      >
+        ✨
+      </motion.div>
+    )}
+  </motion.button>
+);
 
 /* ── Theme tile grid ── */
 const ThemeTileGrid = ({
@@ -37,36 +74,24 @@ const ThemeTileGrid = ({
   selected: string | null;
   onSelect: (label: string) => void;
 }) => (
-  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-    {THEMES.map((t) => {
-      const active = selected === t.label;
-      return (
-        <motion.button
-          key={t.label}
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onSelect(t.label)}
-          className={`relative flex flex-col items-center justify-center gap-1 rounded-2xl p-4 border-2 transition-all duration-300 bg-gradient-to-br ${t.gradient} ${
-            active
-              ? "border-primary ring-4 ring-primary/40 scale-105 magic-glow"
-              : "border-border/40 hover:border-primary/50"
-          }`}
-        >
-          <span className="text-4xl">{t.emoji}</span>
-          <span className="font-display text-sm font-bold text-foreground">{t.label}</span>
-          {active && (
-            <motion.div
-              className="absolute -top-1 -right-1 text-lg"
-              initial={{ scale: 0 }}
-              animate={{ scale: [1, 1.3, 1] }}
-              transition={{ duration: 0.4 }}
-            >
-              ✨
-            </motion.div>
-          )}
-        </motion.button>
-      );
-    })}
+  <div className="flex flex-col gap-3">
+    <div className="grid grid-cols-6 gap-2">
+      {THEMES.map((t) => (
+        <ThemeTile key={t.label} {...t} selected={selected === t.label} onSelect={onSelect} />
+      ))}
+    </div>
+
+    {/* Life Skills row */}
+    <div>
+      <p className="font-display text-xs font-bold text-muted-foreground mb-1.5 uppercase tracking-wide">
+        🌱 Teach Me Something
+      </p>
+      <div className="grid grid-cols-5 gap-2">
+        {LIFE_SKILLS_THEMES.map((t) => (
+          <ThemeTile key={t.label} {...t} selected={selected === t.label} onSelect={onSelect} />
+        ))}
+      </div>
+    </div>
   </div>
 );
 
@@ -78,14 +103,14 @@ const CustomThemeInput = ({
   value: string;
   onChange: (v: string) => void;
 }) => (
-  <div className="mt-6">
-    <p className="font-display text-lg font-bold text-foreground mb-2">Or dream up your own! 💭</p>
+  <div className="mt-3">
+    <p className="font-display text-sm font-bold text-foreground mb-1.5">Or dream up your own! 💭</p>
     <input
       type="text"
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder="Type anything… a dragon chef? A moon princess?"
-      className="w-full rounded-2xl border-2 border-border/40 bg-card/60 px-5 py-4 font-body text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/30 outline-none transition-all"
+      className="w-full rounded-xl border-2 border-border/40 bg-card/60 px-4 py-2.5 font-body text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/30 outline-none transition-all"
     />
   </div>
 );
@@ -93,14 +118,24 @@ const CustomThemeInput = ({
 /* ── Sketch canvas ── */
 const SKETCH_COLORS = [
   { hex: "#111827", label: "Black" },
+  { hex: "#6b7280", label: "Gray" },
+  { hex: "#ffffff", label: "White", border: true },
+  { hex: "#7c2d12", label: "Brown" },
   { hex: "#ef4444", label: "Red" },
   { hex: "#f97316", label: "Orange" },
+  { hex: "#fb923c", label: "Peach" },
   { hex: "#eab308", label: "Yellow" },
+  { hex: "#facc15", label: "Light Yellow" },
+  { hex: "#84cc16", label: "Lime" },
   { hex: "#22c55e", label: "Green" },
+  { hex: "#10b981", label: "Emerald" },
   { hex: "#06b6d4", label: "Teal" },
+  { hex: "#38bdf8", label: "Sky" },
   { hex: "#3b82f6", label: "Blue" },
+  { hex: "#6366f1", label: "Indigo" },
   { hex: "#a855f7", label: "Purple" },
   { hex: "#ec4899", label: "Pink" },
+  { hex: "#f43f5e", label: "Rose" },
 ];
 
 const SketchCanvas = ({ onSketch }: { onSketch: (base64: string) => void }) => {
@@ -185,8 +220,8 @@ const SketchCanvas = ({ onSketch }: { onSketch: (base64: string) => void }) => {
       <div className="relative rounded-2xl overflow-hidden border-2 border-border/40 bg-white shadow-inner" style={{ touchAction: "none" }}>
         <canvas
           ref={canvasRef}
-          width={800}
-          height={380}
+          width={1200}
+          height={600}
           className="w-full block"
           style={{ cursor: isEraser ? "cell" : "crosshair", touchAction: "none" }}
           onMouseDown={startDraw}
@@ -211,10 +246,10 @@ const SketchCanvas = ({ onSketch }: { onSketch: (base64: string) => void }) => {
             key={c.hex}
             onClick={() => { setColor(c.hex); setIsEraser(false); }}
             title={c.label}
-            className="w-7 h-7 rounded-full border-2 transition-transform hover:scale-110 flex-shrink-0"
+            className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 flex-shrink-0"
             style={{
               backgroundColor: c.hex,
-              borderColor: !isEraser && color === c.hex ? "hsl(42 100% 62%)" : "rgba(0,0,0,0.15)",
+              borderColor: !isEraser && color === c.hex ? "hsl(42 100% 62%)" : c.border ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.15)",
               boxShadow: !isEraser && color === c.hex ? "0 0 0 2px hsl(42 100% 62% / 0.4)" : undefined,
             }}
           />
@@ -296,7 +331,7 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
         <>
           <div className="relative w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden border-2 border-dashed border-primary/50 bg-card/40">
             <div className="absolute inset-0 rounded-2xl overflow-hidden">
-              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
             </div>
             {/* Scan line */}
             <motion.div
@@ -359,18 +394,16 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
   const [customText, setCustomText] = useState("");
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [sketchImage, setSketchImage] = useState<string | null>(null);
-  const [sketchPreview, setSketchPreview] = useState<{
-    loading: boolean;
-    label: string | null;
-    imageData: string | null;
-    mimeType: string;
-  } | null>(null);
+
+  type Preview = { loading: boolean; label: string | null; imageData: string | null; mimeType: string };
+  const [sketchPreview, setSketchPreview] = useState<Preview | null>(null);
+  const [cameraPreview, setCameraPreview] = useState<Preview | null>(null);
 
   const toggleExpand = (id: OptionId) => {
     setExpanded(id);
-    if (id === "pick") { setCapturedImage(null); setSketchImage(null); setSketchPreview(null); }
+    if (id === "pick")   { setCapturedImage(null); setCameraPreview(null); setSketchImage(null); setSketchPreview(null); }
     if (id === "camera") { setSelectedTheme(null); setCustomText(""); setSketchImage(null); setSketchPreview(null); }
-    if (id === "sketch") { setSelectedTheme(null); setCustomText(""); setCapturedImage(null); }
+    if (id === "sketch") { setSelectedTheme(null); setCustomText(""); setCapturedImage(null); setCameraPreview(null); }
   };
 
   const handleBack = () => {
@@ -379,62 +412,73 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
       setSketchPreview(null);
       setSketchImage(null);
       setCapturedImage(null);
+      setCameraPreview(null);
     } else {
       onBack();
     }
   };
 
   const canConfirmPick   = !!(selectedTheme || customText.trim());
-  const canConfirmSketch = !!sketchImage && !sketchPreview;
+  const canConfirmSketch = !!sketchImage && !sketchPreview?.loading;
 
-  const handleSketchPreview = async () => {
-    if (!sketchImage) return;
-    setSketchPreview({ loading: true, label: null, imageData: null, mimeType: "" });
+  async function callPreviewAPI(imageData: string, setter: (p: Preview | null) => void) {
+    setter({ loading: true, label: null, imageData: null, mimeType: "" });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 50_000);
     try {
       const res = await fetch(`${API_BASE}/api/sketch-preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sketch_data: sketchImage, image_style: character.imageStyle }),
+        body: JSON.stringify({ sketch_data: imageData, image_style: character.imageStyle }),
+        signal: controller.signal,
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setSketchPreview({ loading: false, label: data.label, imageData: data.image_data, mimeType: data.mime_type });
+      setter({ loading: false, label: data.label, imageData: data.image_data, mimeType: data.mime_type });
     } catch (err) {
-      console.error("[sketch-preview] failed:", err);
-      setSketchPreview(null);
+      console.error("[preview] failed:", err);
+      // On any failure show a recoverable error state rather than leaving the user stuck
+      setter({ loading: false, label: null, imageData: null, mimeType: "" });
+    } finally {
+      clearTimeout(timeout);
     }
-  };
+  }
+
+  const handleSketchPreview = () => sketchImage && callPreviewAPI(sketchImage, setSketchPreview);
+  const handleCameraCapture = (base64: string) => { setCapturedImage(base64); callPreviewAPI(base64, setCameraPreview); };
 
   const handleGo = () => {
     if (expanded === "pick") {
       onConfirm(customText.trim() || selectedTheme || "");
-    } else if (expanded === "camera") {
-      onConfirm("camera_prop", capturedImage ?? undefined);
+    } else if (expanded === "camera" && cameraPreview?.imageData) {
+      onConfirm("camera_prop", cameraPreview.imageData);
     } else if (expanded === "sketch" && sketchPreview?.imageData) {
       onConfirm("sketch", sketchPreview.imageData);
     }
   };
 
   return (
-    <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
+    <div className="relative h-screen bg-sky-gradient overflow-hidden">
       <FloatingElements />
 
-      <div className="relative z-10 container mx-auto px-4 py-6 sm:py-10">
+      <div className="relative z-10 h-full flex flex-col container mx-auto px-4 py-4 sm:py-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-6"
+          className="flex items-center justify-between mb-4"
         >
-          <button
-            onClick={handleBack}
-            className="text-muted-foreground hover:text-foreground font-body transition-colors"
-          >
-            ← Back
-          </button>
+          <div className="flex-1">
+            <button
+              onClick={handleBack}
+              className="text-muted-foreground hover:text-foreground font-body transition-colors"
+            >
+              ← Back
+            </button>
+          </div>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
           {/* Character chip */}
-          <div className="flex items-center gap-2">
+          <div className="flex-1 flex items-center justify-end gap-2">
             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/50 flex-shrink-0">
               <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
             </div>
@@ -447,18 +491,20 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
           initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-center mb-8"
+          className="text-center mb-4"
         >
-          <h2 className="font-display text-3xl sm:text-5xl font-extrabold text-primary mb-2">
+          <h2 className="font-display text-2xl sm:text-4xl font-extrabold text-primary mb-1">
             {expanded ? OPTION_CARDS.find(c => c.id === expanded)?.title : "What's Your Story About?"}
           </h2>
-          <p className="text-foreground/70 font-body text-base sm:text-lg">
-            {expanded ? "← Back to change your choice" : "Choose how you want to spark your adventure ✨"}
-          </p>
+          {!expanded && (
+            <p className="text-foreground/70 font-body text-base sm:text-lg">
+              Choose how you want to spark your adventure ✨
+            </p>
+          )}
         </motion.div>
 
         {/* Option cards */}
-        <div className="max-w-3xl mx-auto flex flex-col gap-5">
+        <div className={`max-w-2xl w-full mx-auto flex flex-col flex-1 gap-4 overflow-y-auto min-h-0 pb-2 ${expanded ? "justify-start pt-2" : "justify-center"}`}>
           {(expanded ? OPTION_CARDS.filter(c => c.id === expanded) : OPTION_CARDS).map((card, i) => {
             const isExpanded = expanded === card.id;
             const isLocked = !!card.locked;
@@ -496,16 +542,18 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                   <button
                     onClick={() => toggleExpand(card.id)}
                     disabled={isLocked}
-                    className="w-full flex items-center gap-5 p-6 sm:p-8 text-left bg-card/70 backdrop-blur-sm"
+                    className={`w-full flex items-center text-left bg-card/70 backdrop-blur-sm transition-all ${isExpanded ? "gap-3 p-3" : "gap-5 p-6"}`}
                   >
-                    <span className="text-5xl sm:text-6xl">{card.emoji}</span>
+                    <span className={isExpanded ? "text-3xl" : "text-5xl"}>{card.emoji}</span>
                     <div>
-                      <h3 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
+                      <h3 className={`font-display font-bold text-foreground ${isExpanded ? "text-lg" : "text-2xl"}`}>
                         {card.title}
                       </h3>
-                      <p className="font-body text-sm sm:text-base text-muted-foreground mt-1">
-                        {card.description}
-                      </p>
+                      {!isExpanded && (
+                        <p className="font-body text-sm text-muted-foreground mt-1">
+                          {card.description}
+                        </p>
+                      )}
                     </div>
                     {!isLocked && (
                       <motion.span
@@ -528,10 +576,10 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                         transition={{ duration: 0.4, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="px-6 sm:px-8 pb-6 sm:pb-8 bg-card/50 border-t border-border/30">
+                        <div className="px-5 sm:px-6 pb-4 sm:pb-5 bg-card/50 border-t border-border/30">
 
                           {card.id === "pick" && (
-                            <div className="pt-5">
+                            <div className="pt-4">
                               <ThemeTileGrid
                                 selected={selectedTheme}
                                 onSelect={(label) => {
@@ -546,13 +594,13 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                                   if (v.trim()) setSelectedTheme(null);
                                 }}
                               />
-                              <div className="mt-5 flex justify-center">
+                              <div className="mt-3 flex justify-center">
                                 <motion.button
                                   whileHover={canConfirmPick ? { scale: 1.05 } : {}}
                                   whileTap={canConfirmPick ? { scale: 0.95 } : {}}
                                   onClick={handleGo}
                                   disabled={!canConfirmPick}
-                                  className={`px-10 py-4 rounded-full font-display text-xl font-bold transition-all ${
+                                  className={`px-8 py-3 rounded-full font-display text-lg font-bold transition-all ${
                                     canConfirmPick
                                       ? "bg-primary text-primary-foreground magic-glow animate-glow-pulse hover:brightness-110"
                                       : "bg-muted text-muted-foreground cursor-not-allowed"
@@ -565,19 +613,81 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                           )}
 
                           {card.id === "camera" && (
-                            <div className="pt-5">
-                              <CameraViewfinder onCapture={setCapturedImage} />
-                              {capturedImage && (
-                                <div className="mt-5 flex justify-center">
-                                  <motion.button
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    onClick={handleGo}
-                                    className="px-10 py-4 rounded-full bg-primary text-primary-foreground font-display text-xl font-bold magic-glow animate-glow-pulse hover:brightness-110"
+                            <div className="pt-4">
+                              {/* Phase 1 — viewfinder */}
+                              {!capturedImage && (
+                                <CameraViewfinder onCapture={handleCameraCapture} />
+                              )}
+
+                              {/* Phase 2 — loading */}
+                              {capturedImage && cameraPreview?.loading && (
+                                <div className="flex flex-col items-center gap-4 py-10">
+                                  <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                                    className="text-5xl"
                                   >
-                                    🪄 Start the Story!
-                                  </motion.button>
+                                    📷
+                                  </motion.div>
+                                  <p className="font-display text-xl font-bold text-foreground">Looking at your prop...</p>
                                 </div>
+                              )}
+
+                              {/* Error state */}
+                              {cameraPreview && !cameraPreview.loading && !cameraPreview.label && (
+                                <div className="flex flex-col items-center gap-4 py-6 text-center">
+                                  <span className="text-4xl">😕</span>
+                                  <p className="font-display text-lg font-bold text-foreground">Hmm, something went wrong!</p>
+                                  <button
+                                    onClick={() => { setCapturedImage(null); setCameraPreview(null); }}
+                                    className="px-6 py-2 rounded-full font-body text-sm border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                                  >
+                                    📷 Try again
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Phase 3 — generated illustration + label */}
+                              {cameraPreview && !cameraPreview.loading && cameraPreview.label && (
+                                <motion.div
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  className="flex flex-col items-center gap-3 py-2"
+                                >
+                                  {cameraPreview.imageData && (
+                                    <div className="w-full rounded-2xl overflow-hidden border-2 border-primary/50 shadow-xl">
+                                      <img
+                                        src={`data:${cameraPreview.mimeType};base64,${cameraPreview.imageData}`}
+                                        alt={cameraPreview.label}
+                                        className="w-full object-contain max-h-72"
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="text-center">
+                                    <p className="font-display text-xl font-bold text-foreground">
+                                      I see {cameraPreview.label}! 🌟
+                                    </p>
+                                    <p className="font-body text-sm text-muted-foreground mt-0.5">
+                                      Your story will be all about this!
+                                    </p>
+                                  </div>
+                                  <div className="flex gap-3">
+                                    <button
+                                      onClick={() => { setCapturedImage(null); setCameraPreview(null); }}
+                                      className="px-5 py-2 rounded-full font-body text-sm border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                                    >
+                                      📷 Retake
+                                    </button>
+                                    <motion.button
+                                      whileHover={{ scale: 1.05 }}
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={handleGo}
+                                      className="px-10 py-3 rounded-full bg-primary text-primary-foreground font-display text-lg font-bold magic-glow animate-glow-pulse hover:brightness-110"
+                                    >
+                                      🪄 Start the Story!
+                                    </motion.button>
+                                  </div>
+                                </motion.div>
                               )}
                             </div>
                           )}
@@ -618,29 +728,44 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                                     🎨
                                   </motion.div>
                                   <p className="font-display text-xl font-bold text-foreground">Looking at your drawing...</p>
-                                  <p className="font-body text-sm text-muted-foreground">Bringing it to life ✨</p>
                                 </div>
                               )}
 
-                              {/* Phase 3 — preview */}
-                              {sketchPreview && !sketchPreview.loading && sketchPreview.imageData && (
+                              {/* Error state */}
+                              {sketchPreview && !sketchPreview.loading && !sketchPreview.label && (
+                                <div className="flex flex-col items-center gap-4 py-6 text-center">
+                                  <span className="text-4xl">😕</span>
+                                  <p className="font-display text-lg font-bold text-foreground">Hmm, something went wrong!</p>
+                                  <button
+                                    onClick={() => { setSketchPreview(null); setSketchImage(null); }}
+                                    className="px-6 py-2 rounded-full font-body text-sm border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                                  >
+                                    ✏️ Try again
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Phase 3 — generated illustration of the sketch */}
+                              {sketchPreview && !sketchPreview.loading && sketchPreview.label && (
                                 <motion.div
                                   initial={{ opacity: 0, scale: 0.95 }}
                                   animate={{ opacity: 1, scale: 1 }}
-                                  className="flex flex-col items-center gap-5"
+                                  className="flex flex-col items-center gap-3 py-2"
                                 >
-                                  <div className="w-full max-w-sm rounded-2xl overflow-hidden border-2 border-primary/50 shadow-xl">
-                                    <img
-                                      src={`data:${sketchPreview.mimeType};base64,${sketchPreview.imageData}`}
-                                      alt={sketchPreview.label ?? "Your drawing"}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
+                                  {sketchPreview.imageData && (
+                                    <div className="w-full rounded-2xl overflow-hidden border-2 border-primary/50 shadow-xl">
+                                      <img
+                                        src={`data:${sketchPreview.mimeType};base64,${sketchPreview.imageData}`}
+                                        alt={sketchPreview.label}
+                                        className="w-full object-contain max-h-72"
+                                      />
+                                    </div>
+                                  )}
                                   <div className="text-center">
-                                    <p className="font-display text-2xl font-bold text-foreground">
+                                    <p className="font-display text-xl font-bold text-foreground">
                                       I see {sketchPreview.label}! 🌟
                                     </p>
-                                    <p className="font-body text-sm text-muted-foreground mt-1">
+                                    <p className="font-body text-sm text-muted-foreground mt-0.5">
                                       Your story will be all about this!
                                     </p>
                                   </div>
