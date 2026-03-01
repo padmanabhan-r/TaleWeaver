@@ -434,9 +434,9 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
                   className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors text-sm leading-none"
                 >+</button>
               </div>
-              {intervalSeconds <= 7 && (
-                <span className="font-body text-xs text-magic-orange">⚠ too fast</span>
-              )}
+              <span className="font-body text-xs text-magic-orange w-16 text-right">
+                {intervalSeconds <= 7 ? "⚠ too fast" : ""}
+              </span>
             </div>
 
             {/* Canvas — relative so ChoiceOverlay can be positioned inside */}
