@@ -1,4 +1,5 @@
 # TaleWeaver — Stretch Goals
+### Updated 1 Mar 2026
 
 ---
 
@@ -15,7 +16,7 @@ Scene Detector Agent  (gemini-2.0-flash-lite)
   → extracts painter-specific English scene from narration
   → saves to session.state["current_scene"]
   ▼
-Illustrator Agent  (gemini-3.1-flash-image-preview)
+Illustrator Agent  (gemini-2.0-flash-preview-image-generation)
   → reads session.state["current_scene"] + previous image for continuity
   → generates image
   → saves base64 to session.state["latest_image"]
@@ -30,81 +31,47 @@ Illustrator Agent  (gemini-3.1-flash-image-preview)
 
 ---
 
-## Stretch Goal 2 — Tool Calling During Live Story
+## Stretch Goal 2 — Tool Calling During Live Story (Server-side Image Trigger)
 
 **Current:** Image generation is triggered client-side after `turnComplete` via `useStoryImages`.
 
-**Target:** Gemini Live calls tools mid-story to trigger images, badges, and choices — all server-side.
+**Target:** Gemini Live calls `generate_illustration` tool mid-story — backend handles it, more story-aware timing.
 
 ```python
-# Character system prompt includes tool definitions:
 tools = [
     {
         "name": "generate_illustration",
         "description": "Generate a story scene image at a key visual moment",
         "parameters": { "scene_description": "string", "mood": "string" }
-    },
-    {
-        "name": "award_badge",
-        "description": "Award the child a badge for engagement",
-        "parameters": { "badge_type": "string", "reason": "string" }
-    },
-    {
-        "name": "show_choice",
-        "description": "Present the child with a story branch choice",
-        "parameters": { "option_a": "string", "option_b": "string" }
     }
 ]
 ```
 
 Frontend listens for `toolCall` events from the WebSocket and renders accordingly.
 
-**Why:** Character decides *when* an image is needed — more story-aware timing than client-side triggering.
+---
+
+## Stretch Goal 3 — Interactive Story Choices ✅ DONE
+
+~~At key moments the character offers two branching choices rendered as tappable buttons.~~
+
+**Implemented:** `showChoice` tool call from Gemini → `pendingChoiceRef` queued until `turnComplete` + 700ms → `ChoiceOverlay` renders over scene canvas → child taps OR speaks → dismissed. AT MOST ONCE per session.
 
 ---
 
-## Stretch Goal 3 — Interactive Story Choices (Phase 7.3)
+## Stretch Goal 4 — Badge & Achievement System ✅ DONE
 
-**Current:** Story is fully linear — Gemini narrates, child can only interrupt with voice.
+~~Character awards virtual badges during the session for engagement behaviours.~~
 
-**Target:** At key moments the character offers two branching choices rendered as tappable buttons.
-
-```
-Grandma Rose: "Now little one — should the dragon fly into the dark cave,
-               or swim across the silver lake?"
-
-UI renders:
-  [ 🐉 Fly into the cave ]    [ 🌊 Swim the silver lake ]
-
-Child taps → useLiveAPI sends text back → story continues that branch
-```
-
-**Implementation:** `show_choice` tool call from Gemini → frontend renders choice overlay → child taps → `client_content` message sent back.
-
----
-
-## Stretch Goal 4 — Badge & Achievement System (Phase 7.4)
-
-**Current:** No engagement mechanics beyond the story itself.
-
-**Target:** Character awards virtual badges during the session for engagement behaviours.
-
-| Badge | Trigger |
-|---|---|
-| 🎤 Great Storyteller | Child suggests 3+ story ideas |
-| 🐉 Dragon Friend | Child picks a dragon-themed option |
-| ⭐ Story Finisher | Session reaches a natural ending |
-| 🌙 Bedtime Hero | Session runs past 8pm local time |
-
-Badges rendered as a pop-up animation, persisted to localStorage.
+**Implemented:** `awardBadge` tool call from Gemini → `BadgePopup` appears centred on screen → auto-dismisses after 3 seconds. Criteria: genuine creative contributions (story ideas, brave choices, movement challenges, ending the story). Prohibited: camera toggle, random movement, just being present.
 
 ---
 
 ## Stretch Goal 5 — Google Cloud Storage for Images
 
-**Current:** Images returned as base64 in HTTP response body — fine for 8 images, but bloats memory.
+**Current:** Images returned as base64 in HTTP response body — fine for typical session lengths.
 
-**Target:** Backend saves generated images to GCS, returns a signed URL. Frontend loads from URL.
+**Target:** Backend saves generated images to GCS, returns a signed URL.
 
 ```
 Image generated
@@ -114,18 +81,15 @@ Image generated
   → frontend renders <img src={signedUrl} />
 ```
 
-**Benefits:**
-- Images persist across page refreshes
-- Can build a "Story Gallery" showing past sessions
-- Reduces HTTP payload size dramatically
+**Benefits:** Images persist across page refreshes; enables story gallery; reduces HTTP payload.
 
 ---
 
-## Stretch Goal 6 — Story Gallery (Past Sessions)
+## Stretch Goal 6 — Story Gallery (Past Sessions) ⏸ DEFERRED
 
-**Current:** Each session is ephemeral — images disappear on refresh.
+**Current:** Each session is ephemeral — images disappear on refresh. "Your Stories" section removed from landing page.
 
-**Target:** After a session ends, save the story (transcript + images) to a named gallery entry.
+**Target (future):** After a session ends, save the story to a named gallery entry.
 
 ```
 Session ends
@@ -134,7 +98,7 @@ Session ends
   → LandingPage shows "Your Stories" section with story cards
 ```
 
-No backend changes needed for v1 — localStorage only. GCS + user accounts for v2.
+Prerequisite: Cloud Storage (Stretch Goal 5) for persistent images.
 
 ---
 
@@ -146,31 +110,22 @@ No backend changes needed for v1 — localStorage only. GCS + user accounts for 
 
 ```python
 from opentelemetry import trace
-from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
-
 tracer = trace.get_tracer("taleweaver")
 
 with tracer.start_as_current_span("image_generation") as span:
     span.set_attribute("character_id", character_id)
-    span.set_attribute("image_model", IMAGE_MODEL)
     span.set_attribute("session_id", session_id)
-    image = await _generate_gemini_api_key(prompt)
+    image = await _generate(prompt)
     span.set_attribute("success", True)
 ```
-
-**What to trace:**
-- WebSocket session lifetime (connect → disconnect)
-- Image generation latency per model
-- Gemini Live API setup time
-- Per-session image count
 
 ---
 
 ## Stretch Goal 8 — uv Package Manager
 
-**Current:** `pip install -r requirements.txt` in Dockerfile — slow, no lock file.
+**Current:** `pip install -r requirements.txt` in Dockerfile.
 
-**Target:** Switch to `uv` (Astral) — 10–100x faster installs, `uv.lock` for reproducible builds.
+**Target:** Switch to `uv` — 10–100x faster installs, `uv.lock` for reproducible builds.
 
 ```dockerfile
 FROM python:3.13-slim
@@ -182,37 +137,23 @@ COPY backend/ .
 CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
 ```
 
-Already have `pyproject.toml` and `uv.lock` at repo root. Just need to wire the Dockerfile.
+`pyproject.toml` and `uv.lock` already exist at repo root — just wire the Dockerfile.
 
 ---
 
-## Stretch Goal 9 — Life Skills Story Themes
+## Stretch Goal 9 — Life Skills Story Themes ✅ DONE
 
-**Current:** Child can ask for any story — no structured educational thread.
+~~Child can pick an educational theme alongside adventure themes.~~
 
-**Target:** Character selection screen includes an optional "What shall we learn today?" picker.
-
-| Theme | Prompt seed |
-|---|---|
-| 🤝 Sharing | "Tell a story where sharing makes everything better" |
-| 💪 Courage | "Tell a story about being brave when you're scared" |
-| 🙏 Gratitude | "Tell a story about saying thank you" |
-| 🎨 Creativity | "Tell a story where imagination saves the day" |
-| 🌍 Kindness | "Tell a story about being kind to someone different" |
-
-Theme is injected as an additional `client_content` message after setup, before "Begin!".
+**Implemented:** ThemeSelect includes 5 life-skill tiles: Sharing 🤝, Courage 💪, Gratitude 🙏, Creativity 🎨, Kindness 🌍. Theme injected into `Begin!` message via existing pipeline.
 
 ---
 
 ## Stretch Goal 10 — Rive Animated Avatars (Lip-sync)
 
-**Current:** PNG portraits with Framer Motion per-state animations (idle breathing, thinking sway,
-speaking scale pulse + sound waves, listening bob). `characterState` drives all visual states.
+**Current:** PNG portraits with Framer Motion per-state animations — idle breathing, thinking sway, speaking scale pulse + sound waves, listening bob. Covers all 4 states well.
 
-**What's done:** Framer Motion approach fully implemented — characters visually react to all 4 states
-with smooth Framer Motion transitions. This covers the core use case without Rive.
-
-**Target (remaining):** Replace PNGs with Rive state machine animations for true lip-sync.
+**Target:** Replace PNGs with Rive state machine animations for true lip-sync tied to audio amplitude.
 
 ```
 characterState = "speaking"
@@ -225,25 +166,23 @@ characterState = "idle"
   → Rive: activate "idle" state → breathing, subtle blink
 ```
 
-Audio amplitude from `AudioVisualizer` drives mouth animation intensity in real time.
-
-**Effort:** Very High — requires creating Rive assets for all 10 characters.
+**Effort:** Very High — requires Rive asset creation for all 10 characters.
 **Impact:** Very High — transforms from "nice animations" to "living character".
 
 ---
 
-## Priority Order (Updated)
+## Priority Order (Current)
 
 | # | Goal | Effort | Impact | Status |
 |---|---|---|---|---|
-| 1 | Interactive story choices (7.3) | Medium | High | ⬜ Planned |
-| 2 | Life skills themes | Low | High | ⬜ Not started |
-| 3 | Movement challenges (7.2) | Low–Medium | High | ⬜ Camera ready (7.1 ✅) |
-| 4 | Badge system (7.4) | Medium | Medium | ⬜ Planned |
-| 5 | Story gallery (localStorage) | Low | Medium | ⬜ Not started |
-| 6 | Rive lip-sync avatars | Very High | Very High | ⬜ Framer Motion covers it for now |
-| 7 | Tool calling during live story | High | High | ⬜ Not started |
-| 8 | Cloud Storage for images | Medium | Medium | ⬜ Not started |
-| 9 | uv package manager | Low | Low | ⬜ Files exist, just wire Dockerfile |
-| 10 | Multi-agent ADK pipeline | Very High | Medium | ⬜ Not started |
-| 11 | OpenTelemetry observability | Medium | Low | ⬜ Not started |
+| 1 | Movement challenges (7.2) | Low | High | ⬜ System prompt only, camera ready |
+| 2 | Rive lip-sync avatars | Very High | Very High | ⬜ Framer Motion covers it for now |
+| 3 | Tool calling pipeline (server-side) | High | High | ⬜ Not started |
+| 4 | Story Gallery | Low–Medium | Medium | ⏸ Deferred (needs GCS) |
+| 5 | Cloud Storage for images | Medium | Medium | ⬜ Not started |
+| 6 | Multi-agent ADK pipeline | Very High | Medium | ⬜ Not started |
+| 7 | uv package manager | Low | Low | ⬜ Files exist, just wire Dockerfile |
+| 8 | OpenTelemetry observability | Medium | Low | ⬜ Not started |
+| — | Interactive story choices | — | — | ✅ Done |
+| — | Badge & achievement system | — | — | ✅ Done |
+| — | Life skills themes | — | — | ✅ Done |
