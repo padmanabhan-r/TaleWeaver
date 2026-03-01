@@ -1,5 +1,5 @@
 # TaleWeaver — Interactive Storytelling for Kids
-### Build Plan (updated 28 Feb 2026)
+### Build Plan (updated 1 Mar 2026)
 
 ---
 
@@ -9,7 +9,8 @@ A voice-driven, kid-friendly web app where a child talks with a beloved storytel
 and listens to a live, improvised story — with AI-generated illustrations appearing as the
 tale unfolds.
 
-**Challenge category:** Creative Storyteller
+**Live:** https://taleweaver.online
+
 **Key differentiator:** Gemini Live native audio API — true bidirectional conversation,
 the child can interrupt, redirect, or react at any moment. Illustrations are generated
 asynchronously against the live story context so images actually match what's being told.
@@ -21,8 +22,8 @@ asynchronously against the live story context so images actually match what's be
 | Layer | Technology |
 |---|---|
 | Conversation | `gemini-live-2.5-flash-native-audio` via Vertex AI |
-| Scene extraction | `gemini-2.0-flash-lite` (narration → English visual scene) |
-| Image generation | `gemini-3.1-flash-image-preview` via Gemini API key (AI Studio) |
+| Scene extraction / safety | `gemini-2.0-flash-lite` |
+| Image generation | `gemini-2.0-flash-preview-image-generation` via Gemini API key |
 | Backend | Python 3.13 + FastAPI + google-genai SDK |
 | Transport | WebSocket (bidirectional proxy: browser ↔ backend ↔ Gemini Live) |
 | Frontend | React 19 + Vite + TailwindCSS v4 + TypeScript + Framer Motion |
@@ -30,6 +31,7 @@ asynchronously against the live story context so images actually match what's be
 | Auth | GCP Application Default Credentials (Vertex AI) + Gemini API key (image gen) |
 | Hosting | Cloud Run — single service, frontend embedded in Python container |
 | CI/CD | Google Cloud Build — `cloudbuild.yaml`, triggers on push to `main` |
+| Domain | taleweaver.online (custom domain mapped to Cloud Run) |
 
 ---
 
@@ -38,34 +40,35 @@ asynchronously against the live story context so images actually match what's be
 ```
 /
 ├── backend/
-│   ├── main.py            # FastAPI: /ws/story, /api/image, /api/health, SPA catch-all
+│   ├── main.py            # FastAPI: /ws/story, /api/image, /api/check-theme, /api/sketch-preview, SPA catch-all
 │   ├── proxy.py           # Bidirectional WS proxy: browser ↔ Gemini Live (15min timeout)
-│   ├── characters.py      # 10 character configs: system prompts, voices, image styles
-│   ├── image_gen.py       # POST /api/image — scene extraction + image generation
+│   ├── characters.py      # 10 character configs: system prompts, voices, image styles, tool declarations
+│   ├── image_gen.py       # /api/image, /api/sketch-preview, /api/check-theme — scene extraction + safety + image gen
 │   └── requirements.txt
 ├── frontend/
 │   ├── public/audio-processors/
 │   │   ├── capture.worklet.js   # 16kHz PCM mic capture
 │   │   └── playback.worklet.js  # 24kHz PCM speaker playback
 │   └── src/
-│       ├── App.tsx                   # Router: landing | story-select | theme-select | story
+│       ├── App.tsx                   # Router: landing | character-select | theme-select | story
 │       ├── characters/index.ts       # 10 character definitions (PNG portraits)
 │       ├── assets/characters/        # 10 PNG character portraits
 │       ├── screens/
 │       │   ├── LandingPage.tsx       # Ambient landing: CTA, Gemini branding, music
 │       │   ├── CharacterSelect.tsx   # 5 English + 5 Indian rows with divider
-│       │   ├── ThemeSelect.tsx       # Theme/camera/sketch picker (between char select + story)
-│       │   └── StoryScreen.tsx       # Live session: animated portrait + scene canvas
+│       │   ├── ThemeSelect.tsx       # Pick/Camera/Sketch accordion; safety moderation
+│       │   └── StoryScreen.tsx       # Live session: animated portrait + scene canvas + overlays
 │       ├── components/
+│       │   ├── ChoiceOverlay.tsx     # Story branching buttons (top of canvas)
+│       │   ├── BadgePopup.tsx        # Centred achievement badge pop-up (3s auto-dismiss)
 │       │   ├── FloatingElements.tsx  # Framer Motion stars/sparkles/clouds
-│       │   ├── MuteButton.tsx        # Ambient sound toggle
 │       │   ├── StorySceneGrid.tsx    # Scrollable image grid
 │       │   ├── StorySceneCard.tsx    # Shimmer → loaded image card
 │       │   ├── AudioVisualizer.tsx   # Real-time waveform
 │       │   └── StorybookEmpty.tsx    # Empty state illustration
 │       └── hooks/
-│           ├── useLiveAPI.ts         # WebSocket + AudioWorklet + camera stream state machine
-│           └── useStoryImages.ts     # Image trigger, rate limiting (8s), story context
+│           ├── useLiveAPI.ts         # WebSocket + AudioWorklet + camera stream + tool call handling
+│           └── useStoryImages.ts     # Image trigger, rate limiting, story context, unlimited scenes
 ├── cloudbuild.yaml        # Cloud Build CI/CD pipeline
 ├── Dockerfile             # Multi-stage: node:22-slim builds frontend, python:3.13-slim serves both
 └── implementation/        # Phase plans and architecture docs
@@ -75,20 +78,18 @@ asynchronously against the live story context so images actually match what's be
 
 ## Characters
 
-### Story Mode (10)
-
 | ID | Name | Language | Voice |
 |---|---|---|---|
-| grandma-rose | Grandma Rose | English | Aoede |
-| captain-leo | Captain Leo | English | Charon |
-| fairy-sparkle | Fairy Sparkle | English | Kore |
-| professor-whiz | Professor Whiz | English | Puck |
-| dragon-blaze | Dragon Blaze | English | Fenrir |
-| paati | Paati | Tamil தமிழ் | Leda |
-| dadi | Dadi | Hindi हिंदी | Orus |
-| ammamma | Ammamma | Telugu తెలుగు | Zephyr |
-| aaji | Aaji | Marathi मराठी | Autonoe |
-| dida | Dida | Bengali বাংলা | Umbriel |
+| wizard | Wizard Wally | English | Puck |
+| fairy | Fairy Flora | English | Aoede |
+| pirate | Captain Coco | English | Charon |
+| robot | Robo Ricky | English | Laomedeia |
+| dragon | Draco the Dragon | English | Fenrir |
+| dadi | Dadi Maa | Hindi हिंदी | Autonoe |
+| maharaja | Raja Vikram | Marathi मराठी | Umbriel |
+| hanuman | Little Hanuman | Tamil தமிழ் | Alnilam |
+| rajkumari | Rajkumari Meera | Telugu తెలుగు | Kore |
+| rishi | Rishi Bodhi | Bengali বাংলা | Puck |
 
 ---
 
@@ -111,7 +112,7 @@ See `PHASE_0_CHARACTER_SELECTION.md` for details.
 - GCP OAuth2 auth server-side (credentials never leave backend)
 - Character config loaded from `characters.py` by `character_id`
 - Full Gemini Live setup: system prompt, voice, affective dialog, VAD, proactive audio
-- VAD tuned to LOW sensitivity (both start and end) with 2000ms silence window — avoids false triggers in children's home environments
+- VAD tuned to LOW sensitivity (both start and end) with 2000ms silence window
 - "Begin!" trigger sent after setup with explicit theme instruction to start proactive character speech
 - Graceful teardown on disconnect from either side
 - `POST /api/image`: two-stage pipeline (Flash Lite scene extraction → Gemini image gen)
@@ -135,12 +136,13 @@ See `PHASE_2_AUDIO_STREAMING.md` for details.
 
 ## Phase 3 — Story Scene Images ✅ DONE
 
-- Image trigger fires at `turnComplete` with full accumulated turn text (100–300 words)
-- Client-side visual keyword pre-filter (EN / Tamil / Hindi / Telugu / Marathi / Bengali)
-- Rate limit: 1 image per 8 seconds, 8 images max per session, 20s startup delay
-- `POST /api/image` → Flash Lite extracts specific English visual scene → Gemini 3.1 generates image
-- Character continuity: negative prompts + reference image passed for scene-to-scene consistency
+- Image trigger fires at `turnComplete` with full accumulated turn text
+- Rate limit: configurable (default 10s), **no scene cap** — images generated for entire session
+- `POST /api/image` → Flash Lite extracts specific English visual scene → Gemini generates image
+- Visual continuity: reference image + continuity instructions keep characters consistent across scenes
+- 8-second session startup delay before first image
 - `StorySceneGrid`: horizontally scrollable, shimmer skeleton → fade-in
+- 429 rate-limit handling: silently discard, reset timer so next turn can retry
 
 See `PHASE_3_STORY_VISUALIZATION.md` for details.
 
@@ -152,14 +154,13 @@ See `PHASE_3_STORY_VISUALIZATION.md` for details.
 - PNG portraits for all 10 story characters
 - **Per-state Framer Motion animations** on portrait:
   - `idle`: slow breathing scale (4s, easeInOut)
-  - `thinking`: side-to-side sway starting at 0° + floating 💭 bubble
+  - `thinking`: side-to-side sway + floating 💭 bubble
   - `speaking`: fast scale pulse (0.45s) + 3 expanding sound-wave rings
   - `listening`: gentle vertical bob (2.5s, cyan border)
 - Border colour cycles per state: gold/40 → violet/60 → gold → cyan/70
-- `key={characterState}` on portrait ensures clean Framer Motion remount on state change (no jerk)
+- `key={characterState}` on portrait ensures clean Framer Motion remount on state change
 - `AudioVisualizer`: real-time waveform
-- Ambient landing page with `FloatingElements` and `MuteButton`
-- Speaking indicator bars below portrait when speaking
+- Ambient landing page with `FloatingElements`
 
 **Still deferred:**
 - Rive/Lottie animated avatars with lip-sync tied to audio amplitude (see Stretch Goal 10)
@@ -170,37 +171,42 @@ See `PHASE_4_CHARACTER_ANIMATION.md` for details.
 
 ## Phase 4.5 — Theme Selection ✅ DONE
 
-A new screen inserted between `CharacterSelect` and `StoryScreen`.
+A screen inserted between `CharacterSelect` and `StoryScreen`.
 
 **Three options:**
 
 | Option | Status | Behaviour |
 |---|---|---|
-| Pick a Theme | ✅ Done | Grid of 12 themed tiles (Animals, Space, Kingdoms, Ocean…) + free-text custom input |
-| Magic Camera | ✅ Done | Live camera viewfinder with scan-line + corner reticles; captures a still, sends as `inline_data` to Gemini to inspire story |
-| Sketch a Theme | 🔒 Coming soon | Locked placeholder |
+| Pick a Theme | ✅ Done | Grid of 12 adventure tiles + 5 life skills tiles + free-text custom input |
+| Magic Camera | ✅ Done | Live camera viewfinder; captures prop photo → safety check → AI recreates as storybook illustration → confirm & start |
+| Sketch a Theme | ✅ Done | Drawing canvas with 19 colours → AI recreates as storybook illustration → confirm & start |
 
 **Implementation details:**
-- `ThemeSelect.tsx`: prop-based navigation (no React Router), AnimatePresence accordion expand/collapse
-- Camera capture: resized to max 512px JPEG @ 0.75 quality, raw base64 (no `data:` prefix) stored in state
+- `ThemeSelect.tsx`: AnimatePresence accordion expand/collapse; `overflow-y-auto` cards container
+- Camera capture: resized to max 512px JPEG, base64 stored in state
+- Sketch canvas: 19-colour palette, submit sends drawing to `/api/sketch-preview` for AI recreation
+- Sequential backend processing for sketch: label extracted first (Flash Lite, 15s timeout), then passed as `subject_hint` to image gen — ensures label matches image
 - Theme + prop_image wired through full stack: `App.tsx` → `StoryScreen` → `useLiveAPI` → WebSocket → `proxy.py`
-- `proxy.py` sends three-branch `Begin!` turn:
-  - `camera_prop` + image → multimodal `inline_data` + strong instruction to centre the object
-  - theme set → directive with theme name injected into first sentence instruction
-  - no theme → plain `"Begin!"`
+- `proxy.py` sends three-branch `Begin!` turn: camera_prop (multimodal inline_data) / theme name / plain
+
+---
+
+## Phase 4.6 — Content Moderation ✅ DONE
+
+All content entry points (typed theme, camera prop, sketch) safety-checked before story starts.
+
+- `_is_safe_for_children(content: str) -> bool` — Flash Lite classifier, 6s timeout, fails open
+- Blocks: violence, weapons, blood, death, horror, adult/sexual, drugs, hate speech, self-harm, war, terrorism
+- `/api/check-theme` endpoint for typed custom themes
+- Safety check runs after label extraction in `/api/sketch-preview`; raises HTTP 400 `unsafe_content` if unsafe
+- Frontend shows friendly "🚫 That theme isn't available" message with suggestion to try something else
+- Camera preview shows 🚫 with explanation when unsafe content detected
 
 ---
 
 ## Phase 5 — Study Mode ⏸ DEFERRED
 
-Study mode removed from active scope. The 4 educational characters (Count Cosmo, Dr. Luna,
-Professor Pip, Arty) are documented in README as a future plan.
-
-Original plan covered:
-- `StudyScreen` with single concept image panel (vs scrollable grid)
-- Green/teal visual theme
-- Prompt Q&A cadence — character asks questions, waits for child's answer
-- End-of-session summary card generated by Gemini
+Study mode removed from active scope.
 
 See `PHASE_5_STORY_INTELLIGENCE.md` for full details when revisited.
 
@@ -209,79 +215,67 @@ See `PHASE_5_STORY_INTELLIGENCE.md` for full details when revisited.
 ## Phase 6 — Deployment & Production Hardening ✅ DONE
 
 - Cloud Run service: `https://taleweaver-950758825854.us-central1.run.app`
+- Custom domain: **https://taleweaver.online** (mapped via GCP Cloud Run domain mapping)
 - Multi-stage Dockerfile: `node:22-slim` builds React → `python:3.13-slim` serves both
 - Cloud Build CI/CD via `cloudbuild.yaml` — auto-deploys on push to `main`
 - `GEMINI_API_KEY` in GCP Secret Manager, injected at runtime via `--update-secrets`
-- CORS locked to Cloud Run URL + localhost dev ports
+- CORS locked to taleweaver.online, www.taleweaver.online, Cloud Run URL, localhost dev ports
 - 15-minute WebSocket session timeout
-- Same-origin frontend/backend — no CORS issues in production
 
 See `PHASE_6_DEPLOYMENT.md` for details.
 
 ---
 
-## Phase 7 — Movement & Vision
+## Phase 7 — Engagement & Vision
 
 ### 7.1 Camera Vision (Gemini sees the child) ✅ DONE
 
 Live webcam feed piped into Gemini Live session alongside audio at 1 FPS.
 
-**What it enables:**
-- Storyteller reacts to what the child is wearing or doing
-- Notices expressions ("You look surprised! Should I slow down?")
-- Visual verification for movement challenges (7.2)
-
-**Implementation:**
 - `useCameraStream` hook inside `useLiveAPI.ts`
-- `getUserMedia({ video: { facingMode: "user" }, audio: false })`
-- 1 FPS `setInterval`: canvas resize to max 512px → `toDataURL('image/jpeg', 0.6)` → strip prefix → send via WebSocket as `realtime_input.media_chunks` with `mime_type: "image/jpeg"`
-- Camera toggle button in `StoryScreen` left panel (opt-in, off by default) — shows "📷 Share Camera" / "📷 Camera On"
-- Mirrored video preview below the button (child sees selfie view; Gemini receives unmirrored frame)
-- `disconnect()` calls `stopCamera()` to release tracks
+- 1 FPS: canvas resize to max 512px → JPEG → WebSocket `realtime_input.media_chunks`
+- Camera toggle in `StoryScreen` left panel (opt-in, off by default)
+- Mirrored video preview for child; Gemini receives unmirrored frame
 
 ### 7.2 Movement Challenges ("Hero's Tasks") ⬜ PLANNED
 
-Storyteller embeds physical challenges into the narrative and waits for the child to complete them.
+Storyteller embeds physical challenges into the narrative; Gemini watches via camera (7.1 ✅) and reacts when it detects movement.
 
-**Approach A (prompt-only):** Add movement prompts to character system prompts. No code changes.
-**Approach B (vision-verified):** Gemini watches via camera (7.1 ✅ now done) and reacts when it detects movement.
+### 7.3 Story Branching (Choice Buttons) ✅ DONE
 
-### 7.3 Story Branching (Choice Buttons) ⬜ PLANNED
+At key story moments Gemini presents 2–3 choices the child picks from.
 
-At key story moments Gemini presents 2–3 choices and the child picks what happens next.
+- Gemini calls `showChoice` tool with `{ options: ["…", "…"] }`
+- `pendingChoiceRef` pattern: queues tool call result, dispatches 700ms after `turnComplete` (ensures audio drains before overlay appears)
+- `ChoiceOverlay` renders at top of scene canvas — tappable buttons
+- Child taps OR speaks any response → overlay dismisses
+- `answerChoice` sends both `toolResponse` + `client_content` so Gemini resumes immediately
+- `onChildSpoke` callback fires on `sc.interrupted` or `sc.inputTranscription.finished` → clears overlay
+- System prompt: `showChoice` called AT MOST ONCE per session
 
-- Gemini calls a `showChoice` tool with `{ options: ["Option A", "Option B"] }`
-- Frontend renders tappable choice buttons
-- Tapped choice sent back as `client_content` text turn
-- Gemini weaves the choice into the continuing story
+### 7.4 Achievement / Badge System ✅ DONE
 
-**Effort:** Low — tool call infra exists, needs a UI component + system prompt change.
-
-### 7.4 Achievements / Badge System ⬜ PLANNED
-
-- Gemini Live calls an `awardBadge` tool at key moments (first jump, story redirect, etc.)
-- Frontend shows badge pop-up, persists to `localStorage`
-
-See `STRETCH_GOALS.md` for full stretch goal details.
+- Gemini calls `awardBadge` tool for genuine creative contributions
+- `BadgePopup` appears centred on screen, auto-dismisses after 3s
+- Criteria: child suggests story ideas, picks brave/creative options, does a physical challenge, chooses to end the story
+- Explicitly prohibited: turning on camera, random movement, being quiet, just joining the session
 
 ---
 
 ## Phase 8 — Stretch Goals ⬜ FUTURE
 
-See `STRETCH_GOALS.md` for full details. Updated priority order:
+See `STRETCH_GOALS.md` for full details.
 
 | # | Goal | Effort | Impact | Status |
 |---|---|---|---|---|
-| 1 | Rive animated avatars (lip-sync) | High | Very High | ⬜ Framer Motion done; Rive deferred |
-| 2 | Interactive story choices (7.3) | Medium | High | ⬜ Planned |
-| 3 | Life skills themes | Low | High | ⬜ Not started |
-| 4 | Story gallery (localStorage) | Low | Medium | ⬜ Not started |
-| 5 | Tool calling during live story | High | High | ⬜ Not started |
-| 6 | Cloud Storage for images | Medium | Medium | ⬜ Not started |
-| 7 | Badge system (7.4) | Medium | Medium | ⬜ Planned |
-| 8 | uv package manager | Low | Low | ⬜ pyproject.toml + uv.lock exist |
-| 9 | Multi-agent ADK pipeline | Very High | Medium | ⬜ Not started |
-| 10 | OpenTelemetry observability | Medium | Low | ⬜ Not started |
+| 1 | Rive animated avatars (lip-sync) | Very High | Very High | ⬜ Framer Motion covers it for now |
+| 2 | Tool calling pipeline (server-side image trigger) | High | High | ⬜ Not started |
+| 3 | Cloud Storage for images (GCS signed URLs) | Medium | Medium | ⬜ Not started |
+| 4 | Story Gallery (past sessions) | Low | Medium | ⬜ Deferred |
+| 5 | Multi-agent ADK pipeline | Very High | Medium | ⬜ Not started |
+| 6 | OpenTelemetry observability | Medium | Low | ⬜ Not started |
+| 7 | uv package manager | Low | Low | ⬜ pyproject.toml + uv.lock exist |
+| 8 | Study Mode (Phase 5) | High | Medium | ⬜ Deferred |
 
 ---
 
@@ -291,43 +285,44 @@ See `STRETCH_GOALS.md` for full details. Updated priority order:
 Child opens app → Landing page (ambient music, floating animations)
     → "Begin Your Adventure" → CharacterSelect
     → selects a character → ThemeSelect
-        Option A: Pick a theme tile (Animals / Space / Ocean…) or type custom
-        Option B: Magic Camera — capture prop photo → confirms image
-        Option C: Sketch (locked/coming soon)
+        Option A: Pick a theme tile (Animals / Space / Ocean… / Life Skills) or type custom
+                  → custom text → /api/check-theme safety check
+        Option B: Magic Camera — capture prop photo → safety check → AI recreates → confirm
+        Option C: Sketch a Theme — draw on canvas → /api/sketch-preview → AI recreates → confirm
     → "Begin the Story!" → StoryScreen mounts
 
     → useLiveAPI.connect()
         → WebSocket → backend /ws/story
         → backend: load character config
-        → backend: get GCP OAuth2 token
         → backend: connect to Gemini Live API
-        → backend: send setup (system prompt + voice + affective dialog + VAD LOW)
-        → backend: send "Begin!" client_content turn (with theme or prop image)
-        → Gemini: setupComplete
-        → frontend: sessionState = "active"
+        → backend: send setup (system prompt + voice + VAD LOW + tools)
+        → backend: send "Begin!" client_content turn (with theme or prop/sketch image)
+        → Gemini: setupComplete → frontend: sessionState = "active"
         → mic capture starts (16kHz PCM via AudioWorklet)
 
-Story begins
+Story plays
     → Gemini proactively speaks the story opening
-    → backend proxies audio chunks → browser playback worklet → speakers
-    → outputTranscription chunks accumulate in outputTextAccRef
-    → turnComplete fires → full turn text sent to useStoryImages
-    → keyword pre-filter passes (story contains visual words)
-    → 8s rate check passes → POST /api/image
-    → backend: Flash Lite extracts scene → Gemini 3.1 Flash Image generates
-    → base64 image returned → StorySceneGrid: shimmer → fade-in
+    → 24kHz PCM audio chunks → playback worklet → speakers
+    → outputTranscription accumulates per turn
+    → turnComplete → full turn text → useStoryImages
+        → 8s startup delay + 10s rate limit check → POST /api/image
+        → Flash Lite extracts scene → Gemini generates image
+        → base64 → StorySceneGrid: shimmer → fade-in
+        → continues generating until session ends (no scene cap)
+
+Story branching (at most once per session)
+    → Gemini calls showChoice tool → stored in pendingChoiceRef
+    → turnComplete + 700ms → ChoiceOverlay renders
+    → child taps button → toolResponse + client_content sent → Gemini continues
+    → OR child speaks → onChildSpoke → overlay dismissed
+
+Achievement badges
+    → Gemini calls awardBadge for genuine creative engagement
+    → BadgePopup appears centred, auto-dismisses after 3s
 
 Child interrupts
-    → VAD (LOW sensitivity, 2000ms silence) detects speech → Gemini sends interrupted signal
-    → playback buffer cleared, characterState = "listening"
-    → child's audio streamed to Gemini in real time
-    → Gemini weaves child's words into the story
-    → new audio chunks → new turn → new image triggered
-
-Optional: Camera sharing
-    → child taps "📷 Share Camera" → getUserMedia(video)
-    → 1 FPS JPEG frames sent as realtime_input.media_chunks
-    → Gemini reacts to what it sees ("Oh, you're wearing a red jumper!")
+    → VAD detects speech → playback clears, choice overlay dismissed
+    → Gemini weaves child's words into the next story beat
 ```
 
 ---
@@ -336,10 +331,8 @@ Optional: Camera sharing
 
 | Item | Priority | Notes |
 |---|---|---|
-| 7.2 Movement Challenges | High | Needs Approach B (vision) — camera is now live |
-| 7.3 Story Branching | High | showChoice tool + UI component |
-| 7.4 Badge System | Medium | awardBadge tool + pop-up UI |
-| Rive lip-sync avatars | Medium | Highest visual impact but high effort |
-| Study mode | Low | Deferred — 4 chars exist, need distinct UI + prompt tuning |
-| GCP token refresh (50min+) | Low | Reconnect Gemini WS with fresh token for long sessions |
-| Custom domain | Optional | Cloud Run domain mapping → `taleweaver.app` |
+| 7.2 Movement Challenges | Medium | Needs system prompt tuning — camera already live |
+| Rive lip-sync avatars | Low | Highest visual impact but very high effort |
+| Study mode | Low | 4 chars exist, need distinct UI + prompt tuning |
+| Cloud Storage for images | Low | Reduces memory, enables story gallery |
+| Story Gallery | Low | Deferred — removed from landing page |
