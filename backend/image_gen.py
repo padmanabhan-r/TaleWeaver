@@ -472,3 +472,106 @@ async def generate_scene_image(request: ImageRequest):
         if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
             raise HTTPException(status_code=429, detail="Rate limited — try again later")
         raise HTTPException(status_code=500, detail="Image generation failed")
+
+
+# ── Story Recap ────────────────────────────────────────────────────────────────
+
+class RecapScene(BaseModel):
+    """One actual scene from the session — image data + short description."""
+    image_data: str          # base64 PNG/JPEG from the session
+    mime_type: str = "image/png"
+    description: str = ""   # short hint (100 chars), used only if image unavailable
+
+
+class StoryRecapRequest(BaseModel):
+    character_name: str
+    image_style: str
+    scenes: list[RecapScene] = []        # preferred: actual session images
+    scene_descriptions: list[str] = []  # legacy fallback (ignored when scenes provided)
+
+
+class RecapPage(BaseModel):
+    type: str           # "text" or "image"
+    content: str = ""   # populated for type="text"
+    image_data: str = ""  # base64, populated for type="image"
+    mime_type: str = ""   # populated for type="image"
+
+
+class StoryRecapResponse(BaseModel):
+    pages: list[RecapPage]
+
+
+_RECAP_SAFETY = [
+    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_LOW_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT",  threshold="BLOCK_LOW_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT",         threshold="BLOCK_LOW_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH",        threshold="BLOCK_LOW_AND_ABOVE"),
+]
+
+
+async def _narrate_scene(scene: RecapScene, character_name: str) -> str:
+    """Ask Gemini to narrate a single scene image in the character's storytelling voice."""
+    try:
+        contents = [types.Content(role="user", parts=[
+            types.Part(inline_data=types.Blob(
+                data=base64.b64decode(scene.image_data),
+                mime_type=scene.mime_type,
+            )),
+            types.Part(text=(
+                f"You are {character_name}, a beloved children's storyteller. "
+                f"This illustration is from the story you just told a child. "
+                f"Write exactly 2 warm, vivid sentences narrating THIS specific moment — "
+                f"describe what is actually happening in this image, in your storytelling voice. "
+                f"Be faithful to what you see. No preamble, just the narration."
+            )),
+        ])]
+
+        client = _api_key_client or _client
+        response = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    response_modalities=["TEXT"],
+                    safety_settings=_RECAP_SAFETY,
+                ),
+            ),
+            timeout=20.0,
+        )
+        text = response.candidates[0].content.parts[0].text.strip()
+        return text
+    except Exception as e:
+        print(f"[story-recap] Narration error for scene: {e}")
+        return scene.description or "And the adventure continued…"
+
+
+@router.post("/api/story-recap", response_model=StoryRecapResponse)
+async def generate_story_recap(request: StoryRecapRequest):
+    """
+    Generate a storybook recap of the session.
+
+    When actual scene images are provided (request.scenes), Gemini narrates each
+    image in the character's voice — a faithful recap of what actually happened.
+    The original session images are reused; no new images are generated.
+    """
+    scenes = [s for s in request.scenes if s.image_data][:6]
+
+    if not scenes:
+        raise HTTPException(status_code=400, detail="No scene images provided.")
+
+    print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
+
+    # Generate narration for all images in parallel
+    narrations = await asyncio.gather(
+        *[_narrate_scene(s, request.character_name) for s in scenes],
+        return_exceptions=True,
+    )
+
+    pages: list[RecapPage] = []
+    for narration, scene in zip(narrations, scenes):
+        text = narration if isinstance(narration, str) else (scene.description or "And the adventure continued…")
+        pages.append(RecapPage(type="text", content=text))
+        pages.append(RecapPage(type="image", image_data=scene.image_data, mime_type=scene.mime_type))
+
+    print(f"[story-recap] Done — {len(pages)} pages ({len(scenes)} images reused from session)")
+    return StoryRecapResponse(pages=pages)

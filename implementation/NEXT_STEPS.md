@@ -1,5 +1,5 @@
 # TaleWeaver — Next Steps
-### Updated 1 Mar 2026
+### Updated 3 Mar 2026
 
 ---
 
@@ -17,6 +17,9 @@
 | ✅ NEVER-END story rule | System prompt explicitly forbids Gemini from ending the story unprompted |
 | ✅ Story pre-warm | `POST /api/story-opening` generates opening + first image before Begin is clicked; canvas never blank |
 | ✅ Server-side image trigger | `generate_illustration` tool call → `forceImageGeneration` bypasses rate limit + skips Flash Lite extraction |
+| ✅ **Story Planner ADK Agent** | `backend/story_planner.py` — `google.adk LlmAgent` + `Runner` + `InMemorySessionService`; `POST /api/story-plan` generates structured 4-beat story plan before session starts; returns `opening_text` hint injected into WebSocket init |
+| ✅ **Story Recap (Interleaved Output)** | `backend/image_gen.py` — `POST /api/story-recap` uses `response_modalities=["TEXT","IMAGE"]`; single Gemini call produces alternating text paragraphs + illustrations; satisfies Creative Storyteller hackathon mandatory requirement |
+| ✅ **StoryRecapModal** | `frontend/src/components/StoryRecapModal.tsx` — modal launched from "📖 See our story!" button in `sessionState === "ended"`; renders interleaved pages in a scrollable storybook layout |
 
 ---
 
@@ -74,6 +77,6 @@ RUN uv sync --frozen --no-dev
 
 | Item | Notes |
 |---|---|
-| Multi-agent ADK pipeline | Scene Detector → Illustrator → Quality Judge |
+| **Story Director Agent (Phase A)** | Full ADK `run_live()` replacement for `proxy.py` — tools fire as Python functions, images pushed via WS. High risk; deferred post-hackathon. See `NEW_PLAN.md` Phase A for design. |
 | OpenTelemetry observability | Structured traces to Cloud Trace |
 | User accounts | Required for cross-device story gallery |

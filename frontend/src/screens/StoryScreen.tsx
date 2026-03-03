@@ -4,11 +4,11 @@ import { Character } from "@/characters";
 import StorybookEmpty from "@/components/StorybookEmpty";
 import { StorySceneGrid } from "@/components/StorySceneGrid";
 import { AudioVisualizer } from "@/components/AudioVisualizer";
-import { useLiveAPI, CharacterState, ChoiceRequest, BadgeAward } from "@/hooks/useLiveAPI";
+import { useLiveAPI, CharacterState, BadgeAward } from "@/hooks/useLiveAPI";
 import { useStoryImages, StoryScene } from "@/hooks/useStoryImages";
 import FloatingElements from "@/components/FloatingElements";
-import ChoiceOverlay from "@/components/ChoiceOverlay";
 import BadgePopup from "@/components/BadgePopup";
+import StoryRecapModal from "@/components/StoryRecapModal";
 
 const THEMES_EMOJI: Record<string, string> = {
   Animals: "🦁", Space: "🚀", Kingdoms: "🏰", Ocean: "🌊", Food: "🍕",
@@ -126,9 +126,12 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   const [preWarmReady, setPreWarmReady] = useState(false);
   const [openingText, setOpeningText] = useState("");
   const preWarmAbortRef = useRef<AbortController | null>(null);
+  // Holds the prewarm image — not shown until Begin is pressed
+  const prewarmImageRef = useRef<{ data: string; mimeType: string; sceneDescription: string } | null>(null);
 
-  // Choice overlay state
-  const [activeChoice, setActiveChoice] = useState<ChoiceRequest | null>(null);
+  // Story recap modal
+  const [showRecap, setShowRecap] = useState(false);
+
   // Badge popup state (queue: show one at a time)
   const [activeBadge, setActiveBadge] = useState<BadgeAward | null>(null);
   const badgeQueueRef = useRef<BadgeAward[]>([]);
@@ -166,7 +169,8 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setOpeningText(data.opening_text);
-        seedInitialImage({ data: data.image_data, mimeType: data.mime_type, sceneDescription: data.scene_description });
+        // Store image — seeded into the canvas only when Begin is pressed
+        prewarmImageRef.current = { data: data.image_data, mimeType: data.mime_type, sceneDescription: data.scene_description };
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
         console.warn("[story-screen] Pre-warm failed, starting fresh:", err);
@@ -185,14 +189,6 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   const scenesRef = useRef<StoryScene[]>(scenes);
   scenesRef.current = scenes;
 
-  const handleChoiceRequest = useCallback((choice: ChoiceRequest) => {
-    setActiveChoice(choice);
-  }, []);
-
-  const handleChildSpoke = useCallback(() => {
-    setActiveChoice(null);
-  }, []);
-
   const handleBadgeAwarded = useCallback((badge: BadgeAward) => {
     badgeQueueRef.current.push(badge);
     // Only show if nothing is currently displayed
@@ -205,7 +201,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   }, []);
 
   const {
-    connect, disconnect, answerChoice, sessionState, characterState, isCapturing,
+    connect, disconnect, sessionState, characterState, isCapturing,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
     cameraEnabled, toggleCamera, cameraVideoRef,
   } = useLiveAPI({
@@ -220,19 +216,16 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
         storyFirstLineRef.current = msg.text;
       }
     },
-    onChoiceRequest: handleChoiceRequest,
     onBadgeAwarded: handleBadgeAwarded,
-    onChildSpoke: handleChildSpoke,
   });
 
-  const handleChoice = useCallback(
-    (option: string) => {
-      if (!activeChoice) return;
-      answerChoice(activeChoice.callId, option);
-      setActiveChoice(null);
-    },
-    [activeChoice, answerChoice]
-  );
+  const handleBegin = useCallback(() => {
+    // Seed the prewarm image into the canvas now that the story is starting
+    if (prewarmImageRef.current) {
+      seedInitialImage(prewarmImageRef.current);
+    }
+    connect();
+  }, [connect, seedInitialImage]);
 
   const endAndSave = useCallback(() => {
     preWarmAbortRef.current?.abort();
@@ -263,6 +256,17 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
       <AnimatePresence>
         {activeBadge && (
           <BadgePopup badge={activeBadge} onDismiss={handleBadgeDismiss} />
+        )}
+      </AnimatePresence>
+
+      {/* Story recap modal */}
+      <AnimatePresence>
+        {showRecap && (
+          <StoryRecapModal
+            character={character}
+            scenes={scenesRef.current}
+            onClose={() => setShowRecap(false)}
+          />
         )}
       </AnimatePresence>
 
@@ -392,14 +396,27 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
 
             {/* Button area */}
             <div className="flex flex-col items-center gap-2" style={{ minHeight: "80px" }}>
-              {!isActive ? (
+              {sessionState === "ended" ? (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex flex-col items-center gap-2"
+                >
+                  <button
+                    onClick={() => setShowRecap(true)}
+                    className="px-6 py-2 rounded-full bg-primary text-primary-foreground font-body text-sm font-semibold hover:brightness-110 transition-all"
+                  >
+                    📖 See our story!
+                  </button>
+                </motion.div>
+              ) : !isActive ? (
                 <motion.button
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3, delay: 0.8 }}
                   whileHover={!isConnecting && preWarmReady ? { scale: 1.05 } : {}}
                   whileTap={!isConnecting && preWarmReady ? { scale: 0.95 } : {}}
-                  onClick={connect}
+                  onClick={handleBegin}
                   disabled={isConnecting || !preWarmReady}
                   className="px-10 py-4 rounded-full bg-primary text-primary-foreground font-display text-xl font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
                 >
@@ -499,7 +516,6 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
               </span>
             </div>
 
-            {/* Canvas — relative so ChoiceOverlay can be positioned inside */}
             <div className="flex-1 story-canvas rounded-2xl border-2 border-dashed border-cycle overflow-hidden flex flex-col relative">
               {scenes.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
@@ -511,12 +527,6 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                 </div>
               )}
 
-              {/* Choice overlay — inside the canvas so it's contextually placed */}
-              <AnimatePresence>
-                {activeChoice && isActive && (
-                  <ChoiceOverlay options={activeChoice.options} onChoice={handleChoice} />
-                )}
-              </AnimatePresence>
             </div>
           </motion.div>
         </div>

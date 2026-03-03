@@ -106,22 +106,47 @@ Each character has:
 │  FastAPI + Python 3.12                                          │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
+│  │  POST /api/story-plan  ← ADK LlmAgent (NEW)            │   │
+│  │                                                         │   │
+│  │  • google.adk LlmAgent + Runner + InMemorySessionService│   │
+│  │  • Generates 4-beat story plan before session starts    │   │
+│  │  • Returns setting, hero, beats[], ending + opening_text│   │
+│  │  • opening_text injected into WebSocket init message    │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
 │  │  /ws/story  — Gemini Live API WebSocket Proxy           │   │
 │  │                                                         │   │
 │  │  • Intercepts first message for session setup           │   │
 │  │  • Injects character system prompt + voice config       │   │
 │  │  • Adds auth token from service account                 │   │
 │  │  • Bidirectional proxy: browser ↔ Gemini Live API       │   │
-│  │  • Monitors output transcriptions for image triggers    │   │
+│  │  • Tools: generate_illustration, showChoice, awardBadge │   │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  POST /api/story-opening  — Pre-warm (runs at mount)    │   │
+│  │                                                         │   │
+│  │  • Flash Lite generates opening text + scene brief      │   │
+│  │  • Image model renders first illustration               │   │
+│  │  • Canvas is never blank when child clicks "Begin"      │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  POST /api/image  — Story Scene Generator               │   │
 │  │                                                         │   │
-│  │  • Receives scene description text                      │   │
-│  │  • Calls Gemini image generation API                    │   │
-│  │  • Returns base64 PNG                                   │   │
-│  │  • Applies character-specific art style                 │   │
+│  │  • Tool-triggered (skip_extraction=true, Gemini's desc) │   │
+│  │  • Fallback: Flash Lite extracts scene from transcript  │   │
+│  │  • Image model renders illustration with visual continuity│  │
+│  └─────────────────────────────────────────────────────────┘   │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │  POST /api/story-recap  ← Interleaved OUTPUT (NEW)      │   │
+│  │                                                         │   │
+│  │  • response_modalities=["TEXT","IMAGE"]                 │   │
+│  │  • Single Gemini call → alternating text + images       │   │
+│  │  • Produces illustrated storybook at session end        │   │
+│  │  • Satisfies Creative Storyteller category requirement  │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │
