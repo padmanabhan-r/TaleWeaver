@@ -15,6 +15,8 @@
 | ✅ Custom domain | `taleweaver.online` mapped to Cloud Run; added to CORS allowlist |
 | ✅ Unlimited scenes | `MAX_SCENES = Infinity` — image generation continues for entire session |
 | ✅ NEVER-END story rule | System prompt explicitly forbids Gemini from ending the story unprompted |
+| ✅ Story pre-warm | `POST /api/story-opening` generates opening + first image before Begin is clicked; canvas never blank |
+| ✅ Server-side image trigger | `generate_illustration` tool call → `forceImageGeneration` bypasses rate limit + skips Flash Lite extraction |
 
 ---
 
@@ -39,13 +41,6 @@ Framer Motion currently covers all 4 character states. Rive is the next visual l
 - Wire mouth animation intensity to real-time audio amplitude
 - Replace PNG `<img>` in `StoryScreen.tsx` portrait with `<RiveComponent>`
 - **Effort:** Very High (requires Rive asset creation per character)
-
-### Tool Calling Pipeline (server-side image trigger)
-Moves image generation server-side so Gemini decides *when* to generate images.
-
-- Add `generate_illustration` tool to character prompts
-- Backend handles `toolCall` → calls `image_gen.py` → returns result via WebSocket
-- More story-aware image timing vs current client-side `turnComplete` trigger
 
 ---
 
@@ -72,10 +67,6 @@ Currently images are base64 in HTTP response body — fine for typical session l
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 RUN uv sync --frozen --no-dev
 ```
-
-### Study Mode (Phase 5)
-4 educational characters (Count Cosmo, Dr. Luna, Professor Pip, Arty) already defined.
-Needs a distinct `StudyScreen` with Q&A prompt cadence and end-of-session summary card.
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Character } from "@/characters";
 import StorybookEmpty from "@/components/StorybookEmpty";
@@ -68,10 +68,13 @@ function saveToGallery(
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+
 interface Props {
   character: Character;
   theme?: string;
   propImage?: string;
+  propDescription?: string;
   onBack: () => void;
 }
 
@@ -115,9 +118,14 @@ const STATUS_TEXT: Record<string, string> = {
   ended: "The end! That was a great story!",
 };
 
-const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
+const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: Props) => {
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   const [intervalSeconds, setIntervalSeconds] = useState(8);
+
+  // Pre-warm: generate story opening + first image before user clicks Begin
+  const [preWarmReady, setPreWarmReady] = useState(false);
+  const [openingText, setOpeningText] = useState("");
+  const preWarmAbortRef = useRef<AbortController | null>(null);
 
   // Choice overlay state
   const [activeChoice, setActiveChoice] = useState<ChoiceRequest | null>(null);
@@ -128,11 +136,51 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
   // Capture first story line for gallery title
   const storyFirstLineRef = useRef("");
 
-  const { scenes, triggerImageGeneration, stop: stopImages } = useStoryImages(
+  const { scenes, triggerImageGeneration, forceImageGeneration, seedInitialImage, stop: stopImages } = useStoryImages(
     character.imageStyle,
     sessionIdRef.current,
     intervalSeconds
   );
+
+  // Fire pre-warm as soon as the screen mounts — generate opening text + first image
+  // so the canvas isn't blank and Gemini Live can continue from the established opening.
+  useEffect(() => {
+    const controller = new AbortController();
+    preWarmAbortRef.current = controller;
+
+    const prewarm = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/story-opening`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            character_id: character.id,
+            character_name: character.name,
+            character_language: character.language,
+            image_style: character.imageStyle,
+            theme: theme ?? "",
+            prop_description: propDescription ?? "",
+          }),
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setOpeningText(data.opening_text);
+        seedInitialImage({ data: data.image_data, mimeType: data.mime_type, sceneDescription: data.scene_description });
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        console.warn("[story-screen] Pre-warm failed, starting fresh:", err);
+      } finally {
+        setPreWarmReady(true);
+      }
+    };
+
+    prewarm();
+
+    // Timeout fallback — allow begin after 20s regardless
+    const timeout = setTimeout(() => setPreWarmReady(true), 20_000);
+    return () => { controller.abort(); clearTimeout(timeout); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Keep a stable ref to scenes for saving on end (state snapshot)
   const scenesRef = useRef<StoryScene[]>(scenes);
   scenesRef.current = scenes;
@@ -164,7 +212,9 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
     character,
     theme,
     propImage,
+    openingText: openingText || undefined,
     onImageTrigger: triggerImageGeneration,
+    onGenerateIllustration: forceImageGeneration,
     onTranscription: (msg) => {
       if (msg.type === "character" && !storyFirstLineRef.current) {
         storyFirstLineRef.current = msg.text;
@@ -185,12 +235,14 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
   );
 
   const endAndSave = useCallback(() => {
+    preWarmAbortRef.current?.abort();
     saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current);
     stopImages();
     disconnect();
   }, [character, disconnect, stopImages]);
 
   const handleBack = () => {
+    preWarmAbortRef.current?.abort();
     saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current);
     stopImages();
     disconnect();
@@ -345,13 +397,21 @@ const StoryScreen = ({ character, theme, propImage, onBack }: Props) => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3, delay: 0.8 }}
-                  whileHover={!isConnecting ? { scale: 1.05 } : {}}
-                  whileTap={!isConnecting ? { scale: 0.95 } : {}}
+                  whileHover={!isConnecting && preWarmReady ? { scale: 1.05 } : {}}
+                  whileTap={!isConnecting && preWarmReady ? { scale: 0.95 } : {}}
                   onClick={connect}
-                  disabled={isConnecting}
+                  disabled={isConnecting || !preWarmReady}
                   className="px-10 py-4 rounded-full bg-primary text-primary-foreground font-display text-xl font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
                 >
-                  {isConnecting ? (
+                  {!preWarmReady ? (
+                    <>
+                      <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Preparing your story...
+                    </>
+                  ) : isConnecting ? (
                     <>
                       <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

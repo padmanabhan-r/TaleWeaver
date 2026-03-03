@@ -109,6 +109,14 @@ ACHIEVEMENT BADGES (using awardBadge tool):
 - Say it warmly first: "Oh! You just earned a special badge!" then call the tool.
 - Keep reason to one short phrase (max 8 words).
 
+ILLUSTRATION TOOL (using generate_illustration tool):
+- Call this when you describe: a new location, a character appearing for the first time,
+  a magical transformation, a dramatic reveal, or any moment that would make a beautiful storybook picture.
+- Do NOT call it for dialogue turns, thinking pauses, or routine story progression.
+- Write scene_description as a vivid, painter-friendly English sentence (1-2 sentences)
+  even if you are telling the story in another language.
+- Call it at most once every 2 story beats. Do not flood with illustration requests.
+
 LANGUAGE:
 - Use English unless the child speaks to you in another language,
   in which case gently switch to match them.
@@ -399,6 +407,23 @@ def build_gemini_setup_message(character: Character, project_id: str, location: 
             "tools": [
                 {
                     "function_declarations": [
+                        {
+                            "name": "generate_illustration",
+                            "description": (
+                                "Generate a storybook illustration at a key visual moment. "
+                                "Call at scene changes, character introductions, and dramatic reveals."
+                            ),
+                            "parameters": {
+                                "type": "object",
+                                "properties": {
+                                    "scene_description": {
+                                        "type": "string",
+                                        "description": "Vivid painter-friendly English description of the scene to illustrate (1-2 sentences)",
+                                    }
+                                },
+                                "required": ["scene_description"],
+                            },
+                        },
                         {
                             "name": "showChoice",
                             "description": (
