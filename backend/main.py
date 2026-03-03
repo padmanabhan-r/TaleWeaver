@@ -16,6 +16,7 @@ load_dotenv()
 
 from proxy import run_proxy_session
 from image_gen import router as image_router
+from story_planner import router as planner_router
 
 app = FastAPI(title="TaleWeaver Backend")
 
@@ -33,6 +34,7 @@ app.add_middleware(
 )
 
 app.include_router(image_router)
+app.include_router(planner_router)
 
 
 @app.get("/api/health")

@@ -73,7 +73,7 @@ SCENE MARKERS (IMPORTANT):
 - This helps paint a vivid mental image for the child.
 
 MOVEMENT CHALLENGES (Hero's Tasks):
-- Once per story (roughly 3-4 minutes in), weave a PHYSICAL CHALLENGE into the story — the hero needs the child's help!
+- Every 60 seconds, weave a PHYSICAL CHALLENGE into the story — the hero needs the child's help!
 - The challenge must feel like the story depends on it. Examples:
     "Quick! The dragon needs you to ROAR as loud as you can and jump three times — go go go!"
     "The ship is rocking! Stretch your arms wide and balance like a pirate — can you hold it?"
@@ -83,20 +83,13 @@ MOVEMENT CHALLENGES (Hero's Tasks):
     "Spin around twice like a wizard casting a spell — whooooosh!"
     "Stamp your feet like thunder to scare away the storm clouds!"
 - Make challenges ACTIVE: jumping, spinning, roaring, wide arm stretches, crouching and springing, stamping, tiptoeing, dancing.
+- Vary the challenge each time — never repeat the same action twice in a row.
 - Deliver it with URGENCY and excitement — make it feel like the story depends on them doing it right now.
 - Then PAUSE and wait 15–20 seconds.
 - If the camera is on, watch carefully for movement and react with HUGE delight: "YES! I saw you! You did it! The hero is saved!"
 - If the camera is off, trust the child and react enthusiastically: "I KNEW you could do it! You are so brave!"
 - If no response after ~20 seconds, continue gently: "The hero found another clever way — and off they went!"
-- Do this AT MOST ONCE per story. Never repeat.
-
-STORY CHOICES (using showChoice tool):
-- Use this tool AT MOST ONCE per entire session. Do NOT call it again after it has been used once.
-- Only call it at a single, genuinely pivotal story moment — a real fork where the choice meaningfully changes what happens next.
-- Do NOT call it just to fill silence, as a routine check-in, or when the story is flowing naturally.
-- Do NOT repeat similar choices or recycle options from earlier in the session.
-- When you do use it, say the options aloud first: "Should we [A], or [B]?" — then call the tool.
-- After the child's choice comes back, weave it into the story immediately and keep going.
+- Keep going — weave a new challenge into the next story beat roughly every minute.
 
 ACHIEVEMENT BADGES (using awardBadge tool):
 - Award a badge (max 2 per session) ONLY for genuinely meaningful contributions:
@@ -422,24 +415,6 @@ def build_gemini_setup_message(character: Character, project_id: str, location: 
                                     }
                                 },
                                 "required": ["scene_description"],
-                            },
-                        },
-                        {
-                            "name": "showChoice",
-                            "description": (
-                                "Present 2-3 story choice buttons to the child at a key story moment. "
-                                "Call this once when the child should decide what happens next."
-                            ),
-                            "parameters": {
-                                "type": "object",
-                                "properties": {
-                                    "options": {
-                                        "type": "array",
-                                        "items": {"type": "string"},
-                                        "description": "2-3 short, exciting story choices (max 8 words each)",
-                                    }
-                                },
-                                "required": ["options"],
                             },
                         },
                         {
