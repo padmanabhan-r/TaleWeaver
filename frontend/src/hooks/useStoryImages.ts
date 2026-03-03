@@ -184,14 +184,12 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
 
         if (stoppedRef.current) return;
 
-        if (response.status === 429) {
+        if (!response.ok) {
           setScenes((prev) => prev.filter((s) => s.id !== sceneId));
           sceneCountRef.current--;
-          lastTriggerTimeRef.current = 0;
+          lastTriggerTimeRef.current = 0; // reset so next turn can retry
           return;
         }
-
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
         const data = await response.json();
         if (stoppedRef.current) return;
@@ -209,6 +207,7 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
         console.error("[story-images] Force generation failed:", err);
         setScenes((prev) => prev.filter((s) => s.id !== sceneId));
         sceneCountRef.current--;
+        lastTriggerTimeRef.current = 0; // reset so next turn can retry
       }
     },
     [imageStyle, sessionId]
