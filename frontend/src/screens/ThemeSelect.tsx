@@ -673,7 +673,7 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                                   >
                                     📷
                                   </motion.div>
-                                  <p className="font-display text-xl font-bold text-foreground">Looking at your prop...</p>
+                                  <p className="font-display text-xl font-bold text-foreground">Ooh, what did you bring? ✨</p>
                                 </div>
                               )}
 
