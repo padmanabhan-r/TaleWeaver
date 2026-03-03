@@ -49,6 +49,10 @@ async def _extract_english_scene(transcript: str, story_context: str) -> str:
         "Use the story context above to get character details exactly right. "
         "Do NOT be generic. Do NOT write 'a character in a setting'. "
         "Write what a painter would actually paint: specific subject, specific place, specific moment. "
+        "CRITICAL: Describe only story characters in their story world. "
+        "NEVER write 'a child holds...', 'a person holds...', or 'someone is holding...'. "
+        "If a toy or object is the story hero, describe it as a living character — e.g. "
+        "'Octavius the octopus soars through the sky' not 'a child holds an octopus toy'. "
         "No dialogue, no abstract concepts — purely visual.\n\n"
         f"Narration: {transcript[:1500]}"
     )
@@ -61,20 +65,31 @@ async def _extract_english_scene(transcript: str, story_context: str) -> str:
 
 async def _generate_imagen(prompt: str) -> tuple[str, str]:
     """Generate image using Imagen models (generate_images API)."""
-    response = await _client.aio.models.generate_images(
-        model=IMAGE_MODEL,
-        prompt=prompt,
-        config=types.GenerateImagesConfig(
-            aspect_ratio="4:3",
-            number_of_images=1,
-            safety_filter_level="BLOCK_LOW_AND_ABOVE",
-            person_generation="ALLOW_ALL",
-        ),
-    )
-    if response.generated_images:
-        image_bytes = response.generated_images[0].image.image_bytes
-        return base64.b64encode(image_bytes).decode("utf-8"), "image/png"
-    raise HTTPException(status_code=500, detail="No image in response")
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = await _client.aio.models.generate_images(
+                model=IMAGE_MODEL,
+                prompt=prompt,
+                config=types.GenerateImagesConfig(
+                    aspect_ratio="4:3",
+                    number_of_images=1,
+                    safety_filter_level="BLOCK_LOW_AND_ABOVE",
+                    person_generation="ALLOW_ALL",
+                ),
+            )
+            if response.generated_images:
+                image_bytes = response.generated_images[0].image.image_bytes
+                return base64.b64encode(image_bytes).decode("utf-8"), "image/png"
+            raise HTTPException(status_code=500, detail="No image in response")
+        except HTTPException:
+            raise
+        except Exception as e:
+            last_exc = e
+            if attempt == 0:
+                print(f"[image_gen] Imagen attempt 1 failed ({e}), retrying…")
+                await asyncio.sleep(2)
+    raise last_exc  # type: ignore[misc]
 
 
 def _build_contents(
@@ -122,41 +137,63 @@ def _build_contents(
 
 async def _generate_gemini(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png", previous_scene_description: str = "") -> tuple[str, str]:
     """Generate image using Gemini models via Vertex AI (generate_content API)."""
-    response = await _client.aio.models.generate_content(
-        model=IMAGE_MODEL,
-        contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
-        config=types.GenerateContentConfig(
-            response_modalities=["IMAGE"],
-            image_config=types.ImageConfig(aspect_ratio="4:3"),
-            safety_settings=[
-                types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_LOW_AND_ABOVE"),
-                types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_LOW_AND_ABOVE"),
-                types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_LOW_AND_ABOVE"),
-                types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_LOW_AND_ABOVE"),
-            ],
-        ),
-    )
-    for part in response.candidates[0].content.parts:
-        if part.inline_data:
-            return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
-    raise HTTPException(status_code=500, detail="No image in response")
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = await _client.aio.models.generate_content(
+                model=IMAGE_MODEL,
+                contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    image_config=types.ImageConfig(aspect_ratio="4:3"),
+                    safety_settings=[
+                        types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_LOW_AND_ABOVE"),
+                        types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_LOW_AND_ABOVE"),
+                        types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_LOW_AND_ABOVE"),
+                        types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_LOW_AND_ABOVE"),
+                    ],
+                ),
+            )
+            for part in response.candidates[0].content.parts:
+                if part.inline_data:
+                    return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
+            raise HTTPException(status_code=500, detail="No image in response")
+        except HTTPException:
+            raise
+        except Exception as e:
+            last_exc = e
+            if attempt == 0:
+                print(f"[image_gen] Gemini attempt 1 failed ({e}), retrying…")
+                await asyncio.sleep(2)
+    raise last_exc  # type: ignore[misc]
 
 
 async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png", previous_scene_description: str = "") -> tuple[str, str]:
     """Generate image using Gemini API key (AI Studio — shorter rate limit intervals than Vertex AI)."""
     if not _api_key_client:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
-    response = await _api_key_client.aio.models.generate_content(
-        model=IMAGE_MODEL,
-        contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
-        config=types.GenerateContentConfig(
-            response_modalities=["IMAGE", "TEXT"],
-        ),
-    )
-    for part in response.candidates[0].content.parts:
-        if part.inline_data and part.inline_data.data:
-            return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
-    raise HTTPException(status_code=500, detail="No image in response")
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = await _api_key_client.aio.models.generate_content(
+                model=IMAGE_MODEL,
+                contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE", "TEXT"],
+                ),
+            )
+            for part in response.candidates[0].content.parts:
+                if part.inline_data and part.inline_data.data:
+                    return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
+            raise HTTPException(status_code=500, detail="No image in response")
+        except HTTPException:
+            raise
+        except Exception as e:
+            last_exc = e
+            if attempt == 0:
+                print(f"[image_gen] Gemini API-key attempt 1 failed ({e}), retrying…")
+                await asyncio.sleep(2)
+    raise last_exc  # type: ignore[misc]
 
 
 async def _is_safe_for_children(content: str) -> bool:
@@ -197,7 +234,9 @@ async def _generate_opening(character_name: str, character_language: str, theme:
         "- Be vivid, exciting, and completely different from any previous story\n"
         "- End mid-action so the story feels alive and ongoing\n"
         f"- STORY section:{lang_note}\n"
-        "- SCENE section: always in English, describe the single most visual moment as a painter would paint it\n\n"
+        "- SCENE section: always in English, describe the single most visual moment as a painter would paint it. "
+        "NEVER write 'a child holds...', 'a person holds...', or any real person. "
+        "Describe only story characters in their story world.\n\n"
         "Respond in EXACTLY this format (two lines, nothing else):\n"
         "STORY: [3-4 sentence story opening]\n"
         "SCENE: [1-2 sentence vivid English painter's description]"

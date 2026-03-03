@@ -96,7 +96,9 @@ def _begin_turns(
                     "The child is holding it up to show you. "
                     "Start your story RIGHT NOW making that object the main character or "
                     "central theme — introduce it in your very first sentence. "
-                    "Do not mention the sea, space, or any default adventure unless the object suggests it."
+                    "Do not mention the sea, space, or any default adventure unless the object suggests it. "
+                    "IMPORTANT: When you call generate_illustration, describe only the object as a living "
+                    "story character in its story world — NEVER describe a child or person holding it."
                 )
             },
         ]
