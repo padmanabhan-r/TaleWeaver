@@ -8,7 +8,7 @@ const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 interface Props {
   character: Character;
   onBack: () => void;
-  onConfirm: (theme: string, propImage?: string) => void;
+  onConfirm: (theme: string, propImage?: string, propDescription?: string) => void;
 }
 
 /* ── Theme tiles ── */
@@ -481,9 +481,9 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
       setContentWarning(null);
       onConfirm(text || selectedTheme || "");
     } else if (expanded === "camera" && cameraPreview?.imageData) {
-      onConfirm("camera_prop", cameraPreview.imageData);
+      onConfirm("camera_prop", cameraPreview.imageData, cameraPreview.label ?? undefined);
     } else if (expanded === "sketch" && sketchPreview?.imageData) {
-      onConfirm("sketch", sketchPreview.imageData);
+      onConfirm("sketch", sketchPreview.imageData, sketchPreview.label ?? undefined);
     }
   };
 

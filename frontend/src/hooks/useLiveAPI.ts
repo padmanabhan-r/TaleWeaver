@@ -26,8 +26,10 @@ export interface BadgeAward {
 interface UseLiveAPIOptions {
   character: Character;
   theme?: string;
-  propImage?: string;  // raw base64 JPEG, no data: prefix
+  propImage?: string;     // raw base64 JPEG, no data: prefix
+  openingText?: string;   // pre-generated story opening from /api/story-opening
   onImageTrigger?: ((text: string) => void) | null;
+  onGenerateIllustration?: ((description: string) => void) | null;
   onTranscription?: ((msg: Transcription) => void) | null;
   onChoiceRequest?: ((choice: ChoiceRequest) => void) | null;
   onBadgeAwarded?: ((badge: BadgeAward) => void) | null;
@@ -243,7 +245,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 // ── Main hook ────────────────────────────────────────────────────────────────
 
-export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTranscription, onChoiceRequest, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
+export function useLiveAPI({ character, theme, propImage, openingText, onImageTrigger, onGenerateIllustration, onTranscription, onChoiceRequest, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
@@ -260,7 +262,9 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
   const playChunkRef = useRef(playChunk);
   const clearBufferRef = useRef(clearBuffer);
   const startCaptureRef = useRef(startCapture);
+  const openingTextRef = useRef(openingText);
   const onImageTriggerRef = useRef(onImageTrigger);
+  const onGenerateIllustrationRef = useRef(onGenerateIllustration);
   const onTranscriptionRef = useRef(onTranscription);
   const onChoiceRequestRef = useRef(onChoiceRequest);
   const onBadgeAwardedRef = useRef(onBadgeAwarded);
@@ -268,7 +272,9 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
   useEffect(() => { playChunkRef.current = playChunk; }, [playChunk]);
   useEffect(() => { clearBufferRef.current = clearBuffer; }, [clearBuffer]);
   useEffect(() => { startCaptureRef.current = startCapture; }, [startCapture]);
+  useEffect(() => { openingTextRef.current = openingText; }, [openingText]);
   useEffect(() => { onImageTriggerRef.current = onImageTrigger; }, [onImageTrigger]);
+  useEffect(() => { onGenerateIllustrationRef.current = onGenerateIllustration; }, [onGenerateIllustration]);
   useEffect(() => { onTranscriptionRef.current = onTranscription; }, [onTranscription]);
   useEffect(() => { onChoiceRequestRef.current = onChoiceRequest; }, [onChoiceRequest]);
   useEffect(() => { onBadgeAwardedRef.current = onBadgeAwarded; }, [onBadgeAwarded]);
@@ -290,6 +296,7 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
           character_id: character.id,
           theme: theme ?? null,
           prop_image: propImage ?? null,
+          opening_text: openingTextRef.current ?? null,
         }));
       };
 
@@ -319,10 +326,19 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onTran
             return;
           }
 
-          // Tool calls: showChoice (wait for user pick) or awardBadge (respond immediately)
+          // Tool calls: handle each by name
           if (data.toolCall?.functionCalls) {
             for (const call of data.toolCall.functionCalls) {
-              if (call.name === "showChoice") {
+              if (call.name === "generate_illustration") {
+                // Respond immediately — don't block Gemini's narration while image generates
+                ws.send(JSON.stringify({
+                  toolResponse: {
+                    functionResponses: [{ id: call.id, response: { output: "Illustration generated." } }],
+                  },
+                }));
+                const description = (call.args?.scene_description as string) ?? "";
+                onGenerateIllustrationRef.current?.(description);
+              } else if (call.name === "showChoice") {
                 // Queue — dispatched after turnComplete so audio finishes first
                 pendingChoiceRef.current = { callId: call.id, options: call.args?.options ?? [] };
               } else if (call.name === "awardBadge") {

@@ -75,12 +75,24 @@ async def proxy_gemini_to_browser(
         print(f"[proxy] gemini→browser loop error: {e}")
 
 
+def _opening_suffix(opening_text: str | None) -> str:
+    """Append pre-generated story opening so Gemini Live continues from it, not from scratch."""
+    if not opening_text:
+        return ""
+    return (
+        f"\n\nThe story has already begun with this opening — continue from exactly where it leaves off:\n\n"
+        f"{opening_text}\n\n"
+        "Do NOT repeat anything already said. Your very next word continues the story mid-flow."
+    )
+
+
 async def run_proxy_session(
     browser_ws: WebSocket,
     character_id: str,
     session_id: str,
     theme: str | None = None,
     prop_image: str | None = None,
+    opening_text: str | None = None,
 ) -> None:
     """
     Establishes a Gemini Live API session for a character and proxies it to the browser.
@@ -151,6 +163,8 @@ async def run_proxy_session(
 
             # Prompt the character to deliver their opening story.
             # Without this, proactive_audio alone doesn't reliably trigger speech.
+            suffix = _opening_suffix(opening_text)
+
             if theme == "camera_prop" and prop_image:
                 # Send the captured image + instruction as a single multimodal turn
                 await gemini_ws.send(json.dumps({
@@ -171,6 +185,7 @@ async def run_proxy_session(
                                         "Start your story RIGHT NOW making that object the main character or "
                                         "central theme — introduce it in your very first sentence. "
                                         "Do not mention the sea, space, or any default adventure unless the object suggests it."
+                                        + suffix
                                     )
                                 },
                             ],
@@ -195,6 +210,7 @@ async def run_proxy_session(
                                     "React with wonder and delight about what they created, then immediately "
                                     "launch into a story where the subject of this picture is the hero. "
                                     "Your very first sentence must bring this picture to life."
+                                    + suffix
                                 )
                             },
                         ]}],
@@ -211,6 +227,7 @@ async def run_proxy_session(
                                 f"The theme is: {theme}. "
                                 f"Your very first sentence must immediately introduce something about {theme}. "
                                 f"Keep {theme} as the central focus throughout the whole story."
+                                + suffix
                             )}],
                         }],
                         "turn_complete": True,
@@ -219,7 +236,7 @@ async def run_proxy_session(
             else:
                 await gemini_ws.send(json.dumps({
                     "client_content": {
-                        "turns": [{"role": "user", "parts": [{"text": "Begin!"}]}],
+                        "turns": [{"role": "user", "parts": [{"text": "Begin!" + suffix}]}],
                         "turn_complete": True,
                     }
                 }))
