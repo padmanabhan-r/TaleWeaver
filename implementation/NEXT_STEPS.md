@@ -28,33 +28,25 @@
 
 ---
 
-## Medium Priority
+## Next Up
 
-### Rive Lip-Sync Avatars
-Framer Motion currently covers all 4 character states. Rive is the next visual level.
+### Phase 10A — Cloud Storage for Images
+Currently images are base64 in HTTP response body. Upload to GCS for persistence.
 
-- Create Rive state machine files for all 10 characters (idle / speaking / thinking / listening)
-- Wire mouth animation intensity to real-time audio amplitude
-- Replace PNG `<img>` in `StoryScreen.tsx` portrait with `<RiveComponent>`
-- **Effort:** Very High (requires Rive asset creation per character)
+- Upload to `gs://taleweaver-images/{session_id}/{timestamp}.png`
+- Return signed URL (1hr TTL) → frontend renders `<img src={signedUrl} />`
+- Prerequisite for Story Gallery
+
+### Phase 10B — Story Gallery
+After session ends, save and display past stories on the landing page.
+
+- Gemini generates 5-word title on session end
+- Save `{ title, character, imageUrls[], timestamp }` to localStorage
+- "Your Stories" grid on landing page
 
 ---
 
 ## Lower Priority / Future
-
-### Story Gallery (Past Sessions)
-Removed from landing page for now (ephemeral sessions are fine for v1).
-
-- Requires Cloud Storage (GCS) to persist images across refreshes
-- After session ends: prompt Gemini for 5-word title → save `{ title, character, images[], timestamp }` to localStorage
-- Display on landing page or character select
-
-### Cloud Storage for Images
-Currently images are base64 in HTTP response body — fine for typical session lengths.
-
-- Upload to `gs://taleweaver-images/{session_id}/{timestamp}.png`
-- Return signed URL (1hr TTL) → frontend renders `<img src={signedUrl} />`
-- Prerequisite for persistent story gallery
 
 ### uv Package Manager
 `pyproject.toml` and `uv.lock` already exist at repo root. Just wire the Dockerfile.
