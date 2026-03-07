@@ -24,7 +24,7 @@ router = APIRouter()
 
 # ── ADK agent ─────────────────────────────────────────────────────────────────
 
-_PLANNER_MODEL = os.getenv("STORY_PLANNER_MODEL", "gemini-2.0-flash")
+_PLANNER_MODEL = os.getenv("STORY_PLANNER_MODEL", "gemini-2.5-flash")
 
 _session_service = InMemorySessionService()
 
