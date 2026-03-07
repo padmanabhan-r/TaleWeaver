@@ -41,15 +41,7 @@
 | aaji | Aaji | Marathi | Autonoe |
 | dida | Dida | Bengali | Umbriel |
 
-**Study Mode (4):**
-| ID | Name | Subject | Voice |
-|---|---|---|---|
-| count-cosmo | Count Cosmo | Maths | Puck |
-| dr-luna | Dr. Luna | Science & Nature | Kore |
-| professor-pip | Professor Pip | Words & Reading | Aoede |
-| arty | Arty | Art & Colours | Fenrir |
-
-All story characters share `SYSTEM_PROMPT_BASE` (STORY VARIETY directive, never fixed openers). Study characters have standalone English-only educational prompts.
+All story characters share `SYSTEM_PROMPT_BASE` (STORY VARIETY directive, never fixed openers).
 
 ### Image Generation (`backend/image_gen.py`)
 - `POST /api/image { scene_description, story_context, image_style, session_id }`

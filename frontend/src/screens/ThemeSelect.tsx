@@ -8,7 +8,7 @@ const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 interface Props {
   character: Character;
   onBack: () => void;
-  onConfirm: (theme: string, propImage?: string) => void;
+  onConfirm: (theme: string, propImage?: string, propDescription?: string) => void;
 }
 
 /* ── Theme tiles ── */
@@ -399,6 +399,7 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
   const [sketchPreview, setSketchPreview] = useState<Preview | null>(null);
   const [cameraPreview, setCameraPreview] = useState<Preview | null>(null);
   const [contentWarning, setContentWarning] = useState<string | null>(null);
+  const [goLoading, setGoLoading] = useState(false);
 
   const toggleExpand = (id: OptionId) => {
     setExpanded(id);
@@ -461,6 +462,7 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
     if (expanded === "pick") {
       const text = customText.trim();
       if (text) {
+        setGoLoading(true);
         try {
           const res = await fetch(`${API_BASE}/api/check-theme`, {
             method: "POST",
@@ -471,19 +473,21 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
             const data = await res.json();
             if (!data.safe) {
               setContentWarning("Oops! That theme isn't right for our stories. Try something fun like animals, magic, or space! 🌟");
+              setGoLoading(false);
               return;
             }
           }
         } catch {
           // fail open — don't block on network error
         }
+        setGoLoading(false);
       }
       setContentWarning(null);
       onConfirm(text || selectedTheme || "");
     } else if (expanded === "camera" && cameraPreview?.imageData) {
-      onConfirm("camera_prop", cameraPreview.imageData);
+      onConfirm("camera_prop", cameraPreview.imageData, cameraPreview.label ?? undefined);
     } else if (expanded === "sketch" && sketchPreview?.imageData) {
-      onConfirm("sketch", sketchPreview.imageData);
+      onConfirm("sketch", sketchPreview.imageData, sketchPreview.label ?? undefined);
     }
   };
 
@@ -636,17 +640,17 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                               )}
                               <div className="mt-3 flex justify-center">
                                 <motion.button
-                                  whileHover={canConfirmPick ? { scale: 1.05 } : {}}
-                                  whileTap={canConfirmPick ? { scale: 0.95 } : {}}
+                                  whileHover={canConfirmPick && !goLoading ? { scale: 1.05 } : {}}
+                                  whileTap={canConfirmPick && !goLoading ? { scale: 0.95 } : {}}
                                   onClick={handleGo}
-                                  disabled={!canConfirmPick}
+                                  disabled={!canConfirmPick || goLoading}
                                   className={`px-8 py-3 rounded-full font-display text-lg font-bold transition-all ${
-                                    canConfirmPick
+                                    canConfirmPick && !goLoading
                                       ? "bg-primary text-primary-foreground magic-glow animate-glow-pulse hover:brightness-110"
                                       : "bg-muted text-muted-foreground cursor-not-allowed"
                                   }`}
                                 >
-                                  Let's Go! 🪄
+                                  {goLoading ? "Checking… ✨" : "Let's Go! 🪄"}
                                 </motion.button>
                               </div>
                             </div>
@@ -669,7 +673,7 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
                                   >
                                     📷
                                   </motion.div>
-                                  <p className="font-display text-xl font-bold text-foreground">Looking at your prop...</p>
+                                  <p className="font-display text-xl font-bold text-foreground">Ooh, what did you bring? ✨</p>
                                 </div>
                               )}
 
