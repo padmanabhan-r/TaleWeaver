@@ -14,6 +14,7 @@ const App = () => {
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [theme, setTheme] = useState<string | undefined>();
   const [propImage, setPropImage] = useState<string | undefined>();
+  const [propDescription, setPropDescription] = useState<string | undefined>();
   const [muted, setMuted] = useState(false);
 
   // Ambient music plays on landing + character select, stops during story or when muted
@@ -24,9 +25,10 @@ const App = () => {
     setScreen("theme-select");
   };
 
-  const handleThemeConfirm = (t: string, img?: string) => {
+  const handleThemeConfirm = (t: string, img?: string, desc?: string) => {
     setTheme(t);
     setPropImage(img);
+    setPropDescription(desc);
     setScreen("story");
   };
 
@@ -38,6 +40,7 @@ const App = () => {
   const handleBackFromStory = () => {
     setTheme(undefined);
     setPropImage(undefined);
+    setPropDescription(undefined);
     setScreen("theme-select");
   };
 
@@ -46,6 +49,7 @@ const App = () => {
     setSelectedCharacter(null);
     setTheme(undefined);
     setPropImage(undefined);
+    setPropDescription(undefined);
   };
 
   return (
@@ -71,6 +75,7 @@ const App = () => {
           character={selectedCharacter}
           theme={theme}
           propImage={propImage}
+          propDescription={propDescription}
           onBack={handleBackFromStory}
         />
       )}

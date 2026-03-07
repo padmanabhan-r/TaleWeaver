@@ -31,23 +31,11 @@ Illustrator Agent  (gemini-2.0-flash-preview-image-generation)
 
 ---
 
-## Stretch Goal 2 — Tool Calling During Live Story (Server-side Image Trigger)
+## Stretch Goal 2 — Tool Calling During Live Story (Server-side Image Trigger) ✅ DONE
 
-**Current:** Image generation is triggered client-side after `turnComplete` via `useStoryImages`.
+~~Image generation is triggered client-side after `turnComplete` via `useStoryImages`.~~
 
-**Target:** Gemini Live calls `generate_illustration` tool mid-story — backend handles it, more story-aware timing.
-
-```python
-tools = [
-    {
-        "name": "generate_illustration",
-        "description": "Generate a story scene image at a key visual moment",
-        "parameters": { "scene_description": "string", "mood": "string" }
-    }
-]
-```
-
-Frontend listens for `toolCall` events from the WebSocket and renders accordingly.
+**Implemented:** `generate_illustration` tool declared in character setup. Gemini calls it at visually rich moments → `useLiveAPI` handles the `toolCall`, immediately sends `toolResponse` (unblocking narration), calls `forceImageGeneration(description)` → bypasses rate limit, passes `skip_extraction: true` to `/api/image` (Gemini wrote the scene description directly, no Flash Lite needed). `turnComplete` fallback at user-configured interval still runs for dialogue-heavy turns.
 
 ---
 
@@ -175,14 +163,14 @@ characterState = "idle"
 
 | # | Goal | Effort | Impact | Status |
 |---|---|---|---|---|
-| 1 | Movement challenges (7.2) | Low | High | ⬜ System prompt only, camera ready |
-| 2 | Rive lip-sync avatars | Very High | Very High | ⬜ Framer Motion covers it for now |
-| 3 | Tool calling pipeline (server-side) | High | High | ⬜ Not started |
-| 4 | Story Gallery | Low–Medium | Medium | ⏸ Deferred (needs GCS) |
-| 5 | Cloud Storage for images | Medium | Medium | ⬜ Not started |
-| 6 | Multi-agent ADK pipeline | Very High | Medium | ⬜ Not started |
-| 7 | uv package manager | Low | Low | ⬜ Files exist, just wire Dockerfile |
-| 8 | OpenTelemetry observability | Medium | Low | ⬜ Not started |
+| 1 | Rive lip-sync avatars | Very High | Very High | ⬜ Framer Motion covers it for now |
+| 2 | Story Gallery | Low–Medium | Medium | ⏸ Deferred (needs GCS) |
+| 3 | Cloud Storage for images | Medium | Medium | ⬜ Not started |
+| 4 | Multi-agent ADK pipeline | Very High | Medium | ⬜ Not started |
+| 5 | uv package manager | Low | Low | ⬜ Files exist, just wire Dockerfile |
+| 6 | OpenTelemetry observability | Medium | Low | ⬜ Not started |
+| — | Story pre-warm (zero blank canvas) | — | — | ✅ Done |
+| — | Tool calling image trigger | — | — | ✅ Done |
 | — | Interactive story choices | — | — | ✅ Done |
 | — | Badge & achievement system | — | — | ✅ Done |
 | — | Life skills themes | — | — | ✅ Done |
