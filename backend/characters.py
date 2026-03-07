@@ -4,7 +4,6 @@
 from dataclasses import dataclass
 
 GEMINI_LIVE_MODEL = "gemini-live-2.5-flash-native-audio"
-GEMINI_IMAGE_MODEL = "gemini-2.0-flash-preview-image-generation"
 
 def gemini_service_url(location: str) -> str:
     """Build the Gemini Live API WebSocket URL for the given GCP location."""
@@ -19,6 +18,7 @@ class Character:
     voice_name: str
     image_style: str
     system_prompt: str
+    language: str = "English"
 
 
 SYSTEM_PROMPT_BASE = """
@@ -232,6 +232,7 @@ DRACO THE DRAGON SPECIFIC:
         id="dadi",
         name="Dadi Maa",
         voice_name="Autonoe",
+        language="Hindi",
         image_style=(
             "warm watercolor illustration, traditional Indian home, cozy evening lamp, "
             "marigold flowers, rangoli, children's picture book art, heartwarming"
@@ -260,6 +261,7 @@ DADI MAA SPECIFIC:
         id="maharaja",
         name="Raja Vikram",
         voice_name="Umbriel",
+        language="Marathi",
         image_style=(
             "vibrant Indian court illustration, royal palace, traditional Marathi attire, "
             "marigolds, golden lamp light, children's picture book art"
@@ -286,6 +288,7 @@ RAJA VIKRAM SPECIFIC:
         id="hanuman",
         name="Little Hanuman",
         voice_name="Alnilam",
+        language="Tamil",
         image_style=(
             "bright Indian mythology illustration, lush jungle, lotus flowers, "
             "warm golden light, children's storybook art, Tamil style"
@@ -312,6 +315,7 @@ LITTLE HANUMAN SPECIFIC:
         id="rajkumari",
         name="Rajkumari Meera",
         voice_name="Kore",
+        language="Telugu",
         image_style=(
             "elegant Telugu princess illustration, palace garden, jasmine flowers, "
             "traditional jewelry, warm watercolor style, children's picture book art"
@@ -338,6 +342,7 @@ RAJKUMARI MEERA SPECIFIC:
         id="rishi",
         name="Rishi Bodhi",
         voice_name="Puck",
+        language="Bengali",
         image_style=(
             "serene Bengali sage illustration, riverside setting, lotus flowers, "
             "golden sunset, mustard fields, warm watercolor, children's picture book art"
