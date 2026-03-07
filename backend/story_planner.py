@@ -17,6 +17,7 @@ from google.adk.agents import LlmAgent
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types as genai_types
+from opik.integrations.adk import OpikTracer, track_adk_agent_recursive
 
 from characters import get_character
 
@@ -45,6 +46,12 @@ _planner_agent = LlmAgent(
         "No extra text, no markdown, no code fences — just the raw JSON object."
     ),
 )
+
+_opik_tracer = OpikTracer(
+    tags=["taleweaver", "story-planner", "adk"],
+    metadata={"model": _PLANNER_MODEL},
+)
+track_adk_agent_recursive(_planner_agent, _opik_tracer)
 
 _runner = Runner(
     agent=_planner_agent,
