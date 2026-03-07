@@ -5,13 +5,6 @@ import { StoryScene } from "@/hooks/useStoryImages";
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
-interface RecapPage {
-  type: "text" | "image";
-  content: string;
-  image_data: string;
-  mime_type: string;
-}
-
 interface Props {
   character: Character;
   scenes: StoryScene[];
@@ -19,25 +12,25 @@ interface Props {
 }
 
 export default function StoryRecapModal({ character, scenes, onClose }: Props) {
-  const [pages, setPages] = useState<RecapPage[]>([]);
+  const [narrations, setNarrations] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    const sceneData = scenes
-      .filter((s) => s.status === "loaded" && s.imageData)
-      .slice(0, 6)
-      .map((s) => ({
-        image_data: s.imageData!,
-        mime_type: s.mimeType ?? "image/png",
-        description: s.description,
-      }));
+  // Only the loaded scenes with images — used for both the API request and display
+  const loadedScenes = scenes.filter((s) => s.status === "loaded" && s.imageData).slice(0, 6);
 
-    if (sceneData.length === 0) {
+  useEffect(() => {
+    if (loadedScenes.length === 0) {
       setError("No story scenes to recap yet!");
       setLoading(false);
       return;
     }
+
+    const sceneData = loadedScenes.map((s) => ({
+      image_data: s.imageData!,
+      mime_type: s.mimeType ?? "image/png",
+      description: s.description,
+    }));
 
     fetch(`${API_BASE}/api/story-recap`, {
       method: "POST",
@@ -52,7 +45,7 @@ export default function StoryRecapModal({ character, scenes, onClose }: Props) {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((data) => setPages(data.pages ?? []))
+      .then((data) => setNarrations(data.narrations ?? []))
       .catch(() => setError("Couldn't create the storybook. Please try again!"))
       .finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -107,22 +100,25 @@ export default function StoryRecapModal({ character, scenes, onClose }: Props) {
             </div>
           )}
 
-          {!loading && !error && pages.length > 0 && (
+          {!loading && !error && narrations.length > 0 && (
             <div className="flex flex-col gap-6">
-              {pages.map((page, i) =>
-                page.type === "text" ? (
-                  <p key={i} className="font-body text-lg text-card-foreground leading-relaxed">
-                    {page.content}
-                  </p>
-                ) : (
-                  <img
-                    key={i}
-                    src={`data:${page.mime_type};base64,${page.image_data}`}
-                    alt={`Story illustration ${Math.floor(i / 2) + 1}`}
-                    className="w-full rounded-2xl shadow-md"
-                  />
-                )
-              )}
+              {narrations.map((narration, i) => {
+                const scene = loadedScenes[i];
+                return (
+                  <div key={i} className="flex flex-col gap-4">
+                    <p className="font-body text-lg text-card-foreground leading-relaxed">
+                      {narration}
+                    </p>
+                    {scene && (
+                      <img
+                        src={`data:${scene.mimeType ?? "image/png"};base64,${scene.imageData}`}
+                        alt={`Story illustration ${i + 1}`}
+                        className="w-full rounded-2xl shadow-md"
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

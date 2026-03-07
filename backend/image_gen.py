@@ -15,7 +15,7 @@ PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 IMAGE_MODEL = os.environ["IMAGE_MODEL"]
 IMAGE_LOCATION = os.environ["IMAGE_LOCATION"]
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-EXTRACT_MODEL = "gemini-2.0-flash-lite"
+EXTRACT_MODEL = "gemini-2.5-flash-lite"
 
 SAFETY_PREFIX = (
     "child-safe illustration, age-appropriate for children aged 4-10, "
@@ -44,15 +44,15 @@ async def _extract_english_scene(transcript: str, story_context: str) -> str:
         "The storyteller just spoke the narration below. "
         "Identify the single most visually interesting moment in this narration and describe it "
         "as a concise English image description (2-3 sentences). "
-        "Be SPECIFIC — name the exact character (their species, appearance, clothing), "
-        "the exact setting (forest, village, ocean, cave, etc.), and the precise action happening. "
-        "Use the story context above to get character details exactly right. "
-        "Do NOT be generic. Do NOT write 'a character in a setting'. "
-        "Write what a painter would actually paint: specific subject, specific place, specific moment. "
+        "Be SPECIFIC — use the EXACT character type from the story context above (e.g. 'rubber chicken toy', "
+        "'wooden puppet', 'friendly bear cub'). "
+        "NEVER replace a specific character type with a vague word — FORBIDDEN words: "
+        "'creature', 'character', 'figure', 'being', 'entity', 'animal' (unless that IS the type). "
+        "Name the exact setting (forest, teacup ride, ocean, etc.) and the precise action happening. "
         "CRITICAL: Describe only story characters in their story world. "
         "NEVER write 'a child holds...', 'a person holds...', or 'someone is holding...'. "
-        "If a toy or object is the story hero, describe it as a living character — e.g. "
-        "'Octavius the octopus soars through the sky' not 'a child holds an octopus toy'. "
+        "If a toy or object is the story hero, show it acting on its own — e.g. "
+        "'Squeaky the rubber chicken toy spins wildly on a teacup ride' not 'a golden creature spins'. "
         "No dialogue, no abstract concepts — purely visual.\n\n"
         f"Narration: {transcript[:1500]}"
     )
@@ -529,15 +529,8 @@ class StoryRecapRequest(BaseModel):
     scene_descriptions: list[str] = []  # legacy fallback (ignored when scenes provided)
 
 
-class RecapPage(BaseModel):
-    type: str           # "text" or "image"
-    content: str = ""   # populated for type="text"
-    image_data: str = ""  # base64, populated for type="image"
-    mime_type: str = ""   # populated for type="image"
-
-
 class StoryRecapResponse(BaseModel):
-    pages: list[RecapPage]
+    narrations: list[str]   # one narration string per scene, in order
 
 
 _RECAP_SAFETY = [
@@ -565,13 +558,11 @@ async def _narrate_scene(scene: RecapScene, character_name: str) -> str:
             )),
         ])]
 
-        client = _api_key_client or _client
         response = await asyncio.wait_for(
-            client.aio.models.generate_content(
-                model="gemini-2.0-flash",
+            _extract_client.aio.models.generate_content(
+                model=EXTRACT_MODEL,
                 contents=contents,
                 config=types.GenerateContentConfig(
-                    response_modalities=["TEXT"],
                     safety_settings=_RECAP_SAFETY,
                 ),
             ),
@@ -601,16 +592,15 @@ async def generate_story_recap(request: StoryRecapRequest):
     print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
 
     # Generate narration for all images in parallel
-    narrations = await asyncio.gather(
+    results = await asyncio.gather(
         *[_narrate_scene(s, request.character_name) for s in scenes],
         return_exceptions=True,
     )
 
-    pages: list[RecapPage] = []
-    for narration, scene in zip(narrations, scenes):
-        text = narration if isinstance(narration, str) else (scene.description or "And the adventure continued…")
-        pages.append(RecapPage(type="text", content=text))
-        pages.append(RecapPage(type="image", image_data=scene.image_data, mime_type=scene.mime_type))
+    narrations = [
+        r if isinstance(r, str) else (scene.description or "And the adventure continued…")
+        for r, scene in zip(results, scenes)
+    ]
 
-    print(f"[story-recap] Done — {len(pages)} pages ({len(scenes)} images reused from session)")
-    return StoryRecapResponse(pages=pages)
+    print(f"[story-recap] Done — {len(narrations)} narrations for {request.character_name}")
+    return StoryRecapResponse(narrations=narrations)
