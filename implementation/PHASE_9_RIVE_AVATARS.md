@@ -1,4 +1,7 @@
-# Phase 9 — Rive Animated Avatars (Lip-sync) ⬜ PLANNED
+# Phase 9 — Rive Animated Avatars (Lip-sync) ❌ DROPPED
+
+> **Dropped** — requires Rive asset creation for all 10 characters (designer work). Too much effort. Framer Motion states are sufficient.
+
 
 Replace the current PNG + Framer Motion portraits with Rive state machine animations that lip-sync to real-time audio amplitude.
 

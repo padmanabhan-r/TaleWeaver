@@ -204,11 +204,11 @@ All content entry points (typed theme, camera prop, sketch) safety-checked befor
 
 ---
 
-## Phase 5 — Study Mode ⏸ DEFERRED
+## Phase 5 — Story Pre-warm ✅ DONE
 
-Study mode removed from active scope.
+Zero blank canvas: a story opening + first illustration are generated the moment StoryScreen mounts, so the canvas is never empty and Gemini Live continues mid-scene rather than starting cold.
 
-See `PHASE_5_STORY_INTELLIGENCE.md` for full details when revisited.
+See `PHASE_5_STORY_PREWARM.md` for full details.
 
 ---
 
@@ -275,7 +275,6 @@ See `STRETCH_GOALS.md` for full details.
 | 5 | Multi-agent ADK pipeline | Very High | Medium | ⬜ Not started |
 | 6 | OpenTelemetry observability | Medium | Low | ⬜ Not started |
 | 7 | uv package manager | Low | Low | ⬜ pyproject.toml + uv.lock exist |
-| 8 | Study Mode (Phase 5) | High | Medium | ⬜ Deferred |
 
 ---
 
@@ -291,23 +290,30 @@ Child opens app → Landing page (ambient music, floating animations)
         Option C: Sketch a Theme — draw on canvas → /api/sketch-preview → AI recreates → confirm
     → "Begin the Story!" → StoryScreen mounts
 
+    [PRE-WARM — runs in background while child sees the character]
+    → POST /api/story-opening (Flash Lite opening + image gen, ~5-8s)
+        → STORY: 3-4 sentence opening in character's language
+        → SCENE: English painter's description for image gen
+        → first illustration rendered → seedInitialImage → canvas shows image
+    → "Begin the Story!" button enables
+
     → useLiveAPI.connect()
-        → WebSocket → backend /ws/story
+        → WebSocket → backend /ws/story (with opening_text in handshake)
         → backend: load character config
         → backend: connect to Gemini Live API
         → backend: send setup (system prompt + voice + VAD LOW + tools)
-        → backend: send "Begin!" client_content turn (with theme or prop/sketch image)
+        → backend: send "Begin!" + opening_text suffix → Gemini continues mid-scene
         → Gemini: setupComplete → frontend: sessionState = "active"
         → mic capture starts (16kHz PCM via AudioWorklet)
 
 Story plays
-    → Gemini proactively speaks the story opening
+    → Gemini continues the story from the pre-generated opening
     → 24kHz PCM audio chunks → playback worklet → speakers
     → outputTranscription accumulates per turn
-    → turnComplete → full turn text → useStoryImages
-        → 8s startup delay + 10s rate limit check → POST /api/image
-        → Flash Lite extracts scene → Gemini generates image
-        → base64 → StorySceneGrid: shimmer → fade-in
+    → Gemini calls generate_illustration tool at vivid moments → forceImageGeneration (bypass rate limit, skip_extraction)
+    → turnComplete fallback → triggerImageGeneration at configured interval
+        → Flash Lite extracts scene → image gen
+        → base64 → StorySceneGrid: shimmer → fade-in (previous image fed for continuity)
         → continues generating until session ends (no scene cap)
 
 Story branching (at most once per session)
@@ -331,8 +337,6 @@ Child interrupts
 
 | Item | Priority | Notes |
 |---|---|---|
-| 7.2 Movement Challenges | Medium | Needs system prompt tuning — camera already live |
 | Rive lip-sync avatars | Low | Highest visual impact but very high effort |
-| Study mode | Low | 4 chars exist, need distinct UI + prompt tuning |
 | Cloud Storage for images | Low | Reduces memory, enables story gallery |
 | Story Gallery | Low | Deferred — removed from landing page |

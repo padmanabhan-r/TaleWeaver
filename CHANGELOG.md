@@ -10,7 +10,6 @@ All notable changes to TaleWeaver are documented here.
 - `.github/workflows/deploy.yml` — GitHub Actions auto-deploy on push to `main` (needs `GCP_SA_KEY` secret to activate)
 
 ### Planned
-- Study Mode UI (`StudyScreen`) with concept panel and end-of-session summary
 - Rename Cloud Run service from `taleweaver-backend` → `taleweaver`
 - Backend rate limiting on `/api/image`
 - Tighten CORS to Cloud Run URL
@@ -21,16 +20,12 @@ All notable changes to TaleWeaver are documented here.
 ## [0.3.0] — 2026-02-26
 
 ### Added
-- **Landing page** (`LandingPage.tsx`) — kid-friendly mode selector with Story Time / Learn & Explore cards, drifting clouds, rainbow title
-- **Study Mode** — 4 new educational characters: Count Cosmo (Maths), Dr. Luna (Science), Professor Pip (Reading), Arty (Art)
+- **Landing page** (`LandingPage.tsx`) — ambient landing with floating elements, rainbow title
 - **3 new Indian story characters** — Ammamma (Telugu, voice: Zephyr), Aaji (Marathi, voice: Autonoe), Dida (Bengali, voice: Umbriel)
-- **`StudyCharacterSelect`** screen — 2×2 grid of study characters with green/teal theme
-- **Full app routing** — 5 screens: `landing | story-select | story | study-select | study` with back navigation
-- **`isStudy` flag** on `Character` interface to separate story vs study characters
-- **7 new SVG portraits** — Ammamma, Aaji, Dida, Count Cosmo, Dr. Luna, Professor Pip, Arty
+- **Full app routing** — screens: `landing | story-select | story` with back navigation
+- **7 new SVG portraits** — Ammamma, Aaji, Dida, and updated English characters
 - Visual keyword dictionary extended to Telugu, Marathi, Bengali for image trigger pre-filter
 - Browser tab: `<title>TaleWeaver</title>` + book emoji favicon
-- `PLAN.md` rewritten to reflect actual implementation + Phase 5 (Study Mode) + Phase 6 (Deployment)
 
 ### Changed
 - `CharacterSelect` now shows 10 story characters in **two rows of 5** with 🇮🇳 Indian Languages divider

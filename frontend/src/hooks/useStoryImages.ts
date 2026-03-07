@@ -125,5 +125,93 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
     [imageStyle, sessionId]
   );
 
-  return { scenes, triggerImageGeneration, stop };
+  // Pre-seed the canvas with the pre-generated opening image before the session starts.
+  const seedInitialImage = useCallback(
+    (image: { data: string; mimeType: string; sceneDescription: string }) => {
+      if (stoppedRef.current) return;
+      lastImageRef.current = image;
+      lastTriggerTimeRef.current = Date.now(); // prevent the fallback from firing immediately
+      const sceneId = `scene-${++sceneCountRef.current}`;
+      setScenes([{
+        id: sceneId,
+        status: "loaded",
+        imageData: image.data,
+        mimeType: image.mimeType,
+        description: image.sceneDescription.slice(0, 100),
+      }]);
+    },
+    []
+  );
+
+  // Called when Gemini explicitly triggers an illustration via tool call.
+  // Bypasses the rate limit and session delay — Gemini already chose the right moment.
+  const forceImageGeneration = useCallback(
+    async (sceneDescription: string) => {
+      if (stoppedRef.current) return;
+      if (sceneCountRef.current >= MAX_SCENES) return;
+
+      storyContextRef.current = (storyContextRef.current + " " + sceneDescription).slice(-2000).trim();
+      // Update timer so the fallback doesn't fire immediately after a tool-triggered image
+      lastTriggerTimeRef.current = Date.now();
+
+      const sceneId = `scene-${++sceneCountRef.current}`;
+      const prevImage = lastImageRef.current;
+
+      setScenes((prev) => [
+        ...prev,
+        { id: sceneId, status: "loading", imageData: null, mimeType: null, description: sceneDescription.slice(0, 100) },
+      ]);
+
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/image`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
+          body: JSON.stringify({
+            scene_description: sceneDescription.slice(0, 2000),
+            story_context: storyContextRef.current,
+            image_style: imageStyle,
+            session_id: sessionId,
+            skip_extraction: true,
+            previous_image_data: prevImage?.data ?? "",
+            previous_image_mime_type: prevImage?.mimeType ?? "image/png",
+            previous_scene_description: prevImage?.sceneDescription ?? "",
+          }),
+        });
+
+        if (stoppedRef.current) return;
+
+        if (!response.ok) {
+          setScenes((prev) => prev.filter((s) => s.id !== sceneId));
+          sceneCountRef.current--;
+          lastTriggerTimeRef.current = 0; // reset so next turn can retry
+          return;
+        }
+
+        const data = await response.json();
+        if (stoppedRef.current) return;
+
+        lastImageRef.current = { data: data.image_data, mimeType: data.mime_type, sceneDescription: data.scene_description };
+        setScenes((prev) =>
+          prev.map((scene) =>
+            scene.id === sceneId
+              ? { ...scene, status: "loaded", imageData: data.image_data, mimeType: data.mime_type }
+              : scene
+          )
+        );
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        console.error("[story-images] Force generation failed:", err);
+        setScenes((prev) => prev.filter((s) => s.id !== sceneId));
+        sceneCountRef.current--;
+        lastTriggerTimeRef.current = 0; // reset so next turn can retry
+      }
+    },
+    [imageStyle, sessionId]
+  );
+
+  return { scenes, triggerImageGeneration, forceImageGeneration, seedInitialImage, stop };
 }

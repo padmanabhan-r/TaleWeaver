@@ -49,6 +49,10 @@ async def _extract_english_scene(transcript: str, story_context: str) -> str:
         "Use the story context above to get character details exactly right. "
         "Do NOT be generic. Do NOT write 'a character in a setting'. "
         "Write what a painter would actually paint: specific subject, specific place, specific moment. "
+        "CRITICAL: Describe only story characters in their story world. "
+        "NEVER write 'a child holds...', 'a person holds...', or 'someone is holding...'. "
+        "If a toy or object is the story hero, describe it as a living character — e.g. "
+        "'Octavius the octopus soars through the sky' not 'a child holds an octopus toy'. "
         "No dialogue, no abstract concepts — purely visual.\n\n"
         f"Narration: {transcript[:1500]}"
     )
@@ -61,20 +65,31 @@ async def _extract_english_scene(transcript: str, story_context: str) -> str:
 
 async def _generate_imagen(prompt: str) -> tuple[str, str]:
     """Generate image using Imagen models (generate_images API)."""
-    response = await _client.aio.models.generate_images(
-        model=IMAGE_MODEL,
-        prompt=prompt,
-        config=types.GenerateImagesConfig(
-            aspect_ratio="4:3",
-            number_of_images=1,
-            safety_filter_level="BLOCK_LOW_AND_ABOVE",
-            person_generation="ALLOW_ALL",
-        ),
-    )
-    if response.generated_images:
-        image_bytes = response.generated_images[0].image.image_bytes
-        return base64.b64encode(image_bytes).decode("utf-8"), "image/png"
-    raise HTTPException(status_code=500, detail="No image in response")
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = await _client.aio.models.generate_images(
+                model=IMAGE_MODEL,
+                prompt=prompt,
+                config=types.GenerateImagesConfig(
+                    aspect_ratio="4:3",
+                    number_of_images=1,
+                    safety_filter_level="BLOCK_LOW_AND_ABOVE",
+                    person_generation="ALLOW_ALL",
+                ),
+            )
+            if response.generated_images:
+                image_bytes = response.generated_images[0].image.image_bytes
+                return base64.b64encode(image_bytes).decode("utf-8"), "image/png"
+            raise HTTPException(status_code=500, detail="No image in response")
+        except HTTPException:
+            raise
+        except Exception as e:
+            last_exc = e
+            if attempt == 0:
+                print(f"[image_gen] Imagen attempt 1 failed ({e}), retrying…")
+                await asyncio.sleep(2)
+    raise last_exc  # type: ignore[misc]
 
 
 def _build_contents(
@@ -122,41 +137,63 @@ def _build_contents(
 
 async def _generate_gemini(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png", previous_scene_description: str = "") -> tuple[str, str]:
     """Generate image using Gemini models via Vertex AI (generate_content API)."""
-    response = await _client.aio.models.generate_content(
-        model=IMAGE_MODEL,
-        contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
-        config=types.GenerateContentConfig(
-            response_modalities=["IMAGE"],
-            image_config=types.ImageConfig(aspect_ratio="4:3"),
-            safety_settings=[
-                types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_LOW_AND_ABOVE"),
-                types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_LOW_AND_ABOVE"),
-                types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_LOW_AND_ABOVE"),
-                types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_LOW_AND_ABOVE"),
-            ],
-        ),
-    )
-    for part in response.candidates[0].content.parts:
-        if part.inline_data:
-            return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
-    raise HTTPException(status_code=500, detail="No image in response")
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = await _client.aio.models.generate_content(
+                model=IMAGE_MODEL,
+                contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE"],
+                    image_config=types.ImageConfig(aspect_ratio="4:3"),
+                    safety_settings=[
+                        types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_LOW_AND_ABOVE"),
+                        types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="BLOCK_LOW_AND_ABOVE"),
+                        types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="BLOCK_LOW_AND_ABOVE"),
+                        types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="BLOCK_LOW_AND_ABOVE"),
+                    ],
+                ),
+            )
+            for part in response.candidates[0].content.parts:
+                if part.inline_data:
+                    return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
+            raise HTTPException(status_code=500, detail="No image in response")
+        except HTTPException:
+            raise
+        except Exception as e:
+            last_exc = e
+            if attempt == 0:
+                print(f"[image_gen] Gemini attempt 1 failed ({e}), retrying…")
+                await asyncio.sleep(2)
+    raise last_exc  # type: ignore[misc]
 
 
 async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", previous_image_mime_type: str = "image/png", previous_scene_description: str = "") -> tuple[str, str]:
     """Generate image using Gemini API key (AI Studio — shorter rate limit intervals than Vertex AI)."""
     if not _api_key_client:
         raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
-    response = await _api_key_client.aio.models.generate_content(
-        model=IMAGE_MODEL,
-        contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
-        config=types.GenerateContentConfig(
-            response_modalities=["IMAGE", "TEXT"],
-        ),
-    )
-    for part in response.candidates[0].content.parts:
-        if part.inline_data and part.inline_data.data:
-            return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
-    raise HTTPException(status_code=500, detail="No image in response")
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            response = await _api_key_client.aio.models.generate_content(
+                model=IMAGE_MODEL,
+                contents=_build_contents(prompt, previous_image_data, previous_image_mime_type, previous_scene_description),
+                config=types.GenerateContentConfig(
+                    response_modalities=["IMAGE", "TEXT"],
+                ),
+            )
+            for part in response.candidates[0].content.parts:
+                if part.inline_data and part.inline_data.data:
+                    return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
+            raise HTTPException(status_code=500, detail="No image in response")
+        except HTTPException:
+            raise
+        except Exception as e:
+            last_exc = e
+            if attempt == 0:
+                print(f"[image_gen] Gemini API-key attempt 1 failed ({e}), retrying…")
+                await asyncio.sleep(2)
+    raise last_exc  # type: ignore[misc]
 
 
 async def _is_safe_for_children(content: str) -> bool:
@@ -177,6 +214,115 @@ async def _is_safe_for_children(content: str) -> bool:
         return "UNSAFE" not in response.text.strip().upper()
     except Exception:
         return True  # fail open — don't block on classifier error
+
+
+async def _generate_opening(character_name: str, character_language: str, theme: str, prop_description: str) -> tuple[str, str]:
+    """
+    Generate a creative story opening + visual scene description in one Flash Lite call.
+    Returns (opening_text, scene_description).
+    opening_text is in the character's language; scene_description is always English (for image gen).
+    """
+    prop_ctx = f"\nThe story subject/prop: {prop_description}" if prop_description else ""
+    theme_ctx = f"\nTheme: {theme}" if theme and theme not in ("camera_prop", "sketch") else ""
+    lang_note = f" Write the STORY section in {character_language}." if character_language != "English" else ""
+
+    prompt = (
+        f"You are {character_name}, a beloved storyteller for children aged 4-10.\n"
+        f"Write the opening 3-4 sentences of a brand-new, creative children's story.{theme_ctx}{prop_ctx}\n\n"
+        "Requirements:\n"
+        "- Start mid-scene immediately — no 'Once upon a time' or preamble\n"
+        "- Be vivid, exciting, and completely different from any previous story\n"
+        "- End mid-action so the story feels alive and ongoing\n"
+        f"- STORY section:{lang_note}\n"
+        "- SCENE section: always in English, describe the single most visual moment as a painter would paint it. "
+        "NEVER write 'a child holds...', 'a person holds...', or any real person. "
+        "Describe only story characters in their story world.\n\n"
+        "Respond in EXACTLY this format (two lines, nothing else):\n"
+        "STORY: [3-4 sentence story opening]\n"
+        "SCENE: [1-2 sentence vivid English painter's description]"
+    )
+
+    response = await _extract_client.aio.models.generate_content(
+        model=EXTRACT_MODEL,
+        contents=prompt,
+    )
+    text = response.text.strip()
+
+    story_idx = text.find("STORY:")
+    scene_idx = text.find("SCENE:")
+
+    if story_idx >= 0 and scene_idx > story_idx:
+        opening_text = text[story_idx + len("STORY:"):scene_idx].strip()
+        scene_description = text[scene_idx + len("SCENE:"):].strip()
+    elif story_idx >= 0:
+        opening_text = text[story_idx + len("STORY:"):].strip()
+        scene_description = opening_text[:300]
+    else:
+        opening_text = text
+        scene_description = text[:300]
+
+    return opening_text, scene_description
+
+
+class StoryOpeningRequest(BaseModel):
+    character_id: str
+    character_name: str
+    character_language: str
+    image_style: str
+    theme: str = ""
+    prop_description: str = ""
+
+
+class StoryOpeningResponse(BaseModel):
+    opening_text: str
+    image_data: str
+    mime_type: str
+    scene_description: str
+
+
+@router.post("/api/story-opening", response_model=StoryOpeningResponse)
+async def generate_story_opening(request: StoryOpeningRequest):
+    """
+    Pre-generate a story opening + first illustration before the live session begins.
+    Called by the frontend when the user lands on StoryScreen, so the canvas isn't blank
+    and Gemini Live can continue from an established opening.
+    """
+    try:
+        opening_text, scene_description = await asyncio.wait_for(
+            _generate_opening(
+                request.character_name,
+                request.character_language,
+                request.theme,
+                request.prop_description,
+            ),
+            timeout=15.0,
+        )
+        print(f"[story-opening] Opening: {opening_text[:80]}...")
+        print(f"[story-opening] Scene: {scene_description}")
+
+        prompt = f"{SAFETY_PREFIX}{request.image_style}, {scene_description}"
+
+        if IMAGE_MODEL.startswith("imagen-"):
+            image_b64, mime_type = await asyncio.wait_for(_generate_imagen(prompt), timeout=30.0)
+        elif _api_key_client:
+            image_b64, mime_type = await asyncio.wait_for(_generate_gemini_api_key(prompt), timeout=45.0)
+        else:
+            image_b64, mime_type = await asyncio.wait_for(_generate_gemini(prompt), timeout=45.0)
+
+        return StoryOpeningResponse(
+            opening_text=opening_text,
+            image_data=image_b64,
+            mime_type=mime_type,
+            scene_description=scene_description,
+        )
+
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Story opening timed out")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[story-opening] Error: {e}")
+        raise HTTPException(status_code=500, detail="Story opening generation failed")
 
 
 class ThemeCheckRequest(BaseModel):
@@ -311,6 +457,7 @@ class ImageRequest(BaseModel):
     previous_image_data: str = ""
     previous_image_mime_type: str = "image/png"
     previous_scene_description: str = ""
+    skip_extraction: bool = False  # True when Gemini wrote the scene description directly via tool call
 
 
 class ImageResponse(BaseModel):
@@ -327,8 +474,12 @@ async def generate_scene_image(request: ImageRequest):
         raise HTTPException(status_code=400, detail="Scene description too long")
 
     try:
-        english_scene = await _extract_english_scene(request.scene_description, request.story_context)
-        print(f"[image_gen] Scene extracted: {english_scene}")
+        if request.skip_extraction:
+            english_scene = request.scene_description
+            print(f"[image_gen] Scene (from tool): {english_scene}")
+        else:
+            english_scene = await _extract_english_scene(request.scene_description, request.story_context)
+            print(f"[image_gen] Scene extracted: {english_scene}")
 
         prompt = f"{SAFETY_PREFIX}{request.image_style}, {english_scene}"
 
@@ -360,3 +511,106 @@ async def generate_scene_image(request: ImageRequest):
         if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
             raise HTTPException(status_code=429, detail="Rate limited — try again later")
         raise HTTPException(status_code=500, detail="Image generation failed")
+
+
+# ── Story Recap ────────────────────────────────────────────────────────────────
+
+class RecapScene(BaseModel):
+    """One actual scene from the session — image data + short description."""
+    image_data: str          # base64 PNG/JPEG from the session
+    mime_type: str = "image/png"
+    description: str = ""   # short hint (100 chars), used only if image unavailable
+
+
+class StoryRecapRequest(BaseModel):
+    character_name: str
+    image_style: str
+    scenes: list[RecapScene] = []        # preferred: actual session images
+    scene_descriptions: list[str] = []  # legacy fallback (ignored when scenes provided)
+
+
+class RecapPage(BaseModel):
+    type: str           # "text" or "image"
+    content: str = ""   # populated for type="text"
+    image_data: str = ""  # base64, populated for type="image"
+    mime_type: str = ""   # populated for type="image"
+
+
+class StoryRecapResponse(BaseModel):
+    pages: list[RecapPage]
+
+
+_RECAP_SAFETY = [
+    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="BLOCK_LOW_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT",  threshold="BLOCK_LOW_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT",         threshold="BLOCK_LOW_AND_ABOVE"),
+    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH",        threshold="BLOCK_LOW_AND_ABOVE"),
+]
+
+
+async def _narrate_scene(scene: RecapScene, character_name: str) -> str:
+    """Ask Gemini to narrate a single scene image in the character's storytelling voice."""
+    try:
+        contents = [types.Content(role="user", parts=[
+            types.Part(inline_data=types.Blob(
+                data=base64.b64decode(scene.image_data),
+                mime_type=scene.mime_type,
+            )),
+            types.Part(text=(
+                f"You are {character_name}, a beloved children's storyteller. "
+                f"This illustration is from the story you just told a child. "
+                f"Write exactly 2 warm, vivid sentences narrating THIS specific moment — "
+                f"describe what is actually happening in this image, in your storytelling voice. "
+                f"Be faithful to what you see. No preamble, just the narration."
+            )),
+        ])]
+
+        client = _api_key_client or _client
+        response = await asyncio.wait_for(
+            client.aio.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=contents,
+                config=types.GenerateContentConfig(
+                    response_modalities=["TEXT"],
+                    safety_settings=_RECAP_SAFETY,
+                ),
+            ),
+            timeout=20.0,
+        )
+        text = response.candidates[0].content.parts[0].text.strip()
+        return text
+    except Exception as e:
+        print(f"[story-recap] Narration error for scene: {e}")
+        return scene.description or "And the adventure continued…"
+
+
+@router.post("/api/story-recap", response_model=StoryRecapResponse)
+async def generate_story_recap(request: StoryRecapRequest):
+    """
+    Generate a storybook recap of the session.
+
+    When actual scene images are provided (request.scenes), Gemini narrates each
+    image in the character's voice — a faithful recap of what actually happened.
+    The original session images are reused; no new images are generated.
+    """
+    scenes = [s for s in request.scenes if s.image_data][:6]
+
+    if not scenes:
+        raise HTTPException(status_code=400, detail="No scene images provided.")
+
+    print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
+
+    # Generate narration for all images in parallel
+    narrations = await asyncio.gather(
+        *[_narrate_scene(s, request.character_name) for s in scenes],
+        return_exceptions=True,
+    )
+
+    pages: list[RecapPage] = []
+    for narration, scene in zip(narrations, scenes):
+        text = narration if isinstance(narration, str) else (scene.description or "And the adventure continued…")
+        pages.append(RecapPage(type="text", content=text))
+        pages.append(RecapPage(type="image", image_data=scene.image_data, mime_type=scene.mime_type))
+
+    print(f"[story-recap] Done — {len(pages)} pages ({len(scenes)} images reused from session)")
+    return StoryRecapResponse(pages=pages)
