@@ -4,6 +4,8 @@
 import asyncio
 import base64
 import os
+import opik
+from opik.integrations.genai import track_genai
 from google import genai
 from google.genai import types
 from fastapi import APIRouter, HTTPException
@@ -23,15 +25,16 @@ SAFETY_PREFIX = (
     "no text, no words, no letters, no captions, no speech bubbles, no labels, purely visual, "
 )
 
-_client = genai.Client(vertexai=True, project=PROJECT_ID, location=IMAGE_LOCATION)
-_extract_client = genai.Client(vertexai=True, project=PROJECT_ID, location="us-central1")
+_client = track_genai(genai.Client(vertexai=True, project=PROJECT_ID, location=IMAGE_LOCATION))
+_extract_client = track_genai(genai.Client(vertexai=True, project=PROJECT_ID, location="us-central1"))
 # API-key client for models not on Vertex AI (e.g. gemini-3.x).
 # vertexai=False is explicit to override GOOGLE_GENAI_USE_VERTEXAI=true env var.
-_api_key_client = genai.Client(api_key=GEMINI_API_KEY, vertexai=False) if GEMINI_API_KEY else None
+_api_key_client = track_genai(genai.Client(api_key=GEMINI_API_KEY, vertexai=False)) if GEMINI_API_KEY else None
 
 print(f"[image_gen] Using model: {IMAGE_MODEL} @ {IMAGE_LOCATION}")
 
 
+@opik.track(name="extract_scene", tags=["taleweaver", "image-gen"])
 async def _extract_english_scene(transcript: str, story_context: str) -> str:
     """Extract a concise English visual scene description from story narration in any language."""
     context_section = (
@@ -196,15 +199,18 @@ async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", p
     raise last_exc  # type: ignore[misc]
 
 
+@opik.track(name="safety_check", tags=["taleweaver", "safety"])
 async def _is_safe_for_children(content: str) -> bool:
     """Return True if the content is appropriate for children aged 4-10."""
     prompt = (
         f"Is this content appropriate for a children's story app for ages 4-10?\n"
         f"Content: \"{content}\"\n\n"
         "Reply with exactly one word: SAFE or UNSAFE.\n"
-        "Mark UNSAFE for: violence, weapons, blood, death, horror, adult/sexual themes, "
-        "drugs, hate speech, self-harm, war, terrorism, or anything frightening or dangerous.\n"
-        "Mark SAFE for: animals, magic, adventure, friendship, food, space, nature, fantasy, everyday life."
+        "Mark UNSAFE for: graphic violence, weapons, blood, death, horror, adult/sexual themes, "
+        "drugs, hate speech, self-harm, war, terrorism, or genuinely disturbing content.\n"
+        "Mark SAFE for: animals, magic, adventure, friendship, food, space, nature, fantasy, "
+        "everyday life, spooky/Halloween themes (ghosts, witches, pumpkins, haunted houses), "
+        "playful scary content, mysteries, mild suspense, and anything a child would enjoy."
     )
     try:
         response = await asyncio.wait_for(
@@ -216,6 +222,7 @@ async def _is_safe_for_children(content: str) -> bool:
         return True  # fail open — don't block on classifier error
 
 
+@opik.track(name="generate_opening", tags=["taleweaver", "story", "opening"])
 async def _generate_opening(character_name: str, character_language: str, theme: str, prop_description: str) -> tuple[str, str]:
     """
     Generate a creative story opening + visual scene description in one Flash Lite call.
@@ -235,8 +242,10 @@ async def _generate_opening(character_name: str, character_language: str, theme:
         "- End mid-action so the story feels alive and ongoing\n"
         f"- STORY section:{lang_note}\n"
         "- SCENE section: always in English, describe the single most visual moment as a painter would paint it. "
+        "Include the specific story characters (by name and appearance) doing what they are doing in the opening. "
+        f"NEVER include {character_name} in the scene — they are the narrator only, not a character in the story. "
         "NEVER write 'a child holds...', 'a person holds...', or any real person. "
-        "Describe only story characters in their story world.\n\n"
+        "Describe only the story's own characters in their world.\n\n"
         "Respond in EXACTLY this format (two lines, nothing else):\n"
         "STORY: [3-4 sentence story opening]\n"
         "SCENE: [1-2 sentence vivid English painter's description]"
@@ -354,17 +363,17 @@ class SketchPreviewResponse(BaseModel):
     mime_type: str
 
 
+@opik.track(name="generate_from_sketch", tags=["taleweaver", "image-gen", "sketch"])
 async def _generate_from_sketch(sketch_bytes: bytes, image_style: str, label: str = "") -> tuple[str, str]:
     """Recreate a child's sketch as a storybook illustration using the sketch as direct input."""
     subject_hint = f"The subject is: {label}. " if label else ""
     contents = [
         types.Part(text=(
             f"{SAFETY_PREFIX}"
-            f"{image_style}, "
             f"{subject_hint}"
-            "recreate this child's drawing as a colorful storybook illustration. "
-            "Keep the exact same subject and composition as the sketch. "
-            "Warm, friendly, simple clean background, no text, no words."
+            "Recreate this as a warm, colorful children's storybook illustration. "
+            "Keep the exact same subject and composition as the original. "
+            "Friendly, charming, simple clean background, no text, no words."
         )),
         types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=sketch_bytes)),
     ]
@@ -541,6 +550,7 @@ _RECAP_SAFETY = [
 ]
 
 
+@opik.track(name="narrate_scene", tags=["taleweaver", "recap"])
 async def _narrate_scene(scene: RecapScene, character_name: str) -> str:
     """Ask Gemini to narrate a single scene image in the character's storytelling voice."""
     try:
