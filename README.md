@@ -87,16 +87,16 @@ Turn your child's screen time into something genuinely fun and creative — a re
 ### Magic Camera — Capture a Prop & See It Reimagined
 <table>
 <tr>
-<td><img src="images/4.%20Magic%20camera%20-%20photo.png" alt="Magic Camera - Photo"/></td>
-<td><img src="images/5.%20Magic%20camera%20-%20image.png" alt="Magic Camera - Illustrated"/></td>
+<td><img src="images/4.%20Magic%20camera%20-%20photo.png" alt="Magic Camera - Photo" width="480"/></td>
+<td><img src="images/5.%20Magic%20camera%20-%20image.png" alt="Magic Camera - Illustrated" width="480"/></td>
 </tr>
 </table>
 
 ### Sketch a Theme — Draw & See It Come to Life
 <table>
 <tr>
-<td><img src="images/6.%20Sketch%20-%20drawing.png" alt="Sketch - Drawing"/></td>
-<td><img src="images/7.%20Sketch%20-%20image.png" alt="Sketch - Illustrated"/></td>
+<td><img src="images/6.%20Sketch%20-%20drawing.png" alt="Sketch - Drawing" width="480"/></td>
+<td><img src="images/7.%20Sketch%20-%20image.png" alt="Sketch - Illustrated" width="480"/></td>
 </tr>
 </table>
 
