@@ -15,7 +15,7 @@ PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 IMAGE_MODEL = os.environ["IMAGE_MODEL"]
 IMAGE_LOCATION = os.environ["IMAGE_LOCATION"]
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-EXTRACT_MODEL = "gemini-2.0-flash-lite"
+EXTRACT_MODEL = "gemini-2.5-flash-lite"
 
 SAFETY_PREFIX = (
     "child-safe illustration, age-appropriate for children aged 4-10, "
@@ -32,64 +32,16 @@ _api_key_client = genai.Client(api_key=GEMINI_API_KEY, vertexai=False) if GEMINI
 print(f"[image_gen] Using model: {IMAGE_MODEL} @ {IMAGE_LOCATION}")
 
 
-async def _extract_english_scene(transcript: str, story_context: str) -> str:
-    """Extract a concise English visual scene description from story narration in any language."""
-    context_section = (
-        f"Story so far (use this to identify the exact characters, species, names, and setting):\n"
-        f"{story_context[:1500]}\n\n"
+def _build_scene_prompt(scene_description: str, story_context: str) -> str:
+    """Build the image prompt directly from story transcription — no extraction step."""
+    context_line = (
+        f"Story context (characters and setting established so far): {story_context[:600]}\n\n"
     ) if story_context else ""
-
-    prompt = (
-        f"{context_section}"
-        "The storyteller just spoke the narration below. "
-        "Identify the single most visually interesting moment in this narration and describe it "
-        "as a concise English image description (2-3 sentences). "
-        "Be SPECIFIC — name the exact character (their species, appearance, clothing), "
-        "the exact setting (forest, village, ocean, cave, etc.), and the precise action happening. "
-        "Use the story context above to get character details exactly right. "
-        "Do NOT be generic. Do NOT write 'a character in a setting'. "
-        "Write what a painter would actually paint: specific subject, specific place, specific moment. "
-        "CRITICAL: Describe only story characters in their story world. "
-        "NEVER write 'a child holds...', 'a person holds...', or 'someone is holding...'. "
-        "If a toy or object is the story hero, describe it as a living character — e.g. "
-        "'Octavius the octopus soars through the sky' not 'a child holds an octopus toy'. "
-        "No dialogue, no abstract concepts — purely visual.\n\n"
-        f"Narration: {transcript[:1500]}"
+    return (
+        f"{context_line}"
+        f"Story narration to illustrate: {scene_description[:1500]}"
     )
-    response = await _extract_client.aio.models.generate_content(
-        model=EXTRACT_MODEL,
-        contents=prompt,
-    )
-    return response.text.strip()
 
-
-async def _generate_imagen(prompt: str) -> tuple[str, str]:
-    """Generate image using Imagen models (generate_images API)."""
-    last_exc: Exception | None = None
-    for attempt in range(2):
-        try:
-            response = await _client.aio.models.generate_images(
-                model=IMAGE_MODEL,
-                prompt=prompt,
-                config=types.GenerateImagesConfig(
-                    aspect_ratio="4:3",
-                    number_of_images=1,
-                    safety_filter_level="BLOCK_LOW_AND_ABOVE",
-                    person_generation="ALLOW_ALL",
-                ),
-            )
-            if response.generated_images:
-                image_bytes = response.generated_images[0].image.image_bytes
-                return base64.b64encode(image_bytes).decode("utf-8"), "image/png"
-            raise HTTPException(status_code=500, detail="No image in response")
-        except HTTPException:
-            raise
-        except Exception as e:
-            last_exc = e
-            if attempt == 0:
-                print(f"[image_gen] Imagen attempt 1 failed ({e}), retrying…")
-                await asyncio.sleep(2)
-    raise last_exc  # type: ignore[misc]
 
 
 def _build_contents(
@@ -202,9 +154,11 @@ async def _is_safe_for_children(content: str) -> bool:
         f"Is this content appropriate for a children's story app for ages 4-10?\n"
         f"Content: \"{content}\"\n\n"
         "Reply with exactly one word: SAFE or UNSAFE.\n"
-        "Mark UNSAFE for: violence, weapons, blood, death, horror, adult/sexual themes, "
-        "drugs, hate speech, self-harm, war, terrorism, or anything frightening or dangerous.\n"
-        "Mark SAFE for: animals, magic, adventure, friendship, food, space, nature, fantasy, everyday life."
+        "Mark UNSAFE for: graphic violence, weapons, blood, death, horror, adult/sexual themes, "
+        "drugs, hate speech, self-harm, war, terrorism, or genuinely disturbing content.\n"
+        "Mark SAFE for: animals, magic, adventure, friendship, food, space, nature, fantasy, "
+        "everyday life, spooky/Halloween themes (ghosts, witches, pumpkins, haunted houses), "
+        "playful scary content, mysteries, mild suspense, and anything a child would enjoy."
     )
     try:
         response = await asyncio.wait_for(
@@ -214,115 +168,6 @@ async def _is_safe_for_children(content: str) -> bool:
         return "UNSAFE" not in response.text.strip().upper()
     except Exception:
         return True  # fail open — don't block on classifier error
-
-
-async def _generate_opening(character_name: str, character_language: str, theme: str, prop_description: str) -> tuple[str, str]:
-    """
-    Generate a creative story opening + visual scene description in one Flash Lite call.
-    Returns (opening_text, scene_description).
-    opening_text is in the character's language; scene_description is always English (for image gen).
-    """
-    prop_ctx = f"\nThe story subject/prop: {prop_description}" if prop_description else ""
-    theme_ctx = f"\nTheme: {theme}" if theme and theme not in ("camera_prop", "sketch") else ""
-    lang_note = f" Write the STORY section in {character_language}." if character_language != "English" else ""
-
-    prompt = (
-        f"You are {character_name}, a beloved storyteller for children aged 4-10.\n"
-        f"Write the opening 3-4 sentences of a brand-new, creative children's story.{theme_ctx}{prop_ctx}\n\n"
-        "Requirements:\n"
-        "- Start mid-scene immediately — no 'Once upon a time' or preamble\n"
-        "- Be vivid, exciting, and completely different from any previous story\n"
-        "- End mid-action so the story feels alive and ongoing\n"
-        f"- STORY section:{lang_note}\n"
-        "- SCENE section: always in English, describe the single most visual moment as a painter would paint it. "
-        "NEVER write 'a child holds...', 'a person holds...', or any real person. "
-        "Describe only story characters in their story world.\n\n"
-        "Respond in EXACTLY this format (two lines, nothing else):\n"
-        "STORY: [3-4 sentence story opening]\n"
-        "SCENE: [1-2 sentence vivid English painter's description]"
-    )
-
-    response = await _extract_client.aio.models.generate_content(
-        model=EXTRACT_MODEL,
-        contents=prompt,
-    )
-    text = response.text.strip()
-
-    story_idx = text.find("STORY:")
-    scene_idx = text.find("SCENE:")
-
-    if story_idx >= 0 and scene_idx > story_idx:
-        opening_text = text[story_idx + len("STORY:"):scene_idx].strip()
-        scene_description = text[scene_idx + len("SCENE:"):].strip()
-    elif story_idx >= 0:
-        opening_text = text[story_idx + len("STORY:"):].strip()
-        scene_description = opening_text[:300]
-    else:
-        opening_text = text
-        scene_description = text[:300]
-
-    return opening_text, scene_description
-
-
-class StoryOpeningRequest(BaseModel):
-    character_id: str
-    character_name: str
-    character_language: str
-    image_style: str
-    theme: str = ""
-    prop_description: str = ""
-
-
-class StoryOpeningResponse(BaseModel):
-    opening_text: str
-    image_data: str
-    mime_type: str
-    scene_description: str
-
-
-@router.post("/api/story-opening", response_model=StoryOpeningResponse)
-async def generate_story_opening(request: StoryOpeningRequest):
-    """
-    Pre-generate a story opening + first illustration before the live session begins.
-    Called by the frontend when the user lands on StoryScreen, so the canvas isn't blank
-    and Gemini Live can continue from an established opening.
-    """
-    try:
-        opening_text, scene_description = await asyncio.wait_for(
-            _generate_opening(
-                request.character_name,
-                request.character_language,
-                request.theme,
-                request.prop_description,
-            ),
-            timeout=15.0,
-        )
-        print(f"[story-opening] Opening: {opening_text[:80]}...")
-        print(f"[story-opening] Scene: {scene_description}")
-
-        prompt = f"{SAFETY_PREFIX}{request.image_style}, {scene_description}"
-
-        if IMAGE_MODEL.startswith("imagen-"):
-            image_b64, mime_type = await asyncio.wait_for(_generate_imagen(prompt), timeout=30.0)
-        elif _api_key_client:
-            image_b64, mime_type = await asyncio.wait_for(_generate_gemini_api_key(prompt), timeout=45.0)
-        else:
-            image_b64, mime_type = await asyncio.wait_for(_generate_gemini(prompt), timeout=45.0)
-
-        return StoryOpeningResponse(
-            opening_text=opening_text,
-            image_data=image_b64,
-            mime_type=mime_type,
-            scene_description=scene_description,
-        )
-
-    except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="Story opening timed out")
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"[story-opening] Error: {e}")
-        raise HTTPException(status_code=500, detail="Story opening generation failed")
 
 
 class ThemeCheckRequest(BaseModel):
@@ -360,11 +205,10 @@ async def _generate_from_sketch(sketch_bytes: bytes, image_style: str, label: st
     contents = [
         types.Part(text=(
             f"{SAFETY_PREFIX}"
-            f"{image_style}, "
             f"{subject_hint}"
-            "recreate this child's drawing as a colorful storybook illustration. "
-            "Keep the exact same subject and composition as the sketch. "
-            "Warm, friendly, simple clean background, no text, no words."
+            "Recreate this as a warm, colorful children's storybook illustration. "
+            "Keep the exact same subject and composition as the original. "
+            "Friendly, charming, simple clean background, no text, no words."
         )),
         types.Part(inline_data=types.Blob(mime_type="image/jpeg", data=sketch_bytes)),
     ]
@@ -419,22 +263,11 @@ async def sketch_preview(request: SketchPreviewRequest):
             print(f"[sketch-preview] Blocked unsafe content: {label!r}")
             raise HTTPException(status_code=400, detail="unsafe_content")
 
-        if IMAGE_MODEL.startswith("imagen-"):
-            # Imagen is text-only — use label as prompt
-            print("[sketch-preview] Using Imagen — generating from label")
-            prompt = (
-                f"{SAFETY_PREFIX}{request.image_style}, "
-                f"a charming storybook illustration of {label}, "
-                "colorful, warm, friendly, simple clean background"
-            )
-            image_b64, mime_type = await asyncio.wait_for(_generate_imagen(prompt), timeout=30.0)
-        else:
-            # Gemini image models — pass label + sketch so image matches the label exactly
-            print("[sketch-preview] Using Gemini — generating image-from-sketch with label hint")
-            image_b64, mime_type = await asyncio.wait_for(
-                _generate_from_sketch(sketch_bytes, request.image_style, label),
-                timeout=45.0,
-            )
+        print("[sketch-preview] Generating image-from-sketch with label hint")
+        image_b64, mime_type = await asyncio.wait_for(
+            _generate_from_sketch(sketch_bytes, request.image_style, label),
+            timeout=45.0,
+        )
 
         print(f"[sketch-preview] Done — label: {label!r}, image: {len(image_b64)} chars")
         return SketchPreviewResponse(label=label, image_data=image_b64, mime_type=mime_type)
@@ -474,23 +307,16 @@ async def generate_scene_image(request: ImageRequest):
         raise HTTPException(status_code=400, detail="Scene description too long")
 
     try:
-        if request.skip_extraction:
-            english_scene = request.scene_description
-            print(f"[image_gen] Scene (from tool): {english_scene}")
-        else:
-            english_scene = await _extract_english_scene(request.scene_description, request.story_context)
-            print(f"[image_gen] Scene extracted: {english_scene}")
+        scene_text = _build_scene_prompt(request.scene_description, request.story_context)
+        print(f"[image_gen] Scene: {request.scene_description[:80]}...")
 
-        prompt = f"{SAFETY_PREFIX}{request.image_style}, {english_scene}"
+        prompt = f"{SAFETY_PREFIX}{request.image_style}. {scene_text}"
 
         prev_data = request.previous_image_data
         prev_mime = request.previous_image_mime_type
         prev_scene = request.previous_scene_description
 
-        if IMAGE_MODEL.startswith("imagen-"):
-            # Imagen — text prompt only, no reference image support
-            image_b64, mime_type = await _generate_imagen(prompt)
-        elif _api_key_client:
+        if _api_key_client:
             # Gemini API key (AI Studio) — preferred: shorter rate limit intervals
             image_b64, mime_type = await _generate_gemini_api_key(prompt, prev_data, prev_mime, prev_scene)
         else:
@@ -500,7 +326,7 @@ async def generate_scene_image(request: ImageRequest):
         return ImageResponse(
             image_data=image_b64,
             mime_type=mime_type,
-            scene_description=english_scene,
+            scene_description=request.scene_description,
         )
 
     except HTTPException:
@@ -529,15 +355,8 @@ class StoryRecapRequest(BaseModel):
     scene_descriptions: list[str] = []  # legacy fallback (ignored when scenes provided)
 
 
-class RecapPage(BaseModel):
-    type: str           # "text" or "image"
-    content: str = ""   # populated for type="text"
-    image_data: str = ""  # base64, populated for type="image"
-    mime_type: str = ""   # populated for type="image"
-
-
 class StoryRecapResponse(BaseModel):
-    pages: list[RecapPage]
+    narrations: list[str]   # one narration string per scene, in order
 
 
 _RECAP_SAFETY = [
@@ -565,13 +384,11 @@ async def _narrate_scene(scene: RecapScene, character_name: str) -> str:
             )),
         ])]
 
-        client = _api_key_client or _client
         response = await asyncio.wait_for(
-            client.aio.models.generate_content(
-                model="gemini-2.0-flash",
+            _extract_client.aio.models.generate_content(
+                model=EXTRACT_MODEL,
                 contents=contents,
                 config=types.GenerateContentConfig(
-                    response_modalities=["TEXT"],
                     safety_settings=_RECAP_SAFETY,
                 ),
             ),
@@ -593,7 +410,7 @@ async def generate_story_recap(request: StoryRecapRequest):
     image in the character's voice — a faithful recap of what actually happened.
     The original session images are reused; no new images are generated.
     """
-    scenes = [s for s in request.scenes if s.image_data][:6]
+    scenes = [s for s in request.scenes if s.image_data]
 
     if not scenes:
         raise HTTPException(status_code=400, detail="No scene images provided.")
@@ -601,16 +418,15 @@ async def generate_story_recap(request: StoryRecapRequest):
     print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
 
     # Generate narration for all images in parallel
-    narrations = await asyncio.gather(
+    results = await asyncio.gather(
         *[_narrate_scene(s, request.character_name) for s in scenes],
         return_exceptions=True,
     )
 
-    pages: list[RecapPage] = []
-    for narration, scene in zip(narrations, scenes):
-        text = narration if isinstance(narration, str) else (scene.description or "And the adventure continued…")
-        pages.append(RecapPage(type="text", content=text))
-        pages.append(RecapPage(type="image", image_data=scene.image_data, mime_type=scene.mime_type))
+    narrations = [
+        r if isinstance(r, str) else (scene.description or "And the adventure continued…")
+        for r, scene in zip(results, scenes)
+    ]
 
-    print(f"[story-recap] Done — {len(pages)} pages ({len(scenes)} images reused from session)")
-    return StoryRecapResponse(pages=pages)
+    print(f"[story-recap] Done — {len(narrations)} narrations for {request.character_name}")
+    return StoryRecapResponse(narrations=narrations)

@@ -65,7 +65,7 @@ const StorybookEmpty = () => (
     </svg>
 
     <p className="font-comic-neue text-lg md:text-xl text-purple-400/80 text-center leading-relaxed">
-      Story pictures will appear here...
+      Your imagination has no limits — let's see where the story takes us! ✨
     </p>
   </div>
 );
