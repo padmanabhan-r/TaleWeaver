@@ -4,8 +4,6 @@
 import asyncio
 import base64
 import os
-import opik
-from opik.integrations.genai import track_genai
 from google import genai
 from google.genai import types
 from fastapi import APIRouter, HTTPException
@@ -25,74 +23,25 @@ SAFETY_PREFIX = (
     "no text, no words, no letters, no captions, no speech bubbles, no labels, purely visual, "
 )
 
-_client = track_genai(genai.Client(vertexai=True, project=PROJECT_ID, location=IMAGE_LOCATION))
-_extract_client = track_genai(genai.Client(vertexai=True, project=PROJECT_ID, location="us-central1"))
+_client = genai.Client(vertexai=True, project=PROJECT_ID, location=IMAGE_LOCATION)
+_extract_client = genai.Client(vertexai=True, project=PROJECT_ID, location="us-central1")
 # API-key client for models not on Vertex AI (e.g. gemini-3.x).
 # vertexai=False is explicit to override GOOGLE_GENAI_USE_VERTEXAI=true env var.
-_api_key_client = track_genai(genai.Client(api_key=GEMINI_API_KEY, vertexai=False)) if GEMINI_API_KEY else None
+_api_key_client = genai.Client(api_key=GEMINI_API_KEY, vertexai=False) if GEMINI_API_KEY else None
 
 print(f"[image_gen] Using model: {IMAGE_MODEL} @ {IMAGE_LOCATION}")
 
 
-@opik.track(name="extract_scene", tags=["taleweaver", "image-gen"])
-async def _extract_english_scene(transcript: str, story_context: str) -> str:
-    """Extract a concise English visual scene description from story narration in any language."""
-    context_section = (
-        f"Story so far (use this to identify the exact characters, species, names, and setting):\n"
-        f"{story_context[:1500]}\n\n"
+def _build_scene_prompt(scene_description: str, story_context: str) -> str:
+    """Build the image prompt directly from story transcription — no extraction step."""
+    context_line = (
+        f"Story context (characters and setting established so far): {story_context[:600]}\n\n"
     ) if story_context else ""
-
-    prompt = (
-        f"{context_section}"
-        "The storyteller just spoke the narration below. "
-        "Identify the single most visually interesting moment in this narration and describe it "
-        "as a concise English image description (2-3 sentences). "
-        "Be SPECIFIC — name the exact character (their species, appearance, clothing), "
-        "the exact setting (forest, village, ocean, cave, etc.), and the precise action happening. "
-        "Use the story context above to get character details exactly right. "
-        "Do NOT be generic. Do NOT write 'a character in a setting'. "
-        "Write what a painter would actually paint: specific subject, specific place, specific moment. "
-        "CRITICAL: Describe only story characters in their story world. "
-        "NEVER write 'a child holds...', 'a person holds...', or 'someone is holding...'. "
-        "If a toy or object is the story hero, describe it as a living character — e.g. "
-        "'Octavius the octopus soars through the sky' not 'a child holds an octopus toy'. "
-        "No dialogue, no abstract concepts — purely visual.\n\n"
-        f"Narration: {transcript[:1500]}"
+    return (
+        f"{context_line}"
+        f"Story narration to illustrate: {scene_description[:1500]}"
     )
-    response = await _extract_client.aio.models.generate_content(
-        model=EXTRACT_MODEL,
-        contents=prompt,
-    )
-    return response.text.strip()
 
-
-async def _generate_imagen(prompt: str) -> tuple[str, str]:
-    """Generate image using Imagen models (generate_images API)."""
-    last_exc: Exception | None = None
-    for attempt in range(2):
-        try:
-            response = await _client.aio.models.generate_images(
-                model=IMAGE_MODEL,
-                prompt=prompt,
-                config=types.GenerateImagesConfig(
-                    aspect_ratio="4:3",
-                    number_of_images=1,
-                    safety_filter_level="BLOCK_LOW_AND_ABOVE",
-                    person_generation="ALLOW_ALL",
-                ),
-            )
-            if response.generated_images:
-                image_bytes = response.generated_images[0].image.image_bytes
-                return base64.b64encode(image_bytes).decode("utf-8"), "image/png"
-            raise HTTPException(status_code=500, detail="No image in response")
-        except HTTPException:
-            raise
-        except Exception as e:
-            last_exc = e
-            if attempt == 0:
-                print(f"[image_gen] Imagen attempt 1 failed ({e}), retrying…")
-                await asyncio.sleep(2)
-    raise last_exc  # type: ignore[misc]
 
 
 def _build_contents(
@@ -199,7 +148,6 @@ async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", p
     raise last_exc  # type: ignore[misc]
 
 
-@opik.track(name="safety_check", tags=["taleweaver", "safety"])
 async def _is_safe_for_children(content: str) -> bool:
     """Return True if the content is appropriate for children aged 4-10."""
     prompt = (
@@ -251,7 +199,6 @@ class SketchPreviewResponse(BaseModel):
     mime_type: str
 
 
-@opik.track(name="generate_from_sketch", tags=["taleweaver", "image-gen", "sketch"])
 async def _generate_from_sketch(sketch_bytes: bytes, image_style: str, label: str = "") -> tuple[str, str]:
     """Recreate a child's sketch as a storybook illustration using the sketch as direct input."""
     subject_hint = f"The subject is: {label}. " if label else ""
@@ -316,22 +263,11 @@ async def sketch_preview(request: SketchPreviewRequest):
             print(f"[sketch-preview] Blocked unsafe content: {label!r}")
             raise HTTPException(status_code=400, detail="unsafe_content")
 
-        if IMAGE_MODEL.startswith("imagen-"):
-            # Imagen is text-only — use label as prompt
-            print("[sketch-preview] Using Imagen — generating from label")
-            prompt = (
-                f"{SAFETY_PREFIX}{request.image_style}, "
-                f"a charming storybook illustration of {label}, "
-                "colorful, warm, friendly, simple clean background"
-            )
-            image_b64, mime_type = await asyncio.wait_for(_generate_imagen(prompt), timeout=30.0)
-        else:
-            # Gemini image models — pass label + sketch so image matches the label exactly
-            print("[sketch-preview] Using Gemini — generating image-from-sketch with label hint")
-            image_b64, mime_type = await asyncio.wait_for(
-                _generate_from_sketch(sketch_bytes, request.image_style, label),
-                timeout=45.0,
-            )
+        print("[sketch-preview] Generating image-from-sketch with label hint")
+        image_b64, mime_type = await asyncio.wait_for(
+            _generate_from_sketch(sketch_bytes, request.image_style, label),
+            timeout=45.0,
+        )
 
         print(f"[sketch-preview] Done — label: {label!r}, image: {len(image_b64)} chars")
         return SketchPreviewResponse(label=label, image_data=image_b64, mime_type=mime_type)
@@ -371,23 +307,16 @@ async def generate_scene_image(request: ImageRequest):
         raise HTTPException(status_code=400, detail="Scene description too long")
 
     try:
-        if request.skip_extraction:
-            english_scene = request.scene_description
-            print(f"[image_gen] Scene (from tool): {english_scene}")
-        else:
-            english_scene = await _extract_english_scene(request.scene_description, request.story_context)
-            print(f"[image_gen] Scene extracted: {english_scene}")
+        scene_text = _build_scene_prompt(request.scene_description, request.story_context)
+        print(f"[image_gen] Scene: {request.scene_description[:80]}...")
 
-        prompt = f"{SAFETY_PREFIX}{request.image_style}, {english_scene}"
+        prompt = f"{SAFETY_PREFIX}{request.image_style}. {scene_text}"
 
         prev_data = request.previous_image_data
         prev_mime = request.previous_image_mime_type
         prev_scene = request.previous_scene_description
 
-        if IMAGE_MODEL.startswith("imagen-"):
-            # Imagen — text prompt only, no reference image support
-            image_b64, mime_type = await _generate_imagen(prompt)
-        elif _api_key_client:
+        if _api_key_client:
             # Gemini API key (AI Studio) — preferred: shorter rate limit intervals
             image_b64, mime_type = await _generate_gemini_api_key(prompt, prev_data, prev_mime, prev_scene)
         else:
@@ -397,7 +326,7 @@ async def generate_scene_image(request: ImageRequest):
         return ImageResponse(
             image_data=image_b64,
             mime_type=mime_type,
-            scene_description=english_scene,
+            scene_description=request.scene_description,
         )
 
     except HTTPException:
@@ -438,7 +367,6 @@ _RECAP_SAFETY = [
 ]
 
 
-@opik.track(name="narrate_scene", tags=["taleweaver", "recap"])
 async def _narrate_scene(scene: RecapScene, character_name: str) -> str:
     """Ask Gemini to narrate a single scene image in the character's storytelling voice."""
     try:

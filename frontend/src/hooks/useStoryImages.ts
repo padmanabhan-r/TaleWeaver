@@ -13,6 +13,9 @@ export interface StoryScene {
 
 // Minimum wait before generating subsequent images (not the first)
 const SUBSEQUENT_DELAY_MS = 3_000;
+// If a tool call fired an image within this window, the turn-complete fallback stays silent.
+// This prevents double-firing when Gemini is actively using generate_illustration.
+const TOOL_CALL_GRACE_MS = 25_000;
 
 export function useStoryImages(imageStyle: string, sessionId: string, intervalSeconds: number = 10) {
   const [scenes, setScenes] = useState<StoryScene[]>([]);
@@ -23,6 +26,8 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
   const storyContextRef = useRef("");
   // Last successfully generated image + its scene description for context-aware continuity
   const lastImageRef = useRef<{ data: string; mimeType: string; sceneDescription: string } | null>(null);
+  // Tracks the last time Gemini fired generate_illustration — fallback defers to this
+  const lastToolCallTimeRef = useRef(0);
   // Keep interval in a ref so changes take effect immediately without recreating callbacks
   const intervalMsRef = useRef(intervalSeconds * 1000);
   useEffect(() => { intervalMsRef.current = intervalSeconds * 1000; }, [intervalSeconds]);
@@ -51,7 +56,9 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
       if (isFirst) {
         if (now - sessionStartTimeRef.current < SUBSEQUENT_DELAY_MS) return;
       } else {
-        // Subsequent images: enforce the user-controlled interval
+        // If Gemini used the tool recently, trust it — don't double-fire
+        if (now - lastToolCallTimeRef.current < TOOL_CALL_GRACE_MS) return;
+        // Enforce the user-controlled interval between fallback images
         if (now - lastTriggerTimeRef.current < intervalMsRef.current) return;
       }
 
@@ -138,8 +145,10 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
       if (sceneCountRef.current >= MAX_SCENES) return;
 
       storyContextRef.current = (storyContextRef.current + " " + sceneDescription).slice(-2000).trim();
-      // Update timer so the fallback doesn't fire immediately after a tool-triggered image
-      lastTriggerTimeRef.current = Date.now();
+      // Mark that the tool call path just fired — fallback will stay silent for TOOL_CALL_GRACE_MS
+      const now = Date.now();
+      lastToolCallTimeRef.current = now;
+      lastTriggerTimeRef.current = now;
 
       const sceneId = `scene-${++sceneCountRef.current}`;
       const prevImage = lastImageRef.current;
