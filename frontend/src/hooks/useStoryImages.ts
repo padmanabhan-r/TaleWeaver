@@ -11,8 +11,8 @@ export interface StoryScene {
   description: string;
 }
 
-// Wait this long after session start before generating the first image
-const SESSION_START_DELAY_MS = 8_000;
+// Minimum wait before generating subsequent images (not the first)
+const SUBSEQUENT_DELAY_MS = 3_000;
 
 export function useStoryImages(imageStyle: string, sessionId: string, intervalSeconds: number = 10) {
   const [scenes, setScenes] = useState<StoryScene[]>([]);
@@ -43,12 +43,17 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
       // Cap at max scenes
       if (sceneCountRef.current >= MAX_SCENES) return;
 
-      // Wait for story to establish before generating first image
       const now = Date.now();
-      if (now - sessionStartTimeRef.current < SESSION_START_DELAY_MS) return;
+      const isFirst = sceneCountRef.current === 0;
 
-      // Rate limit — controlled by intervalMsRef
-      if (now - lastTriggerTimeRef.current < intervalMsRef.current) return;
+      // First image: fire as soon as the first turn completes, with only a small buffer
+      // to ensure there's enough story text to describe a meaningful scene.
+      if (isFirst) {
+        if (now - sessionStartTimeRef.current < SUBSEQUENT_DELAY_MS) return;
+      } else {
+        // Subsequent images: enforce the user-controlled interval
+        if (now - lastTriggerTimeRef.current < intervalMsRef.current) return;
+      }
 
       lastTriggerTimeRef.current = now;
       const sceneId = `scene-${++sceneCountRef.current}`;
@@ -125,24 +130,6 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
     [imageStyle, sessionId]
   );
 
-  // Pre-seed the canvas with the pre-generated opening image before the session starts.
-  const seedInitialImage = useCallback(
-    (image: { data: string; mimeType: string; sceneDescription: string }) => {
-      if (stoppedRef.current) return;
-      lastImageRef.current = image;
-      lastTriggerTimeRef.current = Date.now(); // prevent the fallback from firing immediately
-      const sceneId = `scene-${++sceneCountRef.current}`;
-      setScenes([{
-        id: sceneId,
-        status: "loaded",
-        imageData: image.data,
-        mimeType: image.mimeType,
-        description: image.sceneDescription.slice(0, 100),
-      }]);
-    },
-    []
-  );
-
   // Called when Gemini explicitly triggers an illustration via tool call.
   // Bypasses the rate limit and session delay — Gemini already chose the right moment.
   const forceImageGeneration = useCallback(
@@ -213,5 +200,5 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
     [imageStyle, sessionId]
   );
 
-  return { scenes, triggerImageGeneration, forceImageGeneration, seedInitialImage, stop };
+  return { scenes, triggerImageGeneration, forceImageGeneration, stop };
 }

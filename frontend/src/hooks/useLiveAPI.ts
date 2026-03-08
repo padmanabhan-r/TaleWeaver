@@ -22,7 +22,6 @@ interface UseLiveAPIOptions {
   character: Character;
   theme?: string;
   propImage?: string;     // raw base64 JPEG, no data: prefix
-  openingText?: string;   // pre-generated story opening from /api/story-opening
   onImageTrigger?: ((text: string) => void) | null;
   onGenerateIllustration?: ((description: string) => void) | null;
   onTranscription?: ((msg: Transcription) => void) | null;
@@ -239,7 +238,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 // ── Main hook ────────────────────────────────────────────────────────────────
 
-export function useLiveAPI({ character, theme, propImage, openingText, onImageTrigger, onGenerateIllustration, onTranscription, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
+export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGenerateIllustration, onTranscription, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
@@ -253,7 +252,8 @@ export function useLiveAPI({ character, theme, propImage, openingText, onImageTr
   const playChunkRef = useRef(playChunk);
   const clearBufferRef = useRef(clearBuffer);
   const startCaptureRef = useRef(startCapture);
-  const openingTextRef = useRef(openingText);
+
+
   const onImageTriggerRef = useRef(onImageTrigger);
   const onGenerateIllustrationRef = useRef(onGenerateIllustration);
   const onTranscriptionRef = useRef(onTranscription);
@@ -262,7 +262,8 @@ export function useLiveAPI({ character, theme, propImage, openingText, onImageTr
   useEffect(() => { playChunkRef.current = playChunk; }, [playChunk]);
   useEffect(() => { clearBufferRef.current = clearBuffer; }, [clearBuffer]);
   useEffect(() => { startCaptureRef.current = startCapture; }, [startCapture]);
-  useEffect(() => { openingTextRef.current = openingText; }, [openingText]);
+
+
   useEffect(() => { onImageTriggerRef.current = onImageTrigger; }, [onImageTrigger]);
   useEffect(() => { onGenerateIllustrationRef.current = onGenerateIllustration; }, [onGenerateIllustration]);
   useEffect(() => { onTranscriptionRef.current = onTranscription; }, [onTranscription]);
@@ -285,7 +286,6 @@ export function useLiveAPI({ character, theme, propImage, openingText, onImageTr
           character_id: character.id,
           theme: theme ?? null,
           prop_image: propImage ?? null,
-          opening_text: openingTextRef.current ?? null,
         }));
       };
 

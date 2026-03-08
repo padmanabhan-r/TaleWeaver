@@ -47,15 +47,15 @@ async def _extract_english_scene(transcript: str, story_context: str) -> str:
         "The storyteller just spoke the narration below. "
         "Identify the single most visually interesting moment in this narration and describe it "
         "as a concise English image description (2-3 sentences). "
-        "Be SPECIFIC — use the EXACT character type from the story context above (e.g. 'rubber chicken toy', "
-        "'wooden puppet', 'friendly bear cub'). "
-        "NEVER replace a specific character type with a vague word — FORBIDDEN words: "
-        "'creature', 'character', 'figure', 'being', 'entity', 'animal' (unless that IS the type). "
-        "Name the exact setting (forest, teacup ride, ocean, etc.) and the precise action happening. "
+        "Be SPECIFIC — name the exact character (their species, appearance, clothing), "
+        "the exact setting (forest, village, ocean, cave, etc.), and the precise action happening. "
+        "Use the story context above to get character details exactly right. "
+        "Do NOT be generic. Do NOT write 'a character in a setting'. "
+        "Write what a painter would actually paint: specific subject, specific place, specific moment. "
         "CRITICAL: Describe only story characters in their story world. "
         "NEVER write 'a child holds...', 'a person holds...', or 'someone is holding...'. "
-        "If a toy or object is the story hero, show it acting on its own — e.g. "
-        "'Squeaky the rubber chicken toy spins wildly on a teacup ride' not 'a golden creature spins'. "
+        "If a toy or object is the story hero, describe it as a living character — e.g. "
+        "'Octavius the octopus soars through the sky' not 'a child holds an octopus toy'. "
         "No dialogue, no abstract concepts — purely visual.\n\n"
         f"Narration: {transcript[:1500]}"
     )
@@ -220,118 +220,6 @@ async def _is_safe_for_children(content: str) -> bool:
         return "UNSAFE" not in response.text.strip().upper()
     except Exception:
         return True  # fail open — don't block on classifier error
-
-
-@opik.track(name="generate_opening", tags=["taleweaver", "story", "opening"])
-async def _generate_opening(character_name: str, character_language: str, theme: str, prop_description: str) -> tuple[str, str]:
-    """
-    Generate a creative story opening + visual scene description in one Flash Lite call.
-    Returns (opening_text, scene_description).
-    opening_text is in the character's language; scene_description is always English (for image gen).
-    """
-    prop_ctx = f"\nThe story subject/prop: {prop_description}" if prop_description else ""
-    theme_ctx = f"\nTheme: {theme}" if theme and theme not in ("camera_prop", "sketch") else ""
-    lang_note = f" Write the STORY section in {character_language}." if character_language != "English" else ""
-
-    prompt = (
-        f"You are {character_name}, a beloved storyteller for children aged 4-10.\n"
-        f"Write the opening 3-4 sentences of a brand-new, creative children's story.{theme_ctx}{prop_ctx}\n\n"
-        "Requirements:\n"
-        "- Start mid-scene immediately — no 'Once upon a time' or preamble\n"
-        "- Be vivid, exciting, and completely different from any previous story\n"
-        "- End mid-action so the story feels alive and ongoing\n"
-        f"- STORY section:{lang_note}\n"
-        "- SCENE section: always in English, describe the single most visual moment as a painter would paint it. "
-        "Include the specific story characters (by name and appearance) doing what they are doing in the opening. "
-        f"NEVER include {character_name} in the scene — they are the narrator only, not a character in the story. "
-        "NEVER write 'a child holds...', 'a person holds...', or any real person. "
-        "Describe only the story's own characters in their world.\n\n"
-        "Respond in EXACTLY this format (two lines, nothing else):\n"
-        "STORY: [3-4 sentence story opening]\n"
-        "SCENE: [1-2 sentence vivid English painter's description]"
-    )
-
-    response = await _extract_client.aio.models.generate_content(
-        model=EXTRACT_MODEL,
-        contents=prompt,
-    )
-    text = response.text.strip()
-
-    story_idx = text.find("STORY:")
-    scene_idx = text.find("SCENE:")
-
-    if story_idx >= 0 and scene_idx > story_idx:
-        opening_text = text[story_idx + len("STORY:"):scene_idx].strip()
-        scene_description = text[scene_idx + len("SCENE:"):].strip()
-    elif story_idx >= 0:
-        opening_text = text[story_idx + len("STORY:"):].strip()
-        scene_description = opening_text[:300]
-    else:
-        opening_text = text
-        scene_description = text[:300]
-
-    return opening_text, scene_description
-
-
-class StoryOpeningRequest(BaseModel):
-    character_id: str
-    character_name: str
-    character_language: str
-    image_style: str
-    theme: str = ""
-    prop_description: str = ""
-
-
-class StoryOpeningResponse(BaseModel):
-    opening_text: str
-    image_data: str
-    mime_type: str
-    scene_description: str
-
-
-@router.post("/api/story-opening", response_model=StoryOpeningResponse)
-async def generate_story_opening(request: StoryOpeningRequest):
-    """
-    Pre-generate a story opening + first illustration before the live session begins.
-    Called by the frontend when the user lands on StoryScreen, so the canvas isn't blank
-    and Gemini Live can continue from an established opening.
-    """
-    try:
-        opening_text, scene_description = await asyncio.wait_for(
-            _generate_opening(
-                request.character_name,
-                request.character_language,
-                request.theme,
-                request.prop_description,
-            ),
-            timeout=15.0,
-        )
-        print(f"[story-opening] Opening: {opening_text[:80]}...")
-        print(f"[story-opening] Scene: {scene_description}")
-
-        prompt = f"{SAFETY_PREFIX}{request.image_style}, {scene_description}"
-
-        if IMAGE_MODEL.startswith("imagen-"):
-            image_b64, mime_type = await asyncio.wait_for(_generate_imagen(prompt), timeout=30.0)
-        elif _api_key_client:
-            image_b64, mime_type = await asyncio.wait_for(_generate_gemini_api_key(prompt), timeout=45.0)
-        else:
-            image_b64, mime_type = await asyncio.wait_for(_generate_gemini(prompt), timeout=45.0)
-
-        return StoryOpeningResponse(
-            opening_text=opening_text,
-            image_data=image_b64,
-            mime_type=mime_type,
-            scene_description=scene_description,
-        )
-
-    except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="Story opening timed out")
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"[story-opening] Error: {e}")
-        raise HTTPException(status_code=500, detail="Story opening generation failed")
 
 
 class ThemeCheckRequest(BaseModel):
