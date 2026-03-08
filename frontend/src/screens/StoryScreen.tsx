@@ -122,13 +122,6 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   const [intervalSeconds, setIntervalSeconds] = useState(8);
 
-  // Pre-warm: generate story opening + first image before user clicks Begin
-  const [preWarmReady, setPreWarmReady] = useState(false);
-  const [openingText, setOpeningText] = useState("");
-  const preWarmAbortRef = useRef<AbortController | null>(null);
-  // Holds the prewarm image — not shown until Begin is pressed
-  const prewarmImageRef = useRef<{ data: string; mimeType: string; sceneDescription: string } | null>(null);
-
   // Story recap modal
   const [showRecap, setShowRecap] = useState(false);
 
@@ -139,52 +132,12 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   // Capture first story line for gallery title
   const storyFirstLineRef = useRef("");
 
-  const { scenes, triggerImageGeneration, forceImageGeneration, seedInitialImage, stop: stopImages } = useStoryImages(
+  const { scenes, triggerImageGeneration, forceImageGeneration, stop: stopImages } = useStoryImages(
     character.imageStyle,
     sessionIdRef.current,
     intervalSeconds
   );
 
-  // Fire pre-warm as soon as the screen mounts — generate opening text + first image
-  // so the canvas isn't blank and Gemini Live can continue from the established opening.
-  useEffect(() => {
-    const controller = new AbortController();
-    preWarmAbortRef.current = controller;
-
-    const prewarm = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/story-opening`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            character_id: character.id,
-            character_name: character.name,
-            character_language: character.language,
-            image_style: character.imageStyle,
-            theme: theme ?? "",
-            prop_description: propDescription ?? "",
-          }),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setOpeningText(data.opening_text);
-        // Store image — seeded into the canvas only when Begin is pressed
-        prewarmImageRef.current = { data: data.image_data, mimeType: data.mime_type, sceneDescription: data.scene_description };
-      } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-        console.warn("[story-screen] Pre-warm failed, starting fresh:", err);
-      } finally {
-        setPreWarmReady(true);
-      }
-    };
-
-    prewarm();
-
-    // Timeout fallback — allow begin after 20s regardless
-    const timeout = setTimeout(() => setPreWarmReady(true), 20_000);
-    return () => { controller.abort(); clearTimeout(timeout); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // Keep a stable ref to scenes for saving on end (state snapshot)
   const scenesRef = useRef<StoryScene[]>(scenes);
   scenesRef.current = scenes;
@@ -201,14 +154,13 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   }, []);
 
   const {
-    connect, disconnect, sessionState, characterState, isCapturing,
+    connect, disconnect, togglePause, isPaused, sessionState, characterState, isCapturing,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
     cameraEnabled, toggleCamera, cameraVideoRef,
   } = useLiveAPI({
     character,
     theme,
     propImage,
-    openingText: openingText || undefined,
     onImageTrigger: triggerImageGeneration,
     onGenerateIllustration: forceImageGeneration,
     onTranscription: (msg) => {
@@ -220,22 +172,16 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   });
 
   const handleBegin = useCallback(() => {
-    // Seed the prewarm image into the canvas now that the story is starting
-    if (prewarmImageRef.current) {
-      seedInitialImage(prewarmImageRef.current);
-    }
     connect();
-  }, [connect, seedInitialImage]);
+  }, [connect]);
 
   const endAndSave = useCallback(() => {
-    preWarmAbortRef.current?.abort();
     saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current);
     stopImages();
     disconnect();
   }, [character, disconnect, stopImages]);
 
   const handleBack = () => {
-    preWarmAbortRef.current?.abort();
     saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current);
     stopImages();
     disconnect();
@@ -249,26 +195,27 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   const statusText = STATUS_TEXT[statusKey] ?? "";
 
   return (
+    <>
+    {/* Badge popup and recap modal are outside the overflow-hidden container so that
+        position:fixed works correctly on iOS/iPad (overflow:hidden clips fixed children) */}
+    <AnimatePresence>
+      {activeBadge && (
+        <BadgePopup badge={activeBadge} onDismiss={handleBadgeDismiss} />
+      )}
+    </AnimatePresence>
+
+    <AnimatePresence>
+      {showRecap && (
+        <StoryRecapModal
+          character={character}
+          scenes={scenesRef.current}
+          onClose={() => setShowRecap(false)}
+        />
+      )}
+    </AnimatePresence>
+
     <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
       <FloatingElements />
-
-      {/* Badge popup — rendered at fixed position, above everything */}
-      <AnimatePresence>
-        {activeBadge && (
-          <BadgePopup badge={activeBadge} onDismiss={handleBadgeDismiss} />
-        )}
-      </AnimatePresence>
-
-      {/* Story recap modal */}
-      <AnimatePresence>
-        {showRecap && (
-          <StoryRecapModal
-            character={character}
-            scenes={scenesRef.current}
-            onClose={() => setShowRecap(false)}
-          />
-        )}
-      </AnimatePresence>
 
       <div className="relative z-10 h-screen flex flex-col">
         {/* Header */}
@@ -281,7 +228,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
             onClick={handleBack}
             className="text-muted-foreground hover:text-foreground font-body transition-colors"
           >
-            ← Change Storyteller
+            ← Back
           </button>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
           <div className="flex justify-end flex-shrink-0">
@@ -408,33 +355,31 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                   >
                     📖 See our story!
                   </button>
+                  <button
+                    onClick={handleBack}
+                    className="font-body text-sm px-6 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                  >
+                    ✨ Begin another story
+                  </button>
                 </motion.div>
               ) : !isActive ? (
                 <motion.button
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.3, delay: 0.8 }}
-                  whileHover={!isConnecting && preWarmReady ? { scale: 1.05 } : {}}
-                  whileTap={!isConnecting && preWarmReady ? { scale: 0.95 } : {}}
+                  whileHover={!isConnecting ? { scale: 1.05 } : {}}
+                  whileTap={!isConnecting ? { scale: 0.95 } : {}}
                   onClick={handleBegin}
-                  disabled={isConnecting || !preWarmReady}
+                  disabled={isConnecting}
                   className="px-10 py-4 rounded-full bg-primary text-primary-foreground font-display text-xl font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
                 >
-                  {!preWarmReady ? (
+                  {isConnecting ? (
                     <>
                       <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      Preparing your story...
-                    </>
-                  ) : isConnecting ? (
-                    <>
-                      <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Getting the story ready...
+                      Waking up the storyteller...
                     </>
                   ) : (
                     "🪄 Begin the Story!"
@@ -447,12 +392,24 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                   transition={{ duration: 0.3 }}
                   className="flex flex-col items-center gap-2"
                 >
-                  <button
-                    onClick={endAndSave}
-                    className="font-body text-sm px-6 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-                  >
-                    End Story
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={togglePause}
+                      className={`font-body text-sm px-4 py-2 rounded-full border transition-colors ${
+                        isPaused
+                          ? "border-primary/60 text-primary bg-primary/10 hover:bg-primary/20"
+                          : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
+                      }`}
+                    >
+                      {isPaused ? "▶ Resume" : "⏸ Pause"}
+                    </button>
+                    <button
+                      onClick={endAndSave}
+                      className="font-body text-sm px-4 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                    >
+                      End Story
+                    </button>
+                  </div>
                   <button
                     onClick={toggleCamera}
                     className={`font-body text-xs px-4 py-1.5 rounded-full border transition-colors ${
@@ -532,6 +489,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
         </div>
       </div>
     </div>
+    </>
   );
 };
 
