@@ -1,6 +1,10 @@
 # TaleWeaver
 
-A voice-first interactive storytelling app for kids aged 4–10, powered by Google Gemini Live API. Children pick a beloved storyteller character, choose how to spark their adventure, and have a real-time voice conversation to co-create magical tales — with AI-generated illustrations appearing as the story unfolds.
+A voice-first interactive storytelling app for kids aged 4–10, powered by Google Gemini Live API. Children pick a beloved storyteller character, then bring anything to life and start weaving a story from a theme of their choice.
+
+**Pick a theme** from a curated set of adventures and life skills, or type anything that sparks your child's imagination. **Bring any toy or object from around your home** to life using the Magic Camera — hold it up, snap a photo, and watch Gemini reimagine it as a storybook character. **Sketch anything in your mind** — a robot, a fairy, a dragon — and see your drawing transformed into a story-starting illustration.
+
+Turn your child's screen time into something genuinely fun and creative — a real-time voice conversation that co-creates a magical, personalised tale with AI-generated illustrations appearing as the story unfolds.
 
 **Live:** https://taleweaver.online
 
