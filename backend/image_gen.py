@@ -410,7 +410,7 @@ async def generate_story_recap(request: StoryRecapRequest):
     image in the character's voice — a faithful recap of what actually happened.
     The original session images are reused; no new images are generated.
     """
-    scenes = [s for s in request.scenes if s.image_data][:6]
+    scenes = [s for s in request.scenes if s.image_data]
 
     if not scenes:
         raise HTTPException(status_code=400, detail="No scene images provided.")

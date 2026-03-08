@@ -242,6 +242,10 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
+  const [isPaused, setIsPaused] = useState(false);
+  // True only when the user explicitly clicks "End Story" — prevents unexpected drops from
+  // showing "See our story!" as if the session ended intentionally.
+  const userEndedRef = useRef(false);
   // Accumulates character speech across transcription chunks (finished flag unreliable in native audio)
   const outputTextAccRef = useRef("");
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
@@ -272,6 +276,7 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
 
   const connect = useCallback(async () => {
     if (sessionState !== "idle") return;
+    userEndedRef.current = false;
     setSessionState("connecting");
 
     try {
@@ -328,11 +333,12 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
                 const description = (call.args?.scene_description as string) ?? "";
                 onGenerateIllustrationRef.current?.(description);
               } else if (call.name === "awardBadge") {
+                // Clear any pre-queued speech about the badge — the visual is enough
+                clearBufferRef.current();
                 onBadgeAwardedRef.current?.(call.args as BadgeAward);
-                // Respond immediately so Gemini can continue narrating
                 ws.send(JSON.stringify({
                   toolResponse: {
-                    functionResponses: [{ id: call.id, response: { output: "Badge awarded!" } }],
+                    functionResponses: [{ id: call.id, response: { output: "Badge shown on screen. Continue the story immediately — do not mention the badge again." } }],
                   },
                 }));
               }
@@ -398,7 +404,9 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
       ws.onclose = (event) => {
         console.log("[live-api] WebSocket closed:", event.code, event.reason);
         stopCapture();
-        setSessionState("ended");
+        // Only transition to "ended" (shows "See our story!") if the user clicked End Story.
+        // Unexpected drops (Gemini timeout, network) go to "error" so the child can restart.
+        setSessionState(userEndedRef.current ? "ended" : "error");
         setCharacterState("idle");
       };
 
@@ -408,15 +416,34 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
     }
   }, [character.id, sessionState, initPlayback, stopCapture]);
 
+  const togglePause = useCallback(() => {
+    const gain = playbackGainRef.current;
+    const captureCtx = captureCtxRef.current;
+    if (isPaused) {
+      // Resume — unmute playback and restart mic AudioContext
+      if (gain) gain.gain.value = 1;
+      captureCtx?.resume();
+      setIsPaused(false);
+    } else {
+      // Pause — silence playback and suspend mic AudioContext (stops worklet processing)
+      if (gain) gain.gain.value = 0;
+      captureCtx?.suspend();
+      setIsPaused(true);
+    }
+  }, [isPaused, playbackGainRef, captureCtxRef]);
+
   const disconnect = useCallback(() => {
+    userEndedRef.current = true;
+    setIsPaused(false);
+    // Restore gain in case we were paused
+    if (playbackGainRef.current) playbackGainRef.current.gain.value = 1;
     stopCapture();
     stopCamera();
     clearBuffer();
     wsRef.current?.close(1000, "User ended session");
     wsRef.current = null;
-    setSessionState("idle");
     setCharacterState("idle");
-  }, [stopCapture, stopCamera, clearBuffer]);
+  }, [stopCapture, stopCamera, clearBuffer, playbackGainRef]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -427,7 +454,7 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    connect, disconnect, sessionState, characterState, isCapturing, isPlaying,
+    connect, disconnect, togglePause, isPaused, sessionState, characterState, isCapturing, isPlaying,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
     cameraEnabled, toggleCamera, cameraVideoRef,
   };

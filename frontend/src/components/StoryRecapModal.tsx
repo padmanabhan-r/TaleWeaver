@@ -17,7 +17,7 @@ export default function StoryRecapModal({ character, scenes, onClose }: Props) {
   const [error, setError] = useState("");
 
   // Only the loaded scenes with images — used for both the API request and display
-  const loadedScenes = scenes.filter((s) => s.status === "loaded" && s.imageData).slice(0, 6);
+  const loadedScenes = scenes.filter((s) => s.status === "loaded" && s.imageData);
 
   useEffect(() => {
     if (loadedScenes.length === 0) {
@@ -100,25 +100,22 @@ export default function StoryRecapModal({ character, scenes, onClose }: Props) {
             </div>
           )}
 
-          {!loading && !error && narrations.length > 0 && (
+          {!loading && !error && loadedScenes.length > 0 && (
             <div className="flex flex-col gap-6">
-              {narrations.map((narration, i) => {
-                const scene = loadedScenes[i];
-                return (
-                  <div key={i} className="flex flex-col gap-4">
+              {loadedScenes.map((scene, i) => (
+                <div key={i} className="flex flex-col gap-4">
+                  <img
+                    src={`data:${scene.mimeType ?? "image/png"};base64,${scene.imageData}`}
+                    alt={`Story illustration ${i + 1}`}
+                    className="w-full rounded-2xl shadow-md"
+                  />
+                  {narrations[i] && (
                     <p className="font-body text-lg text-card-foreground leading-relaxed">
-                      {narration}
+                      {narrations[i]}
                     </p>
-                    {scene && (
-                      <img
-                        src={`data:${scene.mimeType ?? "image/png"};base64,${scene.imageData}`}
-                        alt={`Story illustration ${i + 1}`}
-                        className="w-full rounded-2xl shadow-md"
-                      />
-                    )}
-                  </div>
-                );
-              })}
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
