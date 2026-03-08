@@ -14,10 +14,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import opik
-opik.configure()
-print("[Opik] Configured successfully")
-
 from proxy import run_proxy_session
 from image_gen import router as image_router
 
