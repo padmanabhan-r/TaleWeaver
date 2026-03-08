@@ -1,7 +1,5 @@
 # TaleWeaver
 
-![TaleWeaver Landing Page](images/0.%20TaleWeaver%20-%20Landing%20Page.png)
-
 A voice-first interactive storytelling app for kids aged 4–10, powered by Google Gemini Live API. Children pick a beloved storyteller character, choose how to spark their adventure, and have a real-time voice conversation to co-create magical tales — with AI-generated illustrations appearing as the story unfolds.
 
 **Live:** https://taleweaver.online
@@ -16,16 +14,17 @@ A voice-first interactive storytelling app for kids aged 4–10, powered by Goog
 - **Native audio** — no TTS/STT round-trips; Gemini handles voice directly at 24kHz
 - **Story pre-warm** — before the session starts, a single Flash Lite call generates a coherent plan + opening line + first illustration; the opening is spoken word-for-word by Gemini Live so narration and the first image always align
 - **Smart illustration timing** — Gemini calls a `generate_illustration` tool at visually rich moments (new location, character reveal, dramatic transformation); images match what Gemini just described rather than firing on a clock
-- **Visual continuity** — reference image + style instructions keep characters and settings consistent across all scenes
+- **Visual continuity** — each image generation passes the previous image + scene description as context; characters and art style stay consistent across all scenes
 - **Unlimited scene illustrations** — images generate continuously throughout the session with no cap
-- **Story Recap** — after the session ends, a single Gemini call with `response_modalities=["TEXT","IMAGE"]` produces an interleaved storybook: alternating narration paragraphs and illustrations rendered from the session's actual images
-- **Achievement badges** — Gemini awards badges for genuine creative contributions; animated pop-up auto-dismisses after 3s
-- **Participation challenges** — character periodically invites the child to wiggle, roar, touch their nose, or shake their head; all challenges are seated so no jumping or running required; the live camera feed lets Gemini visually confirm and react
+- **Story Recap** — after the session ends, a single Gemini call with `response_modalities=["TEXT","IMAGE"]` produces an interleaved storybook: alternating narration paragraphs and illustrations rendered from the session's actual images; all scenes included, no cap
+- **Achievement badges** — Gemini awards badges for genuine creative contributions; badge appears on screen instantly when the tool fires; animated pop-up auto-dismisses after 3s
+- **Participation challenges** — character weaves in the first challenge within the first minute of the story, then adds more at natural story moments (danger, magic, urgency); all seated — no jumping or running required; camera lets Gemini visually confirm and react
+- **Pause / Resume** — child (or parent) can pause and resume the story at any time without losing the session
 - **Life skills themes** — Sharing, Courage, Gratitude, Creativity, Kindness alongside adventure themes
 - **Content moderation** — typed themes, sketches, and camera props are safety-checked before the story starts
-- **Camera vision** — optional live webcam feed lets Gemini see and react to the child in real time
+- **Camera vision** — optional live webcam feed lets Gemini see and react to the child in real time; front/back camera toggle for tablets
 - **Sketch a Theme** — drawing canvas with 19 colours; sketch is recreated as a storybook illustration and becomes the story's starting image
-- **Kid-safe** — all characters are warm, age-appropriate, and tuned for children aged 4–10; story never ends unless the child asks
+- **Kid-safe** — all characters are warm, age-appropriate, and tuned for children aged 4–10; story never ends unless the child presses End Story
 - **Multilingual** — Indian storytellers tell stories in Hindi, Marathi, Tamil, Telugu, and Bengali
 - **15-minute session timeout** — idle sessions close automatically
 
@@ -37,10 +36,9 @@ A voice-first interactive storytelling app for kids aged 4–10, powered by Goog
 |---|---|
 | Conversation | `gemini-live-2.5-flash-native-audio` via Vertex AI |
 | Story pre-warm | `gemini-2.5-flash-lite` — generates plan + opening + scene in one call |
-| Scene extraction / safety | `gemini-2.5-flash-lite` |
-| Image generation | `gemini-2.0-flash-preview-image-generation` via Gemini API key |
+| Content moderation | `gemini-2.5-flash-lite` — safety-checks themes, sketches, and camera props |
+| Image generation | `gemini-2.0-flash-preview-image-generation` via Gemini API key — raw narration passed directly, no intermediate extraction |
 | Story recap | `gemini-2.0-flash-preview-image-generation` — interleaved `TEXT` + `IMAGE` output |
-| Observability | Opik — traces all LLM calls with tags and metadata |
 | Backend | Python 3.13 + FastAPI + WebSocket |
 | Frontend | React 19 + Vite + TailwindCSS v4 + TypeScript + Framer Motion |
 | Audio I/O | Web Audio API + AudioWorklet (16kHz capture, 24kHz playback) |
@@ -65,6 +63,38 @@ A voice-first interactive storytelling app for kids aged 4–10, powered by Goog
 | hanuman | Little Hanuman | Tamil தமிழ் | Alnilam |
 | rajkumari | Rajkumari Meera | Telugu తెలుగు | Kore |
 | rishi | Rishi Bodhi | Bengali বাংলা | Puck |
+
+---
+
+## Screenshots
+
+### Landing Page
+![Landing Page](images/0.%20TaleWeaver%20-%20Landing%20Page.png)
+
+### Choose Your Storyteller
+![Choose Storyteller](images/1.%20Choose%20Storyteller.png)
+
+### Choose How to Start
+![Pick Mode](images/2.%20Pick%20mode.png)
+
+### Pick a Theme
+![Pick a Theme](images/3.%20Pick%20a%20theme.png)
+
+### Magic Camera — Capture a Prop & See It Reimagined
+<table>
+<tr>
+<td><img src="images/4.%20Magic%20camera%20-%20photo.png" alt="Magic Camera - Photo"/></td>
+<td><img src="images/5.%20Magic%20camera%20-%20image.png" alt="Magic Camera - Illustrated"/></td>
+</tr>
+</table>
+
+### Sketch a Theme — Draw & See It Come to Life
+<table>
+<tr>
+<td><img src="images/6.%20Sketch%20-%20drawing.png" alt="Sketch - Drawing"/></td>
+<td><img src="images/7.%20Sketch%20-%20image.png" alt="Sketch - Illustrated"/></td>
+</tr>
+</table>
 
 ---
 
@@ -98,19 +128,26 @@ Story plays
     → Gemini speaks → 24kHz PCM → playback worklet → speakers
     → Gemini calls generate_illustration tool at key visual moments
         → frontend responds immediately (Gemini doesn't wait)
-        → POST /api/image with Gemini's scene description (skip Flash Lite extraction)
+        → POST /api/image with Gemini's scene description (raw narration, no extraction step)
+        → previous image + previous scene description passed for visual continuity
         → base64 image → StorySceneGrid (shimmer → fade-in)
-    → turnComplete fallback fires at ~30s if Gemini hasn't triggered an image
-        → POST /api/image → Flash Lite extracts scene → image generated
+    → turnComplete fallback fires if no tool call in ~30s
+        → POST /api/image with raw turn transcription
 
 Achievement badges
     → Gemini calls awardBadge tool for genuine creative contributions
+    → pre-queued audio cleared so no delayed verbal re-announcement
     → BadgePopup appears centred on screen, auto-dismisses after 3s
 
 Participation challenges
-    → Character periodically invites child to wiggle, roar, touch nose, shake head
+    → First challenge within the first minute at a natural story moment
+    → Further challenges whenever story creates urgency or magic — not on a clock
     → All seated — no jumping or running required
     → Camera stream lets Gemini visually confirm and react
+
+Pause / Resume
+    → Pause mutes playback and suspends mic capture
+    → Resume restores both — session and WebSocket stay alive
 
 Child interrupts
     → Gemini VAD detects speech → playback clears
@@ -122,47 +159,6 @@ Session ends (child says stop or presses End Story)
         → single Gemini call with response_modalities=["TEXT","IMAGE"]
         → interleaved narration paragraphs + illustrations
     → StoryRecapModal renders scrollable storybook
-```
-
----
-
-## Repo Structure
-
-```
-/
-├── backend/
-│   ├── main.py            # FastAPI: /ws/story, /api/story-opening, /api/image, /api/story-recap, /api/check-theme, /api/sketch-preview, SPA catch-all
-│   ├── proxy.py           # Bidirectional WS proxy: browser ↔ Gemini Live API (15min timeout)
-│   ├── characters.py      # 10 character configs: system prompts, voices, image styles, tool declarations
-│   ├── image_gen.py       # Pre-warm (plan+opening+scene), scene extraction, image gen, story recap
-│   └── requirements.txt
-├── frontend/
-│   ├── public/audio-processors/
-│   │   ├── capture.worklet.js    # 16kHz PCM mic capture
-│   │   └── playback.worklet.js   # 24kHz PCM speaker playback
-│   └── src/
-│       ├── App.tsx                   # Router: landing | character-select | theme-select | story
-│       ├── characters/index.ts       # 10 character definitions + PNG portraits
-│       ├── assets/characters/        # 10 PNG character portraits
-│       ├── screens/
-│       │   ├── LandingPage.tsx       # Ambient landing: CTA, Gemini branding, music
-│       │   ├── CharacterSelect.tsx   # 5 English + 5 Indian rows with divider
-│       │   ├── ThemeSelect.tsx       # Pick/Camera/Sketch accordion; safety moderation; story pre-warm
-│       │   └── StoryScreen.tsx       # Live session: animated portrait + scene canvas + overlays
-│       ├── components/
-│       │   ├── BadgePopup.tsx        # Centred achievement badge pop-up (3s auto-dismiss)
-│       │   ├── StoryRecapModal.tsx   # Interleaved storybook recap modal
-│       │   ├── FloatingElements.tsx  # Framer Motion stars/sparkles/clouds
-│       │   ├── StorySceneGrid.tsx    # Scrollable image grid
-│       │   ├── StorySceneCard.tsx    # Shimmer → loaded image card
-│       │   ├── AudioVisualizer.tsx   # Real-time waveform
-│       │   └── StorybookEmpty.tsx    # Empty state illustration
-│       └── hooks/
-│           ├── useLiveAPI.ts         # WebSocket + AudioWorklet + camera stream + tool call handling
-│           └── useStoryImages.ts     # Force/fallback image triggers, story context, unlimited scenes
-├── cloudbuild.yaml        # Cloud Build CI/CD pipeline
-├── Dockerfile             # Multi-stage: node:22-slim builds frontend, python:3.13-slim serves both
-└── implementation/        # Architecture and phase docs
 ```
 
 ---
