@@ -154,7 +154,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   }, []);
 
   const {
-    connect, disconnect, sessionState, characterState, isCapturing,
+    connect, disconnect, togglePause, isPaused, sessionState, characterState, isCapturing,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
     cameraEnabled, toggleCamera, cameraVideoRef,
   } = useLiveAPI({
@@ -195,26 +195,27 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   const statusText = STATUS_TEXT[statusKey] ?? "";
 
   return (
+    <>
+    {/* Badge popup and recap modal are outside the overflow-hidden container so that
+        position:fixed works correctly on iOS/iPad (overflow:hidden clips fixed children) */}
+    <AnimatePresence>
+      {activeBadge && (
+        <BadgePopup badge={activeBadge} onDismiss={handleBadgeDismiss} />
+      )}
+    </AnimatePresence>
+
+    <AnimatePresence>
+      {showRecap && (
+        <StoryRecapModal
+          character={character}
+          scenes={scenesRef.current}
+          onClose={() => setShowRecap(false)}
+        />
+      )}
+    </AnimatePresence>
+
     <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
       <FloatingElements />
-
-      {/* Badge popup — rendered at fixed position, above everything */}
-      <AnimatePresence>
-        {activeBadge && (
-          <BadgePopup badge={activeBadge} onDismiss={handleBadgeDismiss} />
-        )}
-      </AnimatePresence>
-
-      {/* Story recap modal */}
-      <AnimatePresence>
-        {showRecap && (
-          <StoryRecapModal
-            character={character}
-            scenes={scenesRef.current}
-            onClose={() => setShowRecap(false)}
-          />
-        )}
-      </AnimatePresence>
 
       <div className="relative z-10 h-screen flex flex-col">
         {/* Header */}
@@ -227,7 +228,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
             onClick={handleBack}
             className="text-muted-foreground hover:text-foreground font-body transition-colors"
           >
-            ← Change Storyteller
+            ← Back
           </button>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
           <div className="flex justify-end flex-shrink-0">
@@ -354,6 +355,12 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                   >
                     📖 See our story!
                   </button>
+                  <button
+                    onClick={handleBack}
+                    className="font-body text-sm px-6 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                  >
+                    ✨ Begin another story
+                  </button>
                 </motion.div>
               ) : !isActive ? (
                 <motion.button
@@ -385,12 +392,24 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                   transition={{ duration: 0.3 }}
                   className="flex flex-col items-center gap-2"
                 >
-                  <button
-                    onClick={endAndSave}
-                    className="font-body text-sm px-6 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-                  >
-                    End Story
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={togglePause}
+                      className={`font-body text-sm px-4 py-2 rounded-full border transition-colors ${
+                        isPaused
+                          ? "border-primary/60 text-primary bg-primary/10 hover:bg-primary/20"
+                          : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
+                      }`}
+                    >
+                      {isPaused ? "▶ Resume" : "⏸ Pause"}
+                    </button>
+                    <button
+                      onClick={endAndSave}
+                      className="font-body text-sm px-4 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
+                    >
+                      End Story
+                    </button>
+                  </div>
                   <button
                     onClick={toggleCamera}
                     className={`font-body text-xs px-4 py-1.5 rounded-full border transition-colors ${
@@ -470,6 +489,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
         </div>
       </div>
     </div>
+    </>
   );
 };
 
