@@ -14,13 +14,13 @@ A voice-first interactive storytelling app for kids aged 4–10, powered by Goog
 - **Three ways to start a story** — Pick a theme tile, use the Magic Camera to hold up a prop, or Sketch a Theme on a drawing canvas
 - **Real-time bidirectional voice** via WebSocket + Gemini Live API — the child can interrupt, redirect, or react at any moment
 - **Native audio** — no TTS/STT round-trips; Gemini handles voice directly at 24kHz
-- **Story Planner ADK Agent** — before the session starts, a Google ADK `LlmAgent` generates a structured 4-beat story plan; the opening line is injected into Gemini Live so narration and the first illustration always align
+- **Story pre-warm** — before the session starts, a single Flash Lite call generates a coherent plan + opening line + first illustration; the opening is spoken word-for-word by Gemini Live so narration and the first image always align
 - **Smart illustration timing** — Gemini calls a `generate_illustration` tool at visually rich moments (new location, character reveal, dramatic transformation); images match what Gemini just described rather than firing on a clock
 - **Visual continuity** — reference image + style instructions keep characters and settings consistent across all scenes
 - **Unlimited scene illustrations** — images generate continuously throughout the session with no cap
 - **Story Recap** — after the session ends, a single Gemini call with `response_modalities=["TEXT","IMAGE"]` produces an interleaved storybook: alternating narration paragraphs and illustrations rendered from the session's actual images
 - **Achievement badges** — Gemini awards badges for genuine creative contributions; animated pop-up auto-dismisses after 3s
-- **Movement challenges** — character periodically invites the child to jump, spin, or roar; the live camera feed lets Gemini visually confirm and react
+- **Participation challenges** — character periodically invites the child to wiggle, roar, touch their nose, or shake their head; all challenges are seated so no jumping or running required; the live camera feed lets Gemini visually confirm and react
 - **Life skills themes** — Sharing, Courage, Gratitude, Creativity, Kindness alongside adventure themes
 - **Content moderation** — typed themes, sketches, and camera props are safety-checked before the story starts
 - **Camera vision** — optional live webcam feed lets Gemini see and react to the child in real time
@@ -36,10 +36,11 @@ A voice-first interactive storytelling app for kids aged 4–10, powered by Goog
 | Layer | Technology |
 |---|---|
 | Conversation | `gemini-live-2.5-flash-native-audio` via Vertex AI |
-| Story planning | Google ADK `LlmAgent` + `gemini-2.0-flash` |
-| Scene extraction / safety | `gemini-2.0-flash-lite` |
+| Story pre-warm | `gemini-2.5-flash-lite` — generates plan + opening + scene in one call |
+| Scene extraction / safety | `gemini-2.5-flash-lite` |
 | Image generation | `gemini-2.0-flash-preview-image-generation` via Gemini API key |
 | Story recap | `gemini-2.0-flash-preview-image-generation` — interleaved `TEXT` + `IMAGE` output |
+| Observability | Opik — traces all LLM calls with tags and metadata |
 | Backend | Python 3.13 + FastAPI + WebSocket |
 | Frontend | React 19 + Vite + TailwindCSS v4 + TypeScript + Framer Motion |
 | Audio I/O | Web Audio API + AudioWorklet (16kHz capture, 24kHz playback) |
@@ -79,16 +80,17 @@ Child opens app → Landing page (ambient music, floating animations)
         Option C: Sketch a Theme — draw on canvas (19 colours) → AI recreates drawing
                   → confirm illustrated version → start story
 
-    → POST /api/story-plan → ADK Story Planner Agent
-        → generates structured 4-beat story plan + opening line
-        → POST /api/story-opening → pre-generates first illustration
-        → both ready before child clicks "Begin"
+    → POST /api/story-opening → Flash Lite (single call)
+        → generates story plan + opening line + visual scene description
+        → image model generates first illustration from scene
+        → all three are coherent (same characters, setting, plot)
+        → Begin button activates (~5–8s)
 
     → StoryScreen mounts → useLiveAPI.connect()
         → WebSocket → backend /ws/story
         → backend connects to Gemini Live API (Vertex AI)
         → sends character system prompt + voice config
-        → injects story opening as fake model turn (narration matches first image)
+        → tells Gemini: "say this opening word for word, then continue"
         → mic capture starts (AudioWorklet, 16kHz PCM)
         → first illustration seeds the canvas immediately
 
@@ -105,8 +107,9 @@ Achievement badges
     → Gemini calls awardBadge tool for genuine creative contributions
     → BadgePopup appears centred on screen, auto-dismisses after 3s
 
-Movement challenges
-    → Every ~60s character invites child to jump / spin / roar
+Participation challenges
+    → Character periodically invites child to wiggle, roar, touch nose, shake head
+    → All seated — no jumping or running required
     → Camera stream lets Gemini visually confirm and react
 
 Child interrupts
@@ -128,11 +131,10 @@ Session ends (child says stop or presses End Story)
 ```
 /
 ├── backend/
-│   ├── main.py            # FastAPI: /ws/story, /api/image, /api/story-plan, /api/story-opening, /api/story-recap, /api/check-theme, /api/sketch-preview, SPA catch-all
+│   ├── main.py            # FastAPI: /ws/story, /api/story-opening, /api/image, /api/story-recap, /api/check-theme, /api/sketch-preview, SPA catch-all
 │   ├── proxy.py           # Bidirectional WS proxy: browser ↔ Gemini Live API (15min timeout)
 │   ├── characters.py      # 10 character configs: system prompts, voices, image styles, tool declarations
-│   ├── image_gen.py       # Scene extraction + image gen + story recap (interleaved output)
-│   ├── story_planner.py   # ADK LlmAgent: generates 4-beat story plan before session starts
+│   ├── image_gen.py       # Pre-warm (plan+opening+scene), scene extraction, image gen, story recap
 │   └── requirements.txt
 ├── frontend/
 │   ├── public/audio-processors/

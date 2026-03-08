@@ -16,7 +16,6 @@ load_dotenv()
 
 from proxy import run_proxy_session
 from image_gen import router as image_router
-from story_planner import router as planner_router
 
 app = FastAPI(title="TaleWeaver Backend")
 
@@ -34,7 +33,6 @@ app.add_middleware(
 )
 
 app.include_router(image_router)
-app.include_router(planner_router)
 
 
 @app.get("/api/health")
@@ -68,12 +66,11 @@ async def story_websocket(ws: WebSocket):
         character_id = init_data.get("character_id", "grandma-rose")
         theme = init_data.get("theme") or None
         prop_image = init_data.get("prop_image") or None
-        opening_text = init_data.get("opening_text") or None
 
-        print(f"[ws] Session {session_id}: character={character_id}" + (f", theme={theme}" if theme else "") + (" [prop image]" if prop_image else "") + (" [opening]" if opening_text else ""))
+        print(f"[ws] Session {session_id}: character={character_id}" + (f", theme={theme}" if theme else "") + (" [prop image]" if prop_image else ""))
 
         # Run the proxy session (blocking until session ends)
-        await run_proxy_session(ws, character_id, session_id, theme=theme, prop_image=prop_image, opening_text=opening_text)
+        await run_proxy_session(ws, character_id, session_id, theme=theme, prop_image=prop_image)
 
     except asyncio.TimeoutError:
         print(f"[ws] Session {session_id}: timeout waiting for character selection")

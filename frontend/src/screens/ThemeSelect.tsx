@@ -280,10 +280,13 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
   const streamRef = useRef<MediaStream | null>(null);
   const [denied, setDenied] = useState(false);
   const [captured, setCaptured] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
 
-  const startCamera = useCallback(async () => {
+  const startCamera = useCallback(async (facing: "environment" | "user") => {
+    // Stop any existing stream before starting a new one
+    streamRef.current?.getTracks().forEach((t) => t.stop());
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing } });
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
       setDenied(false);
@@ -293,9 +296,15 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
   }, []);
 
   useEffect(() => {
-    startCamera();
+    startCamera(facingMode);
     return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
-  }, [startCamera]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const flipCamera = () => {
+    const next = facingMode === "environment" ? "user" : "environment";
+    setFacingMode(next);
+    startCamera(next);
+  };
 
   const handleCapture = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -331,8 +340,16 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
         <>
           <div className="relative w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden border-2 border-dashed border-primary/50 bg-card/40">
             <div className="absolute inset-0 rounded-2xl overflow-hidden">
-              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }} />
             </div>
+            {/* Flip camera button */}
+            <button
+              onClick={flipCamera}
+              className="absolute top-3 right-3 z-10 bg-black/50 hover:bg-black/70 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl transition-colors"
+              title={facingMode === "environment" ? "Switch to front camera" : "Switch to back camera"}
+            >
+              🔄
+            </button>
             {/* Scan line */}
             <motion.div
               className="absolute left-0 right-0 h-1 rounded-full pointer-events-none"
