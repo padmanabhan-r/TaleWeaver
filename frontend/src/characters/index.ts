@@ -31,7 +31,7 @@ export const CHARACTERS: Character[] = [
     description: "A wise and playful wizard who loves magical tales",
     image: wizardImg,
     greeting: "Greetings, young adventurer! Ready for a magical story?",
-    imageStyle: "magical wizard illustration, enchanted library, glowing spell books, starry backdrop, children's fantasy art, warm golden light",
+    imageStyle: "children's fantasy storybook art, warm golden light, rich jewel tones, magical atmosphere, watercolor and ink",
     category: "english",
   },
   {
@@ -42,7 +42,7 @@ export const CHARACTERS: Character[] = [
     description: "A kind fairy princess from the Enchanted Garden",
     image: fairyImg,
     greeting: "Hello, little one! Let me sprinkle some story magic!",
-    imageStyle: "enchanted garden illustration, fairy wings, flowers and butterflies, soft pastel colors, magical sparkles, children's picture book art",
+    imageStyle: "soft pastel watercolor, children's picture book art, magical sparkles, delicate line work, dreamy warm atmosphere",
     category: "english",
   },
   {
@@ -53,7 +53,7 @@ export const CHARACTERS: Character[] = [
     description: "A brave pirate captain with exciting sea adventures",
     image: pirateImg,
     greeting: "Ahoy, matey! Ready to sail into a grand adventure?",
-    imageStyle: "bold pirate adventure illustration, colorful ship and ocean, treasure chest, bright sunny day, children's adventure book art",
+    imageStyle: "bold vibrant colors, bright sunny palette, children's adventure book art, dynamic composition, clean cartoon illustration",
     category: "english",
   },
   {
@@ -64,7 +64,7 @@ export const CHARACTERS: Character[] = [
     description: "A friendly robot from the future with amazing stories",
     image: robotImg,
     greeting: "Beep boop! Story mode activated! Let's begin!",
-    imageStyle: "colorful cartoon robot illustration, friendly face, bright tech elements, futuristic city, children's science fiction art",
+    imageStyle: "bright cheerful colors, children's science fiction art, clean cartoon style, soft glow effects, playful digital illustration",
     category: "english",
   },
   {
@@ -75,7 +75,7 @@ export const CHARACTERS: Character[] = [
     description: "A gentle baby dragon who loves sharing tales",
     image: dragonImg,
     greeting: "Rawr! I mean... hello! Want to hear a fiery tale?",
-    imageStyle: "cute baby dragon illustration, colorful scales, friendly expression, magical cave, children's fantasy storybook art, warm lighting",
+    imageStyle: "rich jewel tones, warm firelight palette, children's fantasy storybook art, painterly illustration, vivid colors",
     category: "english",
   },
   // ── Indian storytellers ───────────────────────────────────────────────
@@ -87,7 +87,7 @@ export const CHARACTERS: Character[] = [
     description: "A loving grandmother with timeless Indian folktales",
     image: dadiImg,
     greeting: "आओ बच्चों, आज दादी एक कहानी सुनाएगी!",
-    imageStyle: "warm watercolor illustration, traditional Indian home, cozy evening lamp, marigold flowers, rangoli, children's picture book art, heartwarming",
+    imageStyle: "warm watercolor, rich saffron and gold tones, children's picture book art, heartwarming illustration style, soft evening light",
     category: "indian",
   },
   {
@@ -98,7 +98,7 @@ export const CHARACTERS: Character[] = [
     description: "A brave and just king with tales of wisdom and courage",
     image: maharajaImg,
     greeting: "स्वागत आहे! आज आपण एक भव्य कथा ऐकूया!",
-    imageStyle: "vibrant Indian court illustration, royal palace, traditional Marathi attire, marigolds, golden lamp light, children's picture book art",
+    imageStyle: "vibrant jewel tones, golden lamp light, children's picture book art, rich Indian folk illustration style, bold colors, decorative patterns",
     category: "indian",
   },
   {
@@ -109,7 +109,7 @@ export const CHARACTERS: Character[] = [
     description: "The mighty and playful monkey hero of Indian mythology",
     image: hanumanImg,
     greeting: "வணக்கம்! ஒரு அற்புதமான கதை கேட்போம்!",
-    imageStyle: "bright Indian mythology illustration, lush jungle, lotus flowers, warm golden light, children's storybook art, Tamil style",
+    imageStyle: "warm golden light, children's storybook art, lush tropical colors, bright and vibrant, painterly illustration",
     category: "indian",
   },
   {
@@ -120,7 +120,7 @@ export const CHARACTERS: Character[] = [
     description: "A graceful princess who shares tales of love and bravery",
     image: rajkumariImg,
     greeting: "నమస్కారం! రండి, మీకు అందమైన కథ చెప్తాను!",
-    imageStyle: "elegant Telugu princess illustration, palace garden, jasmine flowers, traditional jewelry, warm watercolor style, children's picture book art",
+    imageStyle: "elegant warm watercolor style, golden light, children's picture book art, soft jewel tones, delicate detail",
     category: "indian",
   },
   {
@@ -131,7 +131,7 @@ export const CHARACTERS: Character[] = [
     description: "A peaceful sage who shares ancient wisdom through stories",
     image: rishiImg,
     greeting: "নমস্কার! এসো, একটি জ্ঞানের গল্প শুনি।",
-    imageStyle: "serene Bengali sage illustration, riverside setting, lotus flowers, golden sunset, mustard fields, warm watercolor, children's picture book art",
+    imageStyle: "warm watercolor, golden sunset tones, children's picture book art, tranquil serene atmosphere, soft gentle palette",
     category: "indian",
   },
 ];
