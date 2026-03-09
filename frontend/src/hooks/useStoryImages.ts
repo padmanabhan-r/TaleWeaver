@@ -38,6 +38,8 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
   const stop = useCallback(() => {
     stoppedRef.current = true;
     abortControllerRef.current?.abort();
+    // Drop any scenes still in "loading" state — they will never complete.
+    setScenes((prev) => prev.filter((s) => s.status === "loaded"));
   }, []);
 
   const triggerImageGeneration = useCallback(
@@ -127,9 +129,13 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
           )
         );
       } catch (err) {
-        if ((err as Error).name === "AbortError") return; // session ended — discard silently
+        if ((err as Error).name === "AbortError") {
+          // Session ended — remove the dangling loading card
+          setScenes((prev) => prev.filter((s) => s.id !== sceneId));
+          sceneCountRef.current--;
+          return;
+        }
         console.error("[story-images] Generation failed:", err);
-        // Silently remove the failed loading card
         setScenes((prev) => prev.filter((s) => s.id !== sceneId));
         sceneCountRef.current--;
       }
@@ -199,11 +205,16 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
           )
         );
       } catch (err) {
-        if ((err as Error).name === "AbortError") return;
+        if ((err as Error).name === "AbortError") {
+          // Session ended — remove the dangling loading card
+          setScenes((prev) => prev.filter((s) => s.id !== sceneId));
+          sceneCountRef.current--;
+          return;
+        }
         console.error("[story-images] Force generation failed:", err);
         setScenes((prev) => prev.filter((s) => s.id !== sceneId));
         sceneCountRef.current--;
-        lastTriggerTimeRef.current = 0; // reset so next turn can retry
+        lastTriggerTimeRef.current = 0;
       }
     },
     [imageStyle, sessionId]
