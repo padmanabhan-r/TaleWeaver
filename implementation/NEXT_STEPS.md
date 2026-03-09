@@ -1,5 +1,5 @@
 # TaleWeaver — Next Steps
-### Updated 3 Mar 2026
+### Updated 9 Mar 2026
 
 ---
 
@@ -25,6 +25,16 @@
 | ✅ **Opening image timing** | Prewarm image stored in `prewarmImageRef`, seeded into canvas only when "Begin" is clicked via `handleBegin()` — not before. |
 | ✅ **Opening image ↔ story match** | `_begin_turns()` injects `opening_text` as a fake model turn so Gemini Live continues naturally from Flash Lite's opening, matching the image shown on screen. |
 | ✅ **ThemeSelect responsiveness** | `goLoading` state shows "Checking… ✨" immediately on custom theme submit — no frozen button during `/api/check-theme` call. |
+| ✅ **Audio garbling fix** | Replaced AudioWorklet queue with `AudioBufferSourceNode` scheduling — each chunk scheduled to start exactly when the previous ends using `audioContext.currentTime`. Gemini streams 30s of audio in 5s; it just schedules into the future. No queue overflow, no garbling. `frontend/src/hooks/useLiveAPI.ts` |
+| ✅ **WebSocket 30s drop fix** | Disabled standard WebSocket ping frames (`ping_interval=None`) — Gemini Live API does not respond to WS pings, causing 1006 drops. `backend/proxy.py` |
+| ✅ **AudioContext suspension fix** | `audioContext.resume()` now awaited in `initPlayback()` — first chunks no longer scheduled on a frozen timeline. `frontend/src/hooks/useLiveAPI.ts` |
+| ✅ **"Begin!" moved to backend** | Kick-off message sent directly to Gemini before bidirectional proxy starts, preventing mic audio from racing with the first response. `backend/proxy.py` |
+| ✅ **Removed participation challenges** | Challenges removed entirely — non-verbal actions (clapping, roaring) are below VAD threshold with `START_SENSITIVITY_LOW`; combined with `proactive_audio` the model never waited reliably. `backend/characters.py` |
+| ✅ **Removed camera during storytelling** | Camera caused model to stop and say "I see you!" mid-story, breaking narrative flow. Removed from `StoryScreen` entirely. `frontend/src/screens/StoryScreen.tsx`, `frontend/src/hooks/useLiveAPI.ts` |
+| ✅ **Simplified badge system** | Badges now awarded only for spontaneous child creativity (max 2/session). No challenge-completion badges. `backend/characters.py` |
+| ✅ **Story continuity** | `clearBuffer()` removed from `awardBadge` handler. Added "NEVER restart mid-session" system prompt rule. Audio no longer cut mid-sentence on badge award. |
+| ✅ **Long-form narration** | System prompt instructs model to speak in 5–7 sentence sustained flows like an audiobook narrator, reducing perceived pause frequency. `backend/characters.py` |
+| ✅ **challenges.md** | New living doc at `implementation/challenges.md` — 9 hard-won lessons with symptom, root cause, fix, and file references. |
 
 ---
 
