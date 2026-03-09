@@ -65,7 +65,7 @@ function StorybookView({
         <div className="flex flex-col items-center px-8 pb-16">
           {/* Title block */}
           <div className="text-center pt-10 pb-8 max-w-xl">
-            <p className="font-display text-3xl font-bold leading-tight" style={{ color: "#5c3d0e" }}>
+            <p className="font-display text-4xl font-bold leading-tight" style={{ color: "#5c3d0e" }}>
               {title}
             </p>
             <p className="font-body text-sm mt-2" style={{ color: "#9c7a3a" }}>
@@ -78,19 +78,31 @@ function StorybookView({
             </div>
           </div>
 
-          {/* Images */}
-          <div className="flex flex-col gap-8 w-full max-w-2xl">
+          {/* Images + narrations */}
+          <div className="flex flex-col gap-10 w-full max-w-2xl">
             {entry.images.map((img, i) => (
-              <motion.img
+              <motion.div
                 key={i}
-                src={`data:${img.mimeType};base64,${img.imageData}`}
-                alt={`Story scene ${i + 1}`}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
-                className="w-full rounded-2xl shadow-lg"
-                style={{ border: "3px solid #e8d9b5" }}
-              />
+                className="flex flex-col gap-4"
+              >
+                <img
+                  src={`data:${img.mimeType};base64,${img.imageData}`}
+                  alt={`Story scene ${i + 1}`}
+                  className="w-full rounded-2xl shadow-lg"
+                  style={{ border: "3px solid #e8d9b5" }}
+                />
+                {entry.narrations?.[i] && (
+                  <p
+                    className="font-body text-lg leading-relaxed text-center px-4 italic"
+                    style={{ color: "#5c3d0e" }}
+                  >
+                    {entry.narrations[i]}
+                  </p>
+                )}
+              </motion.div>
             ))}
           </div>
 
@@ -127,6 +139,9 @@ function StorybookView({
             </div>
             <p className="font-display text-3xl font-bold" style={{ color: "#5c3d0e" }}>
               The End
+            </p>
+            <p className="font-body text-sm mt-2" style={{ color: "#9c7a3a" }}>
+              {entry.characterName} hopes you loved every moment ✨
             </p>
           </div>
         </div>

@@ -12,10 +12,10 @@ interface Props {
   scenes: StoryScene[];
   badges?: BadgeSummary[];
   onClose: () => void;
-  onTitleGenerated?: (title: string) => void;
+  onRecapGenerated?: (title: string, narrations: string[]) => void;
 }
 
-export default function StoryRecapModal({ character, scenes, badges = [], onClose, onTitleGenerated }: Props) {
+export default function StoryRecapModal({ character, scenes, badges = [], onClose, onRecapGenerated }: Props) {
   const [title, setTitle] = useState("");
   const [narrations, setNarrations] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,9 +51,10 @@ export default function StoryRecapModal({ character, scenes, badges = [], onClos
       })
       .then((data) => {
         const t = data.title ?? "";
+        const n = data.narrations ?? [];
         setTitle(t);
-        setNarrations(data.narrations ?? []);
-        if (t) onTitleGenerated?.(t);
+        setNarrations(n);
+        if (t) onRecapGenerated?.(t, n);
       })
       .catch(() => setError("Couldn't create the storybook. Please try again!"))
       .finally(() => setLoading(false));
