@@ -190,28 +190,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return window.btoa(binary);
 }
 
-// ── Begin turns ──────────────────────────────────────────────────────────────
-
-function buildBeginTurns(theme?: string, propImage?: string): object[] {
-  let parts: object[];
-  if (theme === "camera_prop" && propImage) {
-    parts = [
-      { inline_data: { mime_type: "image/jpeg", data: propImage } },
-      { text: "The story is about the object in this image — keep it as the main character. IMPORTANT: When you call generate_illustration, describe only the object as a living story character in its story world — NEVER describe a child or person holding it." },
-    ];
-  } else if (theme === "sketch" && propImage) {
-    parts = [
-      { inline_data: { mime_type: "image/jpeg", data: propImage } },
-      { text: "The story is about the subject of this drawing — keep that character as the hero." },
-    ];
-  } else if (theme) {
-    parts = [{ text: `Begin! Start your story RIGHT NOW. The theme is: ${theme}. Your very first sentence must immediately introduce something about ${theme}. Keep ${theme} as the central focus throughout the whole story.` }];
-  } else {
-    parts = [{ text: "Begin!" }];
-  }
-  return [{ role: "user", parts }];
-}
-
 // ── Main hook ────────────────────────────────────────────────────────────────
 
 export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGenerateIllustration, onTranscription, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
@@ -222,8 +200,6 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
   // True only when the user explicitly clicks "End Story" — prevents unexpected drops from
   // showing "See our story!" as if the session ended intentionally.
   const userEndedRef = useRef(false);
-  // True once Gemini sends any audio — used to avoid double-sending begin turns
-  const receivedAudioRef = useRef(false);
   // Accumulates character speech across transcription chunks (finished flag unreliable in native audio)
   const outputTextAccRef = useRef("");
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
@@ -254,7 +230,6 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
   const connect = useCallback(async () => {
     if (sessionState !== "idle") return;
     userEndedRef.current = false;
-    receivedAudioRef.current = false;
     setSessionState("connecting");
 
     try {
@@ -293,19 +268,6 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
               if (playbackCtx && playbackCtx.state === "suspended") {
                 await playbackCtx.resume();
                 console.log("[live-api] Playback AudioContext resumed after mic start");
-              }
-
-              // If Gemini hasn't sent any audio yet, the backend's begin_turns
-              // were swallowed by VAD (mic audio put Gemini into listen mode).
-              // Re-send "Begin!" from the frontend now that the mic is live.
-              if (!receivedAudioRef.current && wsRef.current?.readyState === WebSocket.OPEN) {
-                console.log("[live-api] No audio received yet — sending begin turns from frontend");
-                wsRef.current.send(JSON.stringify({
-                  client_content: {
-                    turns: buildBeginTurns(theme, propImage),
-                    turn_complete: true,
-                  },
-                }));
               }
             }).catch((err) => {
               console.error("[live-api] Mic capture failed:", err);
@@ -373,7 +335,6 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
           if (sc.modelTurn?.parts) {
             for (const part of sc.modelTurn.parts) {
               if (part.inlineData?.data) {
-                receivedAudioRef.current = true;
                 playChunkRef.current(part.inlineData.data);
                 setCharacterState("speaking");
               }
