@@ -8,6 +8,7 @@ const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 interface Props {
   character: Character;
   onBack: () => void;
+  onHome: () => void;
   onConfirm: (theme: string, propImage?: string, propDescription?: string) => void;
 }
 
@@ -405,7 +406,7 @@ const OPTION_CARDS: { id: OptionId; emoji: string; title: string; description: s
 ];
 
 /* ── Main screen ── */
-const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
+const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
   const [expanded, setExpanded] = useState<OptionId | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
   const [customText, setCustomText] = useState("");
@@ -529,11 +530,18 @@ const ThemeSelect = ({ character, onBack, onConfirm }: Props) => {
           </div>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
           {/* Character chip */}
-          <div className="flex-1 flex items-center justify-end gap-2">
+          <div className="flex-1 flex items-center justify-end gap-3">
             <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary/50 flex-shrink-0">
               <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
             </div>
             <span className="font-body text-sm text-foreground hidden sm:inline">{character.name}</span>
+            <button
+              onClick={onHome}
+              className="text-muted-foreground hover:text-foreground font-body transition-colors text-lg"
+              title="Go home"
+            >
+              🏠
+            </button>
           </div>
         </motion.div>
 
