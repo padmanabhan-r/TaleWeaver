@@ -75,34 +75,6 @@ async def proxy_gemini_to_browser(
         print(f"[proxy] gemini→browser loop error: {e}")
 
 
-def _begin_turns(theme: str | None, prop_image: str | None) -> list[dict]:
-    """Build the client_content user turn that kicks off the story."""
-    if theme == "camera_prop" and prop_image:
-        user_parts = [
-            {"inline_data": {"mime_type": "image/jpeg", "data": prop_image}},
-            {"text": (
-                "The story is about the object in this image — keep it as the main character. "
-                "IMPORTANT: When you call generate_illustration, describe only the object as a living "
-                "story character in its story world — NEVER describe a child or person holding it."
-            )},
-        ]
-    elif theme == "sketch" and prop_image:
-        user_parts = [
-            {"inline_data": {"mime_type": "image/jpeg", "data": prop_image}},
-            {"text": "The story is about the subject of this drawing — keep that character as the hero."},
-        ]
-    elif theme:
-        user_parts = [{"text": (
-            f"Begin! Start your story RIGHT NOW. "
-            f"The theme is: {theme}. "
-            f"Your very first sentence must immediately introduce something about {theme}. "
-            f"Keep {theme} as the central focus throughout the whole story."
-        )}]
-    else:
-        user_parts = [{"text": "Begin!"}]
-
-    return [{"role": "user", "parts": user_parts}]
-
 
 async def run_proxy_session(
     browser_ws: WebSocket,
@@ -177,15 +149,6 @@ async def run_proxy_session(
             }))
 
             print(f"[proxy] Session ready for {character.name} (session: {session_id})")
-
-            # Kick off the story with the begin turns (see _begin_turns).
-            await gemini_ws.send(json.dumps({
-                "client_content": {
-                    "turns": _begin_turns(theme, prop_image),
-                    "turn_complete": True,
-                }
-            }))
-
 
             # Start bidirectional proxy
             browser_to_gemini = asyncio.create_task(

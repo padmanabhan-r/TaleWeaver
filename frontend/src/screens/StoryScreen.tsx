@@ -66,6 +66,49 @@ function saveToGallery(
   }
 }
 
+// ── Our Story end card ────────────────────────────────────────────────────────
+
+function OurStoryCard({
+  character,
+  scenes,
+}: {
+  character: Character;
+  scenes: StoryScene[];
+}) {
+  const lastImage = scenes.filter((s) => s.status === "loaded" && s.imageData).at(-1);
+
+  return (
+    <div className="relative flex-1 w-full h-full flex flex-col items-center justify-center overflow-hidden">
+      {/* Last scene image as dimmed background */}
+      {lastImage && (
+        <img
+          src={`data:${lastImage.mimeType};base64,${lastImage.imageData}`}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
+      )}
+
+      {/* Overlay gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/60" />
+
+      {/* Content */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.92, y: 16 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="relative z-10 flex flex-col items-center gap-5 text-center px-8"
+      >
+        <div>
+          <p className="font-display text-4xl font-bold text-white drop-shadow-lg">The End</p>
+          <p className="font-body text-base text-white/80 mt-1">
+            A story with {character.name}
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
@@ -154,7 +197,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
   }, []);
 
   const {
-    connect, disconnect, togglePause, isPaused, sessionState, characterState, isCapturing,
+    connect, disconnect, togglePause, isPaused, notifyActionDone, sessionState, characterState, isCapturing,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
     cameraEnabled, toggleCamera, cameraVideoRef,
   } = useLiveAPI({
@@ -204,15 +247,6 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
       )}
     </AnimatePresence>
 
-    <AnimatePresence>
-      {showRecap && (
-        <StoryRecapModal
-          character={character}
-          scenes={scenesRef.current}
-          onClose={() => setShowRecap(false)}
-        />
-      )}
-    </AnimatePresence>
 
     <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
       <FloatingElements />
@@ -257,10 +291,10 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-col items-center justify-center md:w-1/5 gap-5"
+            className="flex flex-col items-center justify-start md:w-1/5 gap-5 pt-4 overflow-y-auto"
           >
             {/* Avatar */}
-            <div className="relative flex items-center justify-center">
+            <div className="relative flex items-center justify-center mt-4">
 
               {/* Sound wave rings — speaking only */}
               {characterState === "speaking" && [0, 0.4, 0.8].map((delay, i) => (
@@ -287,7 +321,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
               {/* Portrait */}
               <motion.div
                 key={characterState}
-                className={`w-36 h-36 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 shadow-xl transition-colors duration-500 ${BORDER_CLASS[characterState]} ${avatarStateClass}`}
+                className={`w-[8.25rem] h-[8.25rem] rounded-full overflow-hidden border-4 shadow-xl transition-colors duration-500 ${BORDER_CLASS[characterState]} ${avatarStateClass}`}
                 initial={{ scale: 1, rotate: 0, y: 0 }}
                 animate={PORTRAIT_ANIMATE[characterState]}
                 transition={PORTRAIT_TRANSITION[characterState]}
@@ -371,7 +405,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                   whileTap={!isConnecting ? { scale: 0.95 } : {}}
                   onClick={handleBegin}
                   disabled={isConnecting}
-                  className="px-10 py-4 rounded-full bg-primary text-primary-foreground font-display text-xl font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-3"
+                  className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-display text-base font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isConnecting ? (
                     <>
@@ -424,17 +458,25 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
               )}
             </div>
 
-            {/* Camera preview */}
-            <div className={`w-full rounded-xl overflow-hidden border border-cyan-400/30 transition-opacity duration-300 ${cameraEnabled && isActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+            {/* Camera preview + Done button */}
+            <div className={`w-full flex flex-col gap-2 transition-opacity duration-300 ${cameraEnabled && isActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}
               style={{ height: cameraEnabled && isActive ? undefined : 0 }}>
-              <video
-                ref={cameraVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover"
-                style={{ transform: "scaleX(-1)" }}
-              />
+              <div className="w-full rounded-xl overflow-hidden border border-cyan-400/30">
+                <video
+                  ref={cameraVideoRef}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover"
+                  style={{ transform: "scaleX(-1)" }}
+                />
+              </div>
+              <button
+                onClick={notifyActionDone}
+                className="w-full py-2 rounded-full bg-cyan-400/20 border border-cyan-400/60 text-cyan-300 font-body text-sm font-semibold hover:bg-cyan-400/30 transition-colors"
+              >
+                ✅ I did it!
+              </button>
             </div>
           </motion.div>
 
@@ -474,7 +516,18 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
             </div>
 
             <div className="flex-1 story-canvas rounded-2xl border-2 border-dashed border-cycle overflow-hidden flex flex-col relative">
-              {scenes.length === 0 ? (
+              {showRecap ? (
+                <StoryRecapModal
+                  character={character}
+                  scenes={scenesRef.current}
+                  onClose={() => setShowRecap(false)}
+                />
+              ) : sessionState === "ended" ? (
+                <OurStoryCard
+                  character={character}
+                  scenes={scenes}
+                />
+              ) : scenes.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-4 p-8">
                   <StorybookEmpty />
                 </div>
@@ -483,7 +536,6 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                   <StorySceneGrid scenes={scenes} />
                 </div>
               )}
-
             </div>
           </motion.div>
         </div>

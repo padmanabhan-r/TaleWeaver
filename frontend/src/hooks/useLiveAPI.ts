@@ -203,6 +203,16 @@ function useCameraStream(wsRef: React.RefObject<WebSocket | null>) {
         }, 1000);
         setEnabled(true); // triggers useEffect to set srcObject after video mounts
         console.log("[camera-stream] Started ✓");
+        // Tell Gemini the camera just came on so it waits to see the child's action
+        const ws = wsRef.current;
+        if (ws?.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            client_content: {
+              turns: [{ role: "user", parts: [{ text: "I just turned on my camera. Watch me!" }] }],
+              turn_complete: true,
+            },
+          }));
+        }
       } catch (err) {
         console.error("[camera-stream] getUserMedia failed:", err);
       }
@@ -234,6 +244,28 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
     binary += String.fromCharCode(bytes[i]);
   }
   return window.btoa(binary);
+}
+
+// ── Begin turns ──────────────────────────────────────────────────────────────
+
+function buildBeginTurns(theme?: string, propImage?: string): object[] {
+  let parts: object[];
+  if (theme === "camera_prop" && propImage) {
+    parts = [
+      { inline_data: { mime_type: "image/jpeg", data: propImage } },
+      { text: "The story is about the object in this image — keep it as the main character. IMPORTANT: When you call generate_illustration, describe only the object as a living story character in its story world — NEVER describe a child or person holding it." },
+    ];
+  } else if (theme === "sketch" && propImage) {
+    parts = [
+      { inline_data: { mime_type: "image/jpeg", data: propImage } },
+      { text: "The story is about the subject of this drawing — keep that character as the hero." },
+    ];
+  } else if (theme) {
+    parts = [{ text: `Begin! Start your story RIGHT NOW. The theme is: ${theme}. Your very first sentence must immediately introduce something about ${theme}. Keep ${theme} as the central focus throughout the whole story.` }];
+  } else {
+    parts = [{ text: "Begin!" }];
+  }
+  return [{ role: "user", parts }];
 }
 
 // ── Main hook ────────────────────────────────────────────────────────────────
@@ -307,6 +339,18 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
             startCaptureRef.current().then(() => {
               setSessionState("active");
               setCharacterState("idle");
+              // Kick off the story now that mic audio is flowing.
+              // Sending this after capture starts ensures Gemini's VAD won't
+              // suppress the response by switching to "listen" mode mid-turn.
+              const currentWs = wsRef.current;
+              if (currentWs?.readyState === WebSocket.OPEN) {
+                currentWs.send(JSON.stringify({
+                  client_content: {
+                    turns: buildBeginTurns(theme, propImage),
+                    turn_complete: true,
+                  },
+                }));
+              }
             }).catch((err) => {
               console.error("[live-api] Mic capture failed:", err);
               setSessionState("error");
@@ -416,6 +460,17 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
     }
   }, [character.id, sessionState, initPlayback, stopCapture]);
 
+  const notifyActionDone = useCallback(() => {
+    const ws = wsRef.current;
+    if (ws?.readyState !== WebSocket.OPEN) return;
+    ws.send(JSON.stringify({
+      client_content: {
+        turns: [{ role: "user", parts: [{ text: "I did it! Did you see me?" }] }],
+        turn_complete: true,
+      },
+    }));
+  }, []);
+
   const togglePause = useCallback(() => {
     const gain = playbackGainRef.current;
     const captureCtx = captureCtxRef.current;
@@ -454,7 +509,7 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    connect, disconnect, togglePause, isPaused, sessionState, characterState, isCapturing, isPlaying,
+    connect, disconnect, togglePause, isPaused, notifyActionDone, sessionState, characterState, isCapturing, isPlaying,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
     cameraEnabled, toggleCamera, cameraVideoRef,
   };
