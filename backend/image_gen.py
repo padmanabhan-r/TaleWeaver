@@ -356,6 +356,7 @@ class StoryRecapRequest(BaseModel):
 
 
 class StoryRecapResponse(BaseModel):
+    title: str              # 4-6 word storybook title generated from the session
     narrations: list[str]   # one narration string per scene, in order
 
 
@@ -365,6 +366,37 @@ _RECAP_SAFETY = [
     types.SafetySetting(category="HARM_CATEGORY_HARASSMENT",         threshold="BLOCK_LOW_AND_ABOVE"),
     types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH",        threshold="BLOCK_LOW_AND_ABOVE"),
 ]
+
+
+async def _generate_title(scenes: list[RecapScene], character_name: str) -> str:
+    """Generate a 4-6 word storybook title from the first scene image."""
+    try:
+        first = scenes[0]
+        contents = [types.Content(role="user", parts=[
+            types.Part(inline_data=types.Blob(
+                data=base64.b64decode(first.image_data),
+                mime_type=first.mime_type,
+            )),
+            types.Part(text=(
+                f"A children's story was told by {character_name}. "
+                "Looking at this opening illustration, generate a magical 4-6 word storybook title. "
+                "Examples: 'The Dragon Who Found a Friend', 'A Very Brave Little Star', "
+                "'The Day the Ocean Sang'. "
+                "Return ONLY the title — no quotes, no punctuation at the end."
+            )),
+        ])]
+        response = await asyncio.wait_for(
+            _extract_client.aio.models.generate_content(
+                model=EXTRACT_MODEL,
+                contents=contents,
+                config=types.GenerateContentConfig(safety_settings=_RECAP_SAFETY),
+            ),
+            timeout=15.0,
+        )
+        return response.candidates[0].content.parts[0].text.strip().strip('"').strip("'")
+    except Exception as e:
+        print(f"[story-recap] Title generation error: {e}")
+        return f"A Story with {character_name}"
 
 
 async def _narrate_scene(scene: RecapScene, character_name: str) -> str:
@@ -417,16 +449,19 @@ async def generate_story_recap(request: StoryRecapRequest):
 
     print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
 
-    # Generate narration for all images in parallel
-    results = await asyncio.gather(
+    # Generate title + all narrations in parallel
+    all_results = await asyncio.gather(
+        _generate_title(scenes, request.character_name),
         *[_narrate_scene(s, request.character_name) for s in scenes],
         return_exceptions=True,
     )
 
+    title = all_results[0] if isinstance(all_results[0], str) else f"A Story with {request.character_name}"
+    narration_results = all_results[1:]
     narrations = [
         r if isinstance(r, str) else (scene.description or "And the adventure continued…")
-        for r, scene in zip(results, scenes)
+        for r, scene in zip(narration_results, scenes)
     ]
 
-    print(f"[story-recap] Done — {len(narrations)} narrations for {request.character_name}")
-    return StoryRecapResponse(narrations=narrations)
+    print(f"[story-recap] Done — title: {title!r}, {len(narrations)} narrations for {request.character_name}")
+    return StoryRecapResponse(title=title, narrations=narrations)

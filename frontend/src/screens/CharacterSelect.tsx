@@ -75,15 +75,15 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
       <FloatingElements />
 
       <div className="relative z-10 container mx-auto px-4 py-3 sm:py-5">
-        {/* Back button */}
+        {/* Home button */}
         {onBack && (
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={onBack}
-            className="mb-6 text-muted-foreground hover:text-foreground font-body transition-colors"
+            className="mb-6 text-muted-foreground hover:text-foreground font-body transition-colors flex items-center gap-1.5"
           >
-            ← Back
+            🏠 Home
           </motion.button>
         )}
 

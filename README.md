@@ -21,12 +21,10 @@ Turn your child's screen time into something genuinely fun and creative — a re
 - **Visual continuity** — each image generation passes the previous image + scene description as context; characters and art style stay consistent across all scenes
 - **Unlimited scene illustrations** — images generate continuously throughout the session with no cap
 - **Story Recap** — after the session ends, a single Gemini call with `response_modalities=["TEXT","IMAGE"]` produces an interleaved storybook: alternating narration paragraphs and illustrations rendered from the session's actual images; all scenes included, no cap
-- **Achievement badges** — Gemini awards badges for genuine creative contributions; badge appears on screen instantly when the tool fires; animated pop-up auto-dismisses after 3s
-- **Participation challenges** — character weaves in the first challenge within the first minute of the story, then adds more at natural story moments (danger, magic, urgency); all seated — no jumping or running required; camera lets Gemini visually confirm and react
+- **Achievement badges** — Gemini awards a badge when the child makes a genuinely creative contribution (a wild idea, a new character name, an unexpected story twist); badge appears on screen instantly, auto-dismisses after 3s
 - **Pause / Resume** — child (or parent) can pause and resume the story at any time without losing the session
 - **Life skills themes** — Sharing, Courage, Gratitude, Creativity, Kindness alongside adventure themes
 - **Content moderation** — typed themes, sketches, and camera props are safety-checked before the story starts
-- **Camera vision** — optional live webcam feed lets Gemini see and react to the child in real time; front/back camera toggle for tablets
 - **Sketch a Theme** — drawing canvas with 19 colours; sketch is recreated as a storybook illustration and becomes the story's starting image
 - **Kid-safe** — all characters are warm, age-appropriate, and tuned for children aged 4–10; story never ends unless the child presses End Story
 - **Multilingual** — Indian storytellers tell stories in Hindi, Marathi, Tamil, Telugu, and Bengali
@@ -45,7 +43,7 @@ Turn your child's screen time into something genuinely fun and creative — a re
 | Story recap | `gemini-2.0-flash-preview-image-generation` — interleaved `TEXT` + `IMAGE` output |
 | Backend | Python 3.13 + FastAPI + WebSocket |
 | Frontend | React 19 + Vite + TailwindCSS v4 + TypeScript + Framer Motion |
-| Audio I/O | Web Audio API + AudioWorklet (16kHz capture, 24kHz playback) |
+| Audio I/O | Web Audio API + AudioWorklet (16kHz capture); `AudioBufferSourceNode` scheduling (24kHz playback) |
 | Auth | GCP Application Default Credentials for Vertex AI; Gemini API key for image gen |
 | Hosting | Cloud Run — single service serves frontend + backend |
 | Domain | taleweaver.online (custom domain mapped to Cloud Run) |
@@ -139,15 +137,8 @@ Story plays
         → POST /api/image with raw turn transcription
 
 Achievement badges
-    → Gemini calls awardBadge tool for genuine creative contributions
-    → pre-queued audio cleared so no delayed verbal re-announcement
+    → Gemini calls awardBadge tool when child makes a genuine creative contribution
     → BadgePopup appears centred on screen, auto-dismisses after 3s
-
-Participation challenges
-    → First challenge within the first minute at a natural story moment
-    → Further challenges whenever story creates urgency or magic — not on a clock
-    → All seated — no jumping or running required
-    → Camera stream lets Gemini visually confirm and react
 
 Pause / Resume
     → Pause mutes playback and suspends mic capture

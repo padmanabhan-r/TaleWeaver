@@ -103,12 +103,16 @@ function useAudioCapture(wsRef: React.RefObject<WebSocket | null>) {
 }
 
 // ── Audio playback ───────────────────────────────────────────────────────────
+// Uses AudioBufferSourceNode scheduling instead of a worklet queue.
+// Each chunk is scheduled to start exactly when the previous one ends,
+// so there is no queue to overflow regardless of how fast Gemini streams.
 
 function useAudioPlayback() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const nextStartTimeRef = useRef<number>(0);
+  const sourcesRef = useRef<AudioBufferSourceNode[]>([]);
   const initializedRef = useRef(false);
 
   const initPlayback = useCallback(async () => {
@@ -117,122 +121,62 @@ function useAudioPlayback() {
     const audioContext = new AudioContext({ sampleRate: 24000 });
     audioContextRef.current = audioContext;
 
-    await audioContext.audioWorklet.addModule("/audio-processors/playback.worklet.js");
-
-    const workletNode = new AudioWorkletNode(audioContext, "audio-playback-processor");
-    workletNodeRef.current = workletNode;
-
-    workletNode.port.onmessage = (event) => {
-      if (event.data.type === "cleared") setIsPlaying(false);
-    };
+    // Ensure context is running — browsers may start it suspended
+    if (audioContext.state === "suspended") await audioContext.resume();
 
     const gainNode = audioContext.createGain();
     gainNodeRef.current = gainNode;
-
-    workletNode.connect(gainNode);
     gainNode.connect(audioContext.destination);
+
     initializedRef.current = true;
-    console.log("[audio-playback] Initialized ✓");
+    console.log("[audio-playback] Initialized ✓", audioContext.state);
   }, []);
 
   const playChunk = useCallback((base64AudioData: string) => {
-    const worklet = workletNodeRef.current;
-    if (!worklet) return;
-
     const audioContext = audioContextRef.current;
-    if (audioContext?.state === "suspended") audioContext.resume();
+    const gainNode = gainNodeRef.current;
+    if (!audioContext || !gainNode || audioContext.state === "suspended") return;
 
+    // Decode base64 → PCM16 LE → Float32
     const binaryString = atob(base64AudioData);
     const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
+    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
     const int16 = new Int16Array(bytes.buffer);
-    worklet.port.postMessage({ type: "audio", data: int16 }, [int16.buffer]);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+
+    // Create an AudioBuffer and schedule it to play immediately after the previous chunk
+    const audioBuffer = audioContext.createBuffer(1, float32.length, 24000);
+    audioBuffer.getChannelData(0).set(float32);
+
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(gainNode);
+
+    const now = audioContext.currentTime;
+    const startTime = Math.max(now, nextStartTimeRef.current);
+    source.start(startTime);
+    nextStartTimeRef.current = startTime + audioBuffer.duration;
+
+    sourcesRef.current.push(source);
+    source.onended = () => {
+      const idx = sourcesRef.current.indexOf(source);
+      if (idx >= 0) sourcesRef.current.splice(idx, 1);
+      if (sourcesRef.current.length === 0) setIsPlaying(false);
+    };
+
     setIsPlaying(true);
   }, []);
 
   const clearBuffer = useCallback(() => {
-    workletNodeRef.current?.port.postMessage({ type: "clear" });
+    sourcesRef.current.forEach(s => { try { s.stop(); } catch { /* already ended */ } });
+    sourcesRef.current = [];
+    nextStartTimeRef.current = 0;
     setIsPlaying(false);
     console.log("[audio-playback] Buffer cleared (interrupted)");
   }, []);
 
   return { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef: audioContextRef, playbackGainRef: gainNodeRef };
-}
-
-// ── Camera stream ────────────────────────────────────────────────────────────
-
-function useCameraStream(wsRef: React.RefObject<WebSocket | null>) {
-  const [enabled, setEnabled] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const intervalRef = useRef<number | null>(null);
-
-  // Once enabled=true the video element mounts — attach the stream
-  useEffect(() => {
-    if (enabled && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-    }
-  }, [enabled]);
-
-  const toggle = useCallback(async () => {
-    if (enabled) {
-      if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-      streamRef.current?.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-      setEnabled(false);
-      console.log("[camera-stream] Stopped");
-    } else {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-        streamRef.current = stream;
-        const canvas = document.createElement("canvas");
-        intervalRef.current = window.setInterval(() => {
-          const video = videoRef.current;
-          const ws = wsRef.current;
-          if (!video || !ws || ws.readyState !== WebSocket.OPEN || video.videoWidth === 0) return;
-          const MAX = 512;
-          const scale = Math.min(1, MAX / Math.max(video.videoWidth, video.videoHeight));
-          canvas.width = Math.round(video.videoWidth * scale);
-          canvas.height = Math.round(video.videoHeight * scale);
-          canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const base64 = canvas.toDataURL("image/jpeg", 0.6).split(",")[1];
-          if (!base64) return;
-          ws.send(JSON.stringify({ realtime_input: { media_chunks: [{ mime_type: "image/jpeg", data: base64 }] } }));
-        }, 1000);
-        setEnabled(true); // triggers useEffect to set srcObject after video mounts
-        console.log("[camera-stream] Started ✓");
-        // Tell Gemini the camera just came on so it waits to see the child's action
-        const ws = wsRef.current;
-        if (ws?.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({
-            client_content: {
-              turns: [{ role: "user", parts: [{ text: "I just turned on my camera. Watch me!" }] }],
-              turn_complete: true,
-            },
-          }));
-        }
-      } catch (err) {
-        console.error("[camera-stream] getUserMedia failed:", err);
-      }
-    }
-  }, [enabled, wsRef]);
-
-  const stop = useCallback(() => {
-    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null; }
-    streamRef.current?.getTracks().forEach(t => t.stop());
-    streamRef.current = null;
-    setEnabled(false);
-  }, []);
-
-  // Cleanup on unmount
-  useEffect(() => () => {
-    if (intervalRef.current) clearInterval(intervalRef.current);
-    streamRef.current?.getTracks().forEach(t => t.stop());
-  }, []);
-
-  return { enabled, toggle, stop, videoRef };
 }
 
 // ── Helper ───────────────────────────────────────────────────────────────────
@@ -244,28 +188,6 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
     binary += String.fromCharCode(bytes[i]);
   }
   return window.btoa(binary);
-}
-
-// ── Begin turns ──────────────────────────────────────────────────────────────
-
-function buildBeginTurns(theme?: string, propImage?: string): object[] {
-  let parts: object[];
-  if (theme === "camera_prop" && propImage) {
-    parts = [
-      { inline_data: { mime_type: "image/jpeg", data: propImage } },
-      { text: "The story is about the object in this image — keep it as the main character. IMPORTANT: When you call generate_illustration, describe only the object as a living story character in its story world — NEVER describe a child or person holding it." },
-    ];
-  } else if (theme === "sketch" && propImage) {
-    parts = [
-      { inline_data: { mime_type: "image/jpeg", data: propImage } },
-      { text: "The story is about the subject of this drawing — keep that character as the hero." },
-    ];
-  } else if (theme) {
-    parts = [{ text: `Begin! Start your story RIGHT NOW. The theme is: ${theme}. Your very first sentence must immediately introduce something about ${theme}. Keep ${theme} as the central focus throughout the whole story.` }];
-  } else {
-    parts = [{ text: "Begin!" }];
-  }
-  return [{ role: "user", parts }];
 }
 
 // ── Main hook ────────────────────────────────────────────────────────────────
@@ -282,7 +204,6 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
   const outputTextAccRef = useRef("");
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
   const { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef, playbackGainRef } = useAudioPlayback();
-  const { enabled: cameraEnabled, toggle: toggleCamera, stop: stopCamera, videoRef: cameraVideoRef } = useCameraStream(wsRef);
 
   // Keep latest callbacks in refs so the WS onmessage closure never goes stale
   const playChunkRef = useRef(playChunk);
@@ -336,20 +257,17 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
             setSessionState("ready");
             setCharacterState("thinking");
 
-            startCaptureRef.current().then(() => {
+            startCaptureRef.current().then(async () => {
               setSessionState("active");
               setCharacterState("idle");
-              // Kick off the story now that mic audio is flowing.
-              // Sending this after capture starts ensures Gemini's VAD won't
-              // suppress the response by switching to "listen" mode mid-turn.
-              const currentWs = wsRef.current;
-              if (currentWs?.readyState === WebSocket.OPEN) {
-                currentWs.send(JSON.stringify({
-                  client_content: {
-                    turns: buildBeginTurns(theme, propImage),
-                    turn_complete: true,
-                  },
-                }));
+
+              // Resume playback AudioContext — browsers may suspend it before a
+              // user gesture on the playback context. getUserMedia counts as one,
+              // so this reliably unblocks audio after mic starts.
+              const playbackCtx = playbackCtxRef.current;
+              if (playbackCtx && playbackCtx.state === "suspended") {
+                await playbackCtx.resume();
+                console.log("[live-api] Playback AudioContext resumed after mic start");
               }
             }).catch((err) => {
               console.error("[live-api] Mic capture failed:", err);
@@ -377,8 +295,8 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
                 const description = (call.args?.scene_description as string) ?? "";
                 onGenerateIllustrationRef.current?.(description);
               } else if (call.name === "awardBadge") {
-                // Clear any pre-queued speech about the badge — the visual is enough
-                clearBufferRef.current();
+                // Don't clear the buffer — the model is mid-story and audio should continue.
+                // The badge is visual only; the system prompt tells the model not to announce it.
                 onBadgeAwardedRef.current?.(call.args as BadgeAward);
                 ws.send(JSON.stringify({
                   toolResponse: {
@@ -493,12 +411,11 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
     // Restore gain in case we were paused
     if (playbackGainRef.current) playbackGainRef.current.gain.value = 1;
     stopCapture();
-    stopCamera();
     clearBuffer();
     wsRef.current?.close(1000, "User ended session");
     wsRef.current = null;
     setCharacterState("idle");
-  }, [stopCapture, stopCamera, clearBuffer, playbackGainRef]);
+  }, [stopCapture, clearBuffer, playbackGainRef]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -509,8 +426,7 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
-    connect, disconnect, togglePause, isPaused, notifyActionDone, sessionState, characterState, isCapturing, isPlaying,
+    connect, disconnect, togglePause, isPaused, sessionState, characterState, isCapturing, isPlaying,
     captureCtxRef, captureSourceRef, playbackCtxRef, playbackGainRef,
-    cameraEnabled, toggleCamera, cameraVideoRef,
   };
 }
