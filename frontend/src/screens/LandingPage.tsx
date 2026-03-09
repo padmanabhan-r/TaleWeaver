@@ -1,13 +1,26 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import heroBg from "@/assets/hero-bg.jpg";
 import geminiIcon from "@/assets/google-gemini-icon.svg";
 import FloatingElements from "@/components/FloatingElements";
+import PastAdventuresModal from "@/components/PastAdventuresModal";
+
+function hasPastStories(): boolean {
+  try {
+    const entries = JSON.parse(localStorage.getItem("taleweaver_gallery") ?? "[]");
+    return Array.isArray(entries) && entries.length > 0;
+  } catch {
+    return false;
+  }
+}
 
 interface Props {
   onStoryMode: () => void;
 }
 
 const LandingPage = ({ onStoryMode }: Props) => {
+  const [showPast, setShowPast] = useState(false);
+  const hasStories = hasPastStories();
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -18,6 +31,24 @@ const LandingPage = ({ onStoryMode }: Props) => {
       </div>
 
       <FloatingElements />
+
+      {/* Past Adventures button — top right */}
+      {hasStories && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.2 }}
+          onClick={() => setShowPast(true)}
+          className="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full font-body text-sm font-semibold transition-all hover:brightness-110"
+          style={{ background: "rgba(253,246,227,0.15)", border: "1px solid rgba(201,168,76,0.5)", color: "#f5d87a", backdropFilter: "blur(6px)" }}
+        >
+          📖 Past Adventures
+        </motion.button>
+      )}
+
+      <AnimatePresence>
+        {showPast && <PastAdventuresModal onClose={() => setShowPast(false)} />}
+      </AnimatePresence>
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center min-h-screen px-4 text-center">
