@@ -1,4 +1,9 @@
-const StorybookEmpty = () => (
+interface Props {
+  characterName?: string;
+  isActive?: boolean;
+}
+
+const StorybookEmpty = ({ characterName, isActive }: Props) => (
   <div className="flex flex-col items-center justify-center gap-8">
     <svg viewBox="0 0 300 220" width={300} height={220} className="drop-shadow-lg" aria-label="Open storybook">
       <defs>
@@ -64,9 +69,22 @@ const StorybookEmpty = () => (
       </circle>
     </svg>
 
-    <p className="font-comic-neue text-lg md:text-xl text-purple-400/80 text-center leading-relaxed">
-      Your imagination has no limits — let's see where the story takes us! ✨
-    </p>
+    {isActive ? (
+      <div className="flex flex-col items-center gap-3 text-center max-w-sm">
+        <p className="font-body text-lg md:text-xl text-purple-300/90 leading-relaxed">
+          Talk to {characterName ?? "your storyteller"} just like you'd talk to a friend —
+          suggest a character, change the adventure, or shout out an idea.
+        </p>
+        <p className="font-body text-sm text-purple-400/60">
+          Your imagination shapes the story ✨
+        </p>
+      </div>
+    ) : (
+      <p className="font-body text-lg md:text-xl text-purple-400/80 text-center leading-relaxed max-w-sm">
+        Your story with {characterName ?? "your storyteller"} is about to begin.
+        Illustrations will appear as the adventure unfolds ✨
+      </p>
+    )}
   </div>
 );
 
