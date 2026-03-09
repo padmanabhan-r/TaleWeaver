@@ -147,8 +147,13 @@ function useAudioPlayback() {
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
+    // Convert PCM16 LE → Float32 on the main thread before sending to worklet
     const int16 = new Int16Array(bytes.buffer);
-    worklet.port.postMessage({ type: "audio", data: int16 }, [int16.buffer]);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i < int16.length; i++) {
+      float32[i] = int16[i] / (int16[i] < 0 ? 0x8000 : 0x7fff);
+    }
+    worklet.port.postMessage({ type: "audio", data: float32 }, [float32.buffer]);
     setIsPlaying(true);
   }, []);
 
@@ -339,18 +344,8 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
             startCaptureRef.current().then(() => {
               setSessionState("active");
               setCharacterState("idle");
-              // Kick off the story now that mic audio is flowing.
-              // Sending this after capture starts ensures Gemini's VAD won't
-              // suppress the response by switching to "listen" mode mid-turn.
-              const currentWs = wsRef.current;
-              if (currentWs?.readyState === WebSocket.OPEN) {
-                currentWs.send(JSON.stringify({
-                  client_content: {
-                    turns: buildBeginTurns(theme, propImage),
-                    turn_complete: true,
-                  },
-                }));
-              }
+              // "Begin!" is sent by the backend directly to Gemini before the
+              // proxy starts — no need to send it again from the frontend.
             }).catch((err) => {
               console.error("[live-api] Mic capture failed:", err);
               setSessionState("error");

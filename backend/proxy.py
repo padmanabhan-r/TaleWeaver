@@ -124,8 +124,7 @@ async def run_proxy_session(
             gemini_service_url(LOCATION),
             additional_headers=headers,
             ssl=ssl_context,
-            ping_interval=20,
-            ping_timeout=10,
+            ping_interval=None,  # Gemini Live manages its own keepalive; standard WS pings cause it to drop
         ) as gemini_ws:
             print("[proxy] Connected to Gemini Live API ✓")
 
@@ -149,6 +148,39 @@ async def run_proxy_session(
             }))
 
             print(f"[proxy] Session ready for {character.name} (session: {session_id})")
+
+            # Kick off the story from the backend before the proxy starts.
+            # Sending directly to Gemini here (not via the browser proxy) is
+            # more reliable than waiting for the frontend to send "Begin!" —
+            # especially with proactive_audio, Gemini responds immediately.
+            begin_parts: list = []
+            if theme in ("camera_prop", "sketch") and prop_image:
+                image_text = (
+                    "The story is about the object in this image — keep it as the main character. "
+                    "IMPORTANT: When you call generate_illustration, describe only the object as a "
+                    "living story character in its story world — NEVER describe a child or person holding it."
+                    if theme == "camera_prop"
+                    else "The story is about the subject of this drawing — keep that character as the hero."
+                )
+                begin_parts = [
+                    {"inline_data": {"mime_type": "image/jpeg", "data": prop_image}},
+                    {"text": image_text},
+                ]
+            elif theme:
+                begin_parts = [{"text": (
+                    f"Begin! Start your story RIGHT NOW. The theme is: {theme}. "
+                    f"Your very first sentence must immediately introduce something about {theme}. "
+                    f"Keep {theme} as the central focus throughout the whole story."
+                )}]
+            else:
+                begin_parts = [{"text": "Begin!"}]
+
+            await gemini_ws.send(json.dumps({
+                "client_content": {
+                    "turns": [{"role": "user", "parts": begin_parts}],
+                    "turn_complete": True,
+                }
+            }))
 
             # Start bidirectional proxy
             browser_to_gemini = asyncio.create_task(
