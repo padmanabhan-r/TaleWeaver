@@ -94,6 +94,30 @@ function StorybookView({
             ))}
           </div>
 
+          {/* Badges */}
+          {(entry.badges ?? []).length > 0 && (
+            <div className="w-full max-w-2xl mt-10">
+              <p className="font-display text-lg font-bold text-center mb-4" style={{ color: "#5c3d0e" }}>
+                🏅 Badges Earned
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                {(entry.badges ?? []).map((b, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full font-body text-sm"
+                    style={{ background: "#f5e6c0", border: "1px solid #c9a84c", color: "#5c3d0e" }}
+                  >
+                    <span className="text-xl">{b.emoji}</span>
+                    <div>
+                      <p className="font-semibold leading-tight">{b.name}</p>
+                      <p className="text-xs opacity-70">{b.reason}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* The End */}
           <div className="text-center mt-14 mb-2">
             <div className="flex items-center justify-center gap-3 mb-5">
