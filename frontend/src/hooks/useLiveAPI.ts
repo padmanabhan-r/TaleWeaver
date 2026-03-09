@@ -103,12 +103,16 @@ function useAudioCapture(wsRef: React.RefObject<WebSocket | null>) {
 }
 
 // ── Audio playback ───────────────────────────────────────────────────────────
+// Uses AudioBufferSourceNode scheduling instead of a worklet queue.
+// Each chunk is scheduled to start exactly when the previous one ends,
+// so there is no queue to overflow regardless of how fast Gemini streams.
 
 function useAudioPlayback() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const nextStartTimeRef = useRef<number>(0);
+  const sourcesRef = useRef<AudioBufferSourceNode[]>([]);
   const initializedRef = useRef(false);
 
   const initPlayback = useCallback(async () => {
@@ -117,48 +121,57 @@ function useAudioPlayback() {
     const audioContext = new AudioContext({ sampleRate: 24000 });
     audioContextRef.current = audioContext;
 
-    await audioContext.audioWorklet.addModule("/audio-processors/playback.worklet.js");
-
-    const workletNode = new AudioWorkletNode(audioContext, "audio-playback-processor");
-    workletNodeRef.current = workletNode;
-
-    workletNode.port.onmessage = (event) => {
-      if (event.data.type === "cleared") setIsPlaying(false);
-    };
+    // Ensure context is running — browsers may start it suspended
+    if (audioContext.state === "suspended") await audioContext.resume();
 
     const gainNode = audioContext.createGain();
     gainNodeRef.current = gainNode;
-
-    workletNode.connect(gainNode);
     gainNode.connect(audioContext.destination);
+
     initializedRef.current = true;
-    console.log("[audio-playback] Initialized ✓");
+    console.log("[audio-playback] Initialized ✓", audioContext.state);
   }, []);
 
   const playChunk = useCallback((base64AudioData: string) => {
-    const worklet = workletNodeRef.current;
-    if (!worklet) return;
-
     const audioContext = audioContextRef.current;
-    if (audioContext?.state === "suspended") audioContext.resume();
+    const gainNode = gainNodeRef.current;
+    if (!audioContext || !gainNode || audioContext.state === "suspended") return;
 
+    // Decode base64 → PCM16 LE → Float32
     const binaryString = atob(base64AudioData);
     const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    // Convert PCM16 LE → Float32 on the main thread before sending to worklet
+    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
     const int16 = new Int16Array(bytes.buffer);
     const float32 = new Float32Array(int16.length);
-    for (let i = 0; i < int16.length; i++) {
-      float32[i] = int16[i] / (int16[i] < 0 ? 0x8000 : 0x7fff);
-    }
-    worklet.port.postMessage({ type: "audio", data: float32 }, [float32.buffer]);
+    for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+
+    // Create an AudioBuffer and schedule it to play immediately after the previous chunk
+    const audioBuffer = audioContext.createBuffer(1, float32.length, 24000);
+    audioBuffer.getChannelData(0).set(float32);
+
+    const source = audioContext.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(gainNode);
+
+    const now = audioContext.currentTime;
+    const startTime = Math.max(now, nextStartTimeRef.current);
+    source.start(startTime);
+    nextStartTimeRef.current = startTime + audioBuffer.duration;
+
+    sourcesRef.current.push(source);
+    source.onended = () => {
+      const idx = sourcesRef.current.indexOf(source);
+      if (idx >= 0) sourcesRef.current.splice(idx, 1);
+      if (sourcesRef.current.length === 0) setIsPlaying(false);
+    };
+
     setIsPlaying(true);
   }, []);
 
   const clearBuffer = useCallback(() => {
-    workletNodeRef.current?.port.postMessage({ type: "clear" });
+    sourcesRef.current.forEach(s => { try { s.stop(); } catch { /* already ended */ } });
+    sourcesRef.current = [];
+    nextStartTimeRef.current = 0;
     setIsPlaying(false);
     console.log("[audio-playback] Buffer cleared (interrupted)");
   }, []);
@@ -213,7 +226,7 @@ function useCameraStream(wsRef: React.RefObject<WebSocket | null>) {
         if (ws?.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({
             client_content: {
-              turns: [{ role: "user", parts: [{ text: "I just turned on my camera. Watch me!" }] }],
+              turns: [{ role: "user", parts: [{ text: "I just turned on my camera — look at what I'm showing you and weave it into the story!" }] }],
               turn_complete: true,
             },
           }));
@@ -372,8 +385,8 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
                 const description = (call.args?.scene_description as string) ?? "";
                 onGenerateIllustrationRef.current?.(description);
               } else if (call.name === "awardBadge") {
-                // Clear any pre-queued speech about the badge — the visual is enough
-                clearBufferRef.current();
+                // Don't clear the buffer — the model is mid-story and audio should continue.
+                // The badge is visual only; the system prompt tells the model not to announce it.
                 onBadgeAwardedRef.current?.(call.args as BadgeAward);
                 ws.send(JSON.stringify({
                   toolResponse: {

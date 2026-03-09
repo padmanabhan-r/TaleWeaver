@@ -291,12 +291,10 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
             initial={{ opacity: 0, x: -40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="flex flex-col items-center justify-start md:w-1/5 gap-5 pt-4 overflow-y-auto"
+            className="flex flex-col items-center md:w-1/5 gap-2 overflow-hidden"
           >
             {/* Avatar */}
-            <div className="relative flex items-center justify-center mt-4">
-
-              {/* Sound wave rings — speaking only */}
+            <div className="relative flex items-center justify-center mt-2">
               {characterState === "speaking" && [0, 0.4, 0.8].map((delay, i) => (
                 <motion.div
                   key={i}
@@ -305,11 +303,9 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                   transition={{ duration: 1.2, repeat: Infinity, delay, ease: "easeOut" }}
                 />
               ))}
-
-              {/* Thinking bubble — thinking only */}
               {characterState === "thinking" && (
                 <motion.div
-                  className="absolute -top-2 -right-2 text-xl pointer-events-none select-none"
+                  className="absolute -top-1 -right-1 text-lg pointer-events-none select-none"
                   initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: [0.5, 1, 0.5], y: [0, -5, 0] }}
                   transition={{ duration: 2, repeat: Infinity }}
@@ -317,140 +313,84 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
                   💭
                 </motion.div>
               )}
-
-              {/* Portrait */}
               <motion.div
                 key={characterState}
-                className={`w-[8.25rem] h-[8.25rem] rounded-full overflow-hidden border-4 shadow-xl transition-colors duration-500 ${BORDER_CLASS[characterState]} ${avatarStateClass}`}
+                className={`w-24 h-24 rounded-full overflow-hidden border-4 shadow-xl transition-colors duration-500 ${BORDER_CLASS[characterState]} ${avatarStateClass}`}
                 initial={{ scale: 1, rotate: 0, y: 0 }}
                 animate={PORTRAIT_ANIMATE[characterState]}
                 transition={PORTRAIT_TRANSITION[characterState]}
               >
                 <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
               </motion.div>
-
             </div>
 
-            {/* Name + language */}
+            {/* Name + status */}
             <div className="text-center">
-              <h2 className="font-display text-2xl sm:text-3xl font-bold text-foreground">
-                {character.name}
-              </h2>
-              <p className="text-sm text-muted-foreground font-body">{character.language} Storyteller</p>
+              <h2 className="font-display text-xl font-bold text-foreground">{character.name}</h2>
+              <p className="text-xs text-muted-foreground font-body">{character.language} Storyteller</p>
             </div>
 
-            {/* Status text */}
-            <p className="font-body text-base text-foreground/70 text-center">{statusText}</p>
-
-            {/* Speaking indicator bars — always in DOM, opacity only */}
-            <div className={`flex gap-1 items-end h-6 transition-opacity duration-300 ${characterState === "speaking" && isActive ? "opacity-100" : "opacity-0"}`}>
+            {/* Speaking indicator bars */}
+            <div className={`flex gap-1 items-end h-5 transition-opacity duration-300 ${characterState === "speaking" && isActive ? "opacity-100" : "opacity-0"}`}>
               {[0, 1, 2, 3, 4].map((i) => (
                 <motion.div
                   key={i}
                   className="w-1.5 bg-primary rounded-full"
-                  style={{ height: "20px", transformOrigin: "bottom" }}
+                  style={{ height: "18px", transformOrigin: "bottom" }}
                   animate={{ scaleY: [0.4, 1, 0.4] }}
                   transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
                 />
               ))}
             </div>
 
-            {/* Audio visualizers — always in DOM, opacity only */}
-            <div className={`flex flex-col gap-2 w-full px-2 transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}>
-              <div style={{ height: "40px" }}>
-                <AudioVisualizer
-                  active={isActive}
-                  ctxRef={playbackCtxRef}
-                  nodeRef={playbackGainRef as React.RefObject<AudioNode | null>}
-                  color="hsl(42 100% 62%)"
-                />
+            {/* Audio visualizers */}
+            <div className={`flex flex-col gap-1 w-full px-2 transition-opacity duration-300 ${isActive ? "opacity-100" : "opacity-0"}`}>
+              <div style={{ height: "28px" }}>
+                <AudioVisualizer active={isActive} ctxRef={playbackCtxRef} nodeRef={playbackGainRef as React.RefObject<AudioNode | null>} color="hsl(42 100% 62%)" />
               </div>
-              <div style={{ height: "40px" }}>
-                <AudioVisualizer
-                  active={isCapturing}
-                  ctxRef={captureCtxRef}
-                  nodeRef={captureSourceRef as React.RefObject<AudioNode | null>}
-                  color="hsl(170 70% 50%)"
-                />
+              <div style={{ height: "28px" }}>
+                <AudioVisualizer active={isCapturing} ctxRef={captureCtxRef} nodeRef={captureSourceRef as React.RefObject<AudioNode | null>} color="hsl(170 70% 50%)" />
               </div>
             </div>
 
-            {/* Button area */}
-            <div className="flex flex-col items-center gap-2" style={{ minHeight: "80px" }}>
+            {/* Buttons */}
+            <div className="flex flex-col items-center gap-2 w-full px-1">
               {sessionState === "ended" ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <button
-                    onClick={() => setShowRecap(true)}
-                    className="px-6 py-2 rounded-full bg-primary text-primary-foreground font-body text-sm font-semibold hover:brightness-110 transition-all"
-                  >
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-2 w-full">
+                  <button onClick={() => setShowRecap(true)} className="w-full px-4 py-2 rounded-full bg-primary text-primary-foreground font-body text-sm font-semibold hover:brightness-110 transition-all">
                     📖 See our story!
                   </button>
-                  <button
-                    onClick={handleBack}
-                    className="font-body text-sm px-6 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-                  >
+                  <button onClick={handleBack} className="w-full font-body text-sm px-4 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors">
                     ✨ Begin another story
                   </button>
                 </motion.div>
               ) : !isActive ? (
                 <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3, delay: 0.8 }}
-                  whileHover={!isConnecting ? { scale: 1.05 } : {}}
-                  whileTap={!isConnecting ? { scale: 0.95 } : {}}
-                  onClick={handleBegin}
-                  disabled={isConnecting}
-                  className="px-6 py-2.5 rounded-full bg-primary text-primary-foreground font-display text-base font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3, delay: 0.8 }}
+                  whileHover={!isConnecting ? { scale: 1.05 } : {}} whileTap={!isConnecting ? { scale: 0.95 } : {}}
+                  onClick={handleBegin} disabled={isConnecting}
+                  className="px-5 py-2 rounded-full bg-primary text-primary-foreground font-display text-sm font-bold magic-glow animate-glow-pulse hover:brightness-110 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isConnecting ? (
-                    <>
-                      <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Waking up the storyteller...
-                    </>
-                  ) : (
-                    "🪄 Begin the Story!"
-                  )}
+                    <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>Waking up...</>
+                  ) : "🪄 Begin the Story!"}
                 </motion.button>
               ) : (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="flex flex-col items-center gap-2"
-                >
-                  <div className="flex gap-2">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="flex flex-col items-center gap-2 w-full">
+                  <div className="flex gap-2 w-full">
                     <button
                       onClick={togglePause}
-                      className={`font-body text-sm px-4 py-2 rounded-full border transition-colors ${
-                        isPaused
-                          ? "border-primary/60 text-primary bg-primary/10 hover:bg-primary/20"
-                          : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
-                      }`}
+                      className={`flex-1 font-body text-xs px-3 py-1.5 rounded-full border transition-colors ${isPaused ? "border-primary/60 text-primary bg-primary/10 hover:bg-primary/20" : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"}`}
                     >
                       {isPaused ? "▶ Resume" : "⏸ Pause"}
                     </button>
-                    <button
-                      onClick={endAndSave}
-                      className="font-body text-sm px-4 py-2 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors"
-                    >
+                    <button onClick={endAndSave} className="flex-1 font-body text-xs px-3 py-1.5 rounded-full border border-border/60 text-muted-foreground hover:text-foreground hover:border-border transition-colors">
                       End Story
                     </button>
                   </div>
                   <button
                     onClick={toggleCamera}
-                    className={`font-body text-xs px-4 py-1.5 rounded-full border transition-colors ${
-                      cameraEnabled
-                        ? "border-cyan-400/70 text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20"
-                        : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"
-                    }`}
+                    className={`w-full font-body text-xs px-3 py-1.5 rounded-full border transition-colors ${cameraEnabled ? "border-cyan-400/70 text-cyan-400 bg-cyan-400/10 hover:bg-cyan-400/20" : "border-border/60 text-muted-foreground hover:text-foreground hover:border-border"}`}
                   >
                     {cameraEnabled ? "📷 Camera On" : "📷 Share Camera"}
                   </button>
@@ -458,26 +398,12 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack }: P
               )}
             </div>
 
-            {/* Camera preview + Done button */}
-            <div className={`w-full flex flex-col gap-2 transition-opacity duration-300 ${cameraEnabled && isActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}
-              style={{ height: cameraEnabled && isActive ? undefined : 0 }}>
-              <div className="w-full rounded-xl overflow-hidden border border-cyan-400/30">
-                <video
-                  ref={cameraVideoRef}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                  style={{ transform: "scaleX(-1)" }}
-                />
+            {/* Camera preview — compact, no scroll */}
+            {cameraEnabled && isActive && (
+              <div className="w-full rounded-xl overflow-hidden border border-cyan-400/30" style={{ height: "90px" }}>
+                <video ref={cameraVideoRef} autoPlay muted playsInline className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
               </div>
-              <button
-                onClick={notifyActionDone}
-                className="w-full py-2 rounded-full bg-cyan-400/20 border border-cyan-400/60 text-cyan-300 font-body text-sm font-semibold hover:bg-cyan-400/30 transition-colors"
-              >
-                ✅ I did it!
-              </button>
-            </div>
+            )}
           </motion.div>
 
           {/* Right — story canvas */}
