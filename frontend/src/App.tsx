@@ -67,6 +67,7 @@ const App = () => {
         <ThemeSelect
           character={selectedCharacter}
           onBack={handleBackFromTheme}
+          onHome={handleBackToLanding}
           onConfirm={handleThemeConfirm}
         />
       )}
@@ -77,6 +78,7 @@ const App = () => {
           propImage={propImage}
           propDescription={propDescription}
           onBack={handleBackFromStory}
+          onHome={handleBackToLanding}
         />
       )}
       {screen !== "story" && (
