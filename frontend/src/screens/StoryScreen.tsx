@@ -318,12 +318,20 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-border/30"
         >
-          <button
-            onClick={handleBack}
-            className="text-muted-foreground hover:text-foreground font-body transition-colors"
-          >
-            ← Back
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleBack}
+              className="text-muted-foreground hover:text-foreground font-body transition-colors"
+            >
+              ← Back
+            </button>
+            <button
+              onClick={handleHome}
+              className="text-muted-foreground hover:text-foreground font-body transition-colors"
+            >
+              Home
+            </button>
+          </div>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
           <div className="flex items-center justify-end gap-3 flex-shrink-0">
             {theme && theme !== "camera_prop" && theme !== "sketch" && (
@@ -341,13 +349,6 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
                 ✏️ Sketch story
               </span>
             )}
-            <button
-              onClick={handleHome}
-              className="text-muted-foreground hover:text-foreground font-body transition-colors text-lg"
-              title="Go home"
-            >
-              🏠
-            </button>
           </div>
         </motion.header>
 
