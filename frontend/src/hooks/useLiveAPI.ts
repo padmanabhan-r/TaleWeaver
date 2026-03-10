@@ -21,7 +21,8 @@ export interface BadgeAward {
 interface UseLiveAPIOptions {
   character: Character;
   theme?: string;
-  propImage?: string;     // raw base64 JPEG, no data: prefix
+  propImage?: string;       // raw base64 JPEG, no data: prefix
+  propDescription?: string; // human-readable label, e.g. "a friendly blue dragon"
   onImageTrigger?: ((text: string) => void) | null;
   onGenerateIllustration?: ((description: string) => void) | null;
   onTranscription?: ((msg: Transcription) => void) | null;
@@ -192,7 +193,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 // ── Main hook ────────────────────────────────────────────────────────────────
 
-export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGenerateIllustration, onTranscription, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
+export function useLiveAPI({ character, theme, propImage, propDescription, onImageTrigger, onGenerateIllustration, onTranscription, onBadgeAwarded, onChildSpoke }: UseLiveAPIOptions) {
   const wsRef = useRef<WebSocket | null>(null);
   const [sessionState, setSessionState] = useState<SessionState>("idle");
   const [characterState, setCharacterState] = useState<CharacterState>("idle");
@@ -244,6 +245,7 @@ export function useLiveAPI({ character, theme, propImage, onImageTrigger, onGene
           character_id: character.id,
           theme: theme ?? null,
           prop_image: propImage ?? null,
+          prop_description: propDescription ?? null,
         }));
       };
 
