@@ -391,9 +391,6 @@ def build_gemini_setup_message(character: Character, project_id: str, location: 
                     "start_of_speech_sensitivity": "START_SENSITIVITY_LOW",
                 }
             },
-            "proactivity": {
-                "proactive_audio": True,
-            },
             "tools": [
                 {
                     "function_declarations": [

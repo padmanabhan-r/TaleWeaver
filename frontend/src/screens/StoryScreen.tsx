@@ -32,16 +32,44 @@ export interface StoryGalleryEntry {
   timestamp: number;
 }
 
-function saveToGallery(
+// Resize a base64 image before localStorage to stay within quota.
+// 800px wide at JPEG 0.8 ≈ 100–200 KB — sharp enough to fill the storybook view (max-w-2xl = 672px).
+function resizeImageForStorage(
+  imageData: string,
+  mimeType: string,
+  maxWidth = 800,
+): Promise<{ imageData: string; mimeType: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const resized = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+      resolve({ imageData: resized, mimeType: "image/jpeg" });
+    };
+    img.onerror = () => resolve({ imageData, mimeType }); // fall back to original on error
+    img.src = `data:${mimeType};base64,${imageData}`;
+  });
+}
+
+async function saveToGallery(
   sessionId: string,
   character: Character,
   scenes: StoryScene[],
   storyFirstLine: string,
   badges: { emoji: string; name: string; reason: string }[] = [],
 ) {
-  const images = scenes
+  // Resize each image to a thumbnail to stay within localStorage quota
+  const rawImages = scenes
     .filter((s) => s.status === "loaded" && s.imageData)
     .map((s) => ({ imageData: s.imageData!, mimeType: s.mimeType! }));
+
+  const images = await Promise.all(
+    rawImages.map((img) => resizeImageForStorage(img.imageData, img.mimeType))
+  );
 
   const title = storyFirstLine
     ? storyFirstLine.split(" ").slice(0, 7).join(" ") + "…"
@@ -67,8 +95,9 @@ function saveToGallery(
     };
     const updated = [entry, ...existing.filter((e) => e.id !== sessionId)].slice(0, 20);
     localStorage.setItem("taleweaver_gallery", JSON.stringify(updated));
-  } catch {
-    // localStorage unavailable — ignore
+    console.log(`[gallery] Saved session ${sessionId} — ${images.length} thumbnails, ${updated.length} total stories`);
+  } catch (e) {
+    console.warn("[gallery] localStorage save failed:", e);
   }
 }
 
@@ -256,7 +285,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
       (sessionState === "ended" || sessionState === "error") &&
       (prev === "active" || prev === "ready" || prev === "connecting")
     ) {
-      saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+      void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     }
   }, [sessionState, character]);
 
@@ -265,20 +294,20 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
   }, [connect]);
 
   const endAndSave = useCallback(() => {
-    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     stopImages();
     disconnect();
   }, [character, disconnect, stopImages]);
 
   const handleBack = () => {
-    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     stopImages();
     disconnect();
     onBack();
   };
 
   const handleHome = () => {
-    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     stopImages();
     disconnect();
     onHome();
@@ -287,7 +316,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
   // Called when the recap is opened — re-saves with the latest scenes (in case
   // images finished loading after endAndSave was called) and current badges.
   const handleShowRecap = () => {
-    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     setShowRecap(true);
   };
 
