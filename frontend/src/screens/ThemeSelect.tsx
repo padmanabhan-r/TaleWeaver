@@ -341,7 +341,7 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
         <>
           <div className="relative w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden border-2 border-dashed border-primary/50 bg-card/40">
             <div className="absolute inset-0 rounded-2xl overflow-hidden">
-              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }} />
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
             </div>
             {/* Flip camera button */}
             <button
