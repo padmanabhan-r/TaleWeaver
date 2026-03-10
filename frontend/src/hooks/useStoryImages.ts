@@ -42,6 +42,16 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
     setScenes((prev) => prev.filter((s) => s.status === "loaded"));
   }, []);
 
+  // Pre-seed the canvas with the prop's illustrated image (camera / sketch mode).
+  // This shows the image immediately when the story starts AND primes visual continuity
+  // so the first AI-generated scene references the same character design.
+  const seedPropImage = useCallback((imageData: string, mimeType: string, description: string) => {
+    if (stoppedRef.current || sceneCountRef.current > 0) return;
+    const sceneId = `scene-${++sceneCountRef.current}`;
+    lastImageRef.current = { data: imageData, mimeType, sceneDescription: description };
+    setScenes([{ id: sceneId, status: "loaded", imageData, mimeType, description }]);
+  }, []);
+
   const triggerImageGeneration = useCallback(
     async (transcriptionText: string) => {
       if (stoppedRef.current) return;
@@ -220,5 +230,5 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
     [imageStyle, sessionId]
   );
 
-  return { scenes, triggerImageGeneration, forceImageGeneration, stop };
+  return { scenes, triggerImageGeneration, forceImageGeneration, stop, seedPropImage };
 }

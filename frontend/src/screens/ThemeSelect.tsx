@@ -9,7 +9,7 @@ interface Props {
   character: Character;
   onBack: () => void;
   onHome: () => void;
-  onConfirm: (theme: string, propImage?: string, propDescription?: string) => void;
+  onConfirm: (theme: string, propImage?: string, propDescription?: string, propImageMimeType?: string) => void;
 }
 
 /* ── Theme tiles ── */
@@ -405,6 +405,21 @@ const OPTION_CARDS: { id: OptionId; emoji: string; title: string; description: s
   { id: "sketch", emoji: "✏️", title: "Sketch a Theme",  description: "Draw whatever's in your head — I'll bring it to life as your story!" },
 ];
 
+/* ── Excited voice announcement ── */
+function speakExcited(text: string) {
+  if (!("speechSynthesis" in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.pitch = 1.4;
+    utter.rate = 1.05;
+    utter.volume = 1.0;
+    window.speechSynthesis.speak(utter);
+  } catch {
+    // speechSynthesis not available or blocked — silently skip
+  }
+}
+
 /* ── Main screen ── */
 const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
   const [expanded, setExpanded] = useState<OptionId | null>(null);
@@ -442,7 +457,7 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
   const canConfirmPick   = !!(selectedTheme || customText.trim());
   const canConfirmSketch = !!sketchImage && !sketchPreview?.loading;
 
-  async function callPreviewAPI(imageData: string, setter: (p: Preview | null) => void) {
+  async function callPreviewAPI(imageData: string, setter: (p: Preview | null) => void, mode: "camera" | "sketch") {
     setter({ loading: true, label: null, imageData: null, mimeType: "" });
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 50_000);
@@ -465,6 +480,11 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
       }
       const data = await res.json();
       setter({ loading: false, label: data.label, imageData: data.image_data, mimeType: data.mime_type });
+      // Speak out loud as soon as the object is identified
+      if (data.label) {
+        const action = mode === "camera" ? "brought" : "drew";
+        speakExcited(`Oh wow, you ${action} ${data.label}! Let me bring it to life in your story!`);
+      }
     } catch (err) {
       console.error("[preview] failed:", err);
       setter({ loading: false, label: null, imageData: null, mimeType: "" });
@@ -473,8 +493,8 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
     }
   }
 
-  const handleSketchPreview = () => sketchImage && callPreviewAPI(sketchImage, setSketchPreview);
-  const handleCameraCapture = (base64: string) => { setCapturedImage(base64); callPreviewAPI(base64, setCameraPreview); };
+  const handleSketchPreview = () => sketchImage && callPreviewAPI(sketchImage, setSketchPreview, "sketch");
+  const handleCameraCapture = (base64: string) => { setCapturedImage(base64); callPreviewAPI(base64, setCameraPreview, "camera"); };
 
   const handleGo = async () => {
     if (expanded === "pick") {
@@ -503,9 +523,9 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
       setContentWarning(null);
       onConfirm(text || selectedTheme || "");
     } else if (expanded === "camera" && cameraPreview?.imageData) {
-      onConfirm("camera_prop", cameraPreview.imageData, cameraPreview.label ?? undefined);
+      onConfirm("camera_prop", cameraPreview.imageData, cameraPreview.label ?? undefined, cameraPreview.mimeType || "image/jpeg");
     } else if (expanded === "sketch" && sketchPreview?.imageData) {
-      onConfirm("sketch", sketchPreview.imageData, sketchPreview.label ?? undefined);
+      onConfirm("sketch", sketchPreview.imageData, sketchPreview.label ?? undefined, sketchPreview.mimeType || "image/jpeg");
     }
   };
 

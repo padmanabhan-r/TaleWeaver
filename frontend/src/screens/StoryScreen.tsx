@@ -138,6 +138,7 @@ interface Props {
   theme?: string;
   propImage?: string;
   propDescription?: string;
+  propImageMimeType?: string;
   onBack: () => void;
   onHome: () => void;
 }
@@ -182,7 +183,7 @@ const STATUS_TEXT: Record<string, string> = {
   ended: "The end! That was a great story!",
 };
 
-const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onHome }: Props) => {
+const StoryScreen = ({ character, theme, propImage, propDescription, propImageMimeType, onBack, onHome }: Props) => {
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   const intervalSeconds = 8;
 
@@ -197,7 +198,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
   // Capture first story line for gallery title
   const storyFirstLineRef = useRef("");
 
-  const { scenes, triggerImageGeneration, forceImageGeneration, stop: stopImages } = useStoryImages(
+  const { scenes, triggerImageGeneration, forceImageGeneration, stop: stopImages, seedPropImage } = useStoryImages(
     character.imageStyle,
     sessionIdRef.current,
     intervalSeconds
@@ -225,6 +226,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
     character,
     theme,
     propImage,
+    propDescription,
     onImageTrigger: triggerImageGeneration,
     onGenerateIllustration: forceImageGeneration,
     onTranscription: (msg) => {
@@ -234,6 +236,15 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
     },
     onBadgeAwarded: handleBadgeAwarded,
   });
+
+  // Seed the prop illustration into the canvas as soon as the session goes active.
+  // This ensures camera/sketch images appear immediately and prime visual continuity.
+  useEffect(() => {
+    if (sessionState === "active" && propImage && propImageMimeType) {
+      seedPropImage(propImage, propImageMimeType, propDescription ?? "");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionState]);
 
   // Auto-save to gallery whenever the session ends — regardless of whether
   // the user clicked "End Story" or the WebSocket closed unexpectedly.
