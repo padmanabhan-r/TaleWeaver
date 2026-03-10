@@ -135,3 +135,31 @@ A secondary bug: `BUFFER_MAX_SAMPLES = 48000 * 10` was wrong — the AudioContex
 **Deeper truth:** Gemini Live is a **conversation API**, not a narration API. Its turn-taking model is designed for back-and-forth dialogue. Using it for one-sided continuous storytelling means working against its grain. The inconsistent pauses are a product of that architectural mismatch and cannot be fully eliminated without a different approach (e.g. pre-generating story audio with a TTS model and using Gemini Live only for interruption/redirection handling).
 
 **Files:** `backend/characters.py` — system prompt
+
+---
+
+## 10. Story Repeats Itself Mid-Session
+
+**Symptom:** The model retells the same plot beats in different words — 10–20 seconds of story followed by the same beats paraphrased. Also happens at the very start of the session (same opening told twice).
+
+**Root cause (beginning):** A frontend "safety re-send" was added to fix characters not starting: after `startCapture()` resolved, if `receivedAudioRef.current` was `false`, the frontend would send another `"Begin!"`. The check was racy — Gemini's audio was already in-flight but hadn't been processed by `ws.onmessage` yet, so the flag was still `false`. Gemini received a second `"Begin!"` mid-opening and retold it in different words.
+
+**Root cause (mid-session):** Gemini Live native audio has limited within-session narrative tracking across many turns, especially after tool-call pauses (`generate_illustration` interrupts narration; when Gemini resumes it can recycle earlier story territory). The system prompt's single "NEVER repeat" sentence was not strong enough.
+
+**Fix:**
+- Removed the frontend begin-turn re-send entirely. The backend already sends `"Begin!"` before the proxy starts — that is the reliable path. The AudioContext resume (challenge 6) is the fix for characters not starting.
+- Strengthened anti-repetition in the system prompt: per-sentence self-check ("Have I already described this moment?"), explicit ban on rephrasing in different words, rule to resume *exactly* where narration left off after any pause or tool-call, prohibition on resumption phrases ("As I was saying…", "Remember how…").
+
+**Files:** `frontend/src/hooks/useLiveAPI.ts`, `backend/characters.py`
+
+---
+
+## 11. Inappropriate Child Input Not Called Out Immediately
+
+**Symptom:** When the child says something violent, rude, or otherwise inappropriate, the model silently ignores it (continues the story as if nothing happened) or addresses it only after narrating a few more sentences.
+
+**Root cause:** The content-rules section told the model to "gently redirect" but gave no timing instruction. The native audio model treated it as background guidance, not an interruption trigger.
+
+**Fix:** Added explicit timing instruction: if the child says anything inappropriate, the model must stop immediately and call it out as its *very first response* — before any story continuation. Added example phrasing ("Oh! I can't tell stories about that — that's not for little ears!") and an explicit rule against silently skipping past bad input.
+
+**Files:** `backend/characters.py` — system prompt
