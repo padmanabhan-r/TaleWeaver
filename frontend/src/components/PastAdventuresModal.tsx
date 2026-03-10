@@ -210,8 +210,13 @@ function StoryCard({
 // ── Main modal ────────────────────────────────────────────────────────────────
 
 export default function PastAdventuresModal({ onClose }: Props) {
-  const [entries] = useState<StoryGalleryEntry[]>(loadGallery);
+  const [entries, setEntries] = useState<StoryGalleryEntry[]>(loadGallery);
   const [selected, setSelected] = useState<StoryGalleryEntry | null>(null);
+
+  const handleClearAll = () => {
+    try { localStorage.removeItem("taleweaver_gallery"); } catch { /* ignore */ }
+    setEntries([]);
+  };
 
   return (
     <motion.div
@@ -264,14 +269,25 @@ export default function PastAdventuresModal({ onClose }: Props) {
                     {entries.length} {entries.length === 1 ? "story" : "stories"} saved
                   </p>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="text-3xl leading-none pb-1 transition-opacity hover:opacity-60"
-                  style={{ color: "#9c7a3a" }}
-                  aria-label="Close"
-                >
-                  ×
-                </button>
+                <div className="flex items-center gap-3">
+                  {entries.length > 0 && (
+                    <button
+                      onClick={handleClearAll}
+                      className="font-body text-xs px-3 py-1 rounded-full border transition-opacity hover:opacity-70"
+                      style={{ color: "#9c7a3a", borderColor: "#c9b07a" }}
+                    >
+                      Clear all
+                    </button>
+                  )}
+                  <button
+                    onClick={onClose}
+                    className="text-3xl leading-none pb-1 transition-opacity hover:opacity-60"
+                    style={{ color: "#9c7a3a" }}
+                    aria-label="Close"
+                  >
+                    ×
+                  </button>
+                </div>
               </div>
 
               {/* Grid or empty state */}

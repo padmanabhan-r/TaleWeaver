@@ -235,6 +235,20 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
     onBadgeAwarded: handleBadgeAwarded,
   });
 
+  // Auto-save to gallery whenever the session ends — regardless of whether
+  // the user clicked "End Story" or the WebSocket closed unexpectedly.
+  const prevSessionStateRef = useRef(sessionState);
+  useEffect(() => {
+    const prev = prevSessionStateRef.current;
+    prevSessionStateRef.current = sessionState;
+    if (
+      (sessionState === "ended" || sessionState === "error") &&
+      (prev === "active" || prev === "ready" || prev === "connecting")
+    ) {
+      saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    }
+  }, [sessionState, character]);
+
   const handleBegin = useCallback(() => {
     connect();
   }, [connect]);
