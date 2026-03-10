@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { StoryGalleryEntry } from "@/screens/StoryScreen";
+import { CHARACTERS } from "@/characters";
+
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
 
 interface Props {
   onClose: () => void;
@@ -28,7 +31,52 @@ function StorybookView({
   entry: StoryGalleryEntry;
   onBack: () => void;
 }) {
-  const title = entry.recapTitle || entry.title;
+  const character = CHARACTERS.find((c) => c.id === entry.characterId);
+  const [recapTitle, setRecapTitle] = useState(entry.recapTitle || entry.title);
+  const [narrations, setNarrations] = useState<string[]>(entry.narrations ?? []);
+  const [loading, setLoading] = useState(!entry.narrations && entry.images.length > 0);
+  const [error, setError] = useState("");
+
+  // Generate narrations on demand if they weren't saved from a previous recap
+  useEffect(() => {
+    if (!loading) return;
+
+    fetch(`${API_BASE}/api/story-recap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        character_name: entry.characterName,
+        image_style: character?.imageStyle ?? "",
+        scenes: entry.images.map((img) => ({
+          image_data: img.imageData,
+          mime_type: img.mimeType,
+          description: "",
+        })),
+      }),
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data) => {
+        const t: string = data.title ?? "";
+        const n: string[] = data.narrations ?? [];
+        if (t) setRecapTitle(t);
+        setNarrations(n);
+        // Persist so next open is instant
+        try {
+          const existing: StoryGalleryEntry[] = JSON.parse(
+            localStorage.getItem("taleweaver_gallery") ?? "[]"
+          );
+          const updated = existing.map((e) =>
+            e.id === entry.id ? { ...e, recapTitle: t || e.recapTitle, narrations: n } : e
+          );
+          localStorage.setItem("taleweaver_gallery", JSON.stringify(updated));
+        } catch { /* quota — best effort */ }
+      })
+      .catch(() => setError("Couldn't create the storybook. Please try again!"))
+      .finally(() => setLoading(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="flex flex-col h-full" style={{ background: "#fdf6e3" }}>
@@ -62,89 +110,112 @@ function StorybookView({
 
       {/* Scrollable storybook */}
       <div className="flex-1 overflow-y-auto">
-        <div className="flex flex-col items-center px-8 pb-16">
-          {/* Title block */}
-          <div className="text-center pt-10 pb-8 max-w-xl">
-            <p className="font-display text-4xl font-bold leading-tight" style={{ color: "#5c3d0e" }}>
-              {title}
+        {/* Loading spinner — same as StoryRecapModal */}
+        {loading && (
+          <div className="flex flex-col items-center justify-center h-64 gap-4">
+            <div
+              className="w-12 h-12 border-4 rounded-full animate-spin"
+              style={{ borderColor: "#e8d9b5", borderTopColor: "#c9a84c" }}
+            />
+            <p className="font-body text-sm text-center" style={{ color: "#9c7a3a" }}>
+              Creating your storybook…
+              <br />
+              <span className="text-xs opacity-70">Just a moment</span>
             </p>
-            <p className="font-body text-sm mt-2" style={{ color: "#9c7a3a" }}>
-              A story with {entry.characterName}
-            </p>
-            <div className="flex items-center justify-center gap-3 mt-5">
-              <div className="h-px w-16" style={{ background: "#c9a84c" }} />
-              <span style={{ color: "#c9a84c" }}>✦</span>
-              <div className="h-px w-16" style={{ background: "#c9a84c" }} />
-            </div>
           </div>
+        )}
 
-          {/* Images + narrations */}
-          <div className="flex flex-col gap-10 w-full max-w-2xl">
-            {entry.images.map((img, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
-                className="flex flex-col gap-4"
-              >
-                <img
-                  src={`data:${img.mimeType};base64,${img.imageData}`}
-                  alt={`Story scene ${i + 1}`}
-                  className="w-full rounded-2xl shadow-lg"
-                  style={{ border: "3px solid #e8d9b5" }}
-                />
-                {entry.narrations?.[i] && (
-                  <p
-                    className="font-body text-lg leading-relaxed text-center px-4 italic"
-                    style={{ color: "#5c3d0e" }}
-                  >
-                    {entry.narrations[i]}
-                  </p>
-                )}
-              </motion.div>
-            ))}
+        {!loading && error && (
+          <div className="text-center py-12">
+            <p className="font-body text-sm" style={{ color: "#9c7a3a" }}>{error}</p>
           </div>
+        )}
 
-          {/* Badges */}
-          {(entry.badges ?? []).length > 0 && (
-            <div className="w-full max-w-2xl mt-10">
-              <p className="font-display text-lg font-bold text-center mb-4" style={{ color: "#5c3d0e" }}>
-                🏅 Badges Earned
+        {!loading && !error && (
+          <div className="flex flex-col items-center px-8 pb-16">
+            {/* Title block */}
+            <div className="text-center pt-10 pb-8 max-w-xl">
+              <p className="font-display text-4xl font-bold leading-tight" style={{ color: "#5c3d0e" }}>
+                {recapTitle}
               </p>
-              <div className="flex flex-wrap justify-center gap-3">
-                {(entry.badges ?? []).map((b, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full font-body text-sm"
-                    style={{ background: "#f5e6c0", border: "1px solid #c9a84c", color: "#5c3d0e" }}
-                  >
-                    <span className="text-xl">{b.emoji}</span>
-                    <div>
-                      <p className="font-semibold leading-tight">{b.name}</p>
-                      <p className="text-xs opacity-70">{b.reason}</p>
-                    </div>
-                  </div>
-                ))}
+              <p className="font-body text-sm mt-2" style={{ color: "#9c7a3a" }}>
+                A story with {entry.characterName}
+              </p>
+              <div className="flex items-center justify-center gap-3 mt-5">
+                <div className="h-px w-16" style={{ background: "#c9a84c" }} />
+                <span style={{ color: "#c9a84c" }}>✦</span>
+                <div className="h-px w-16" style={{ background: "#c9a84c" }} />
               </div>
             </div>
-          )}
 
-          {/* The End */}
-          <div className="text-center mt-14 mb-2">
-            <div className="flex items-center justify-center gap-3 mb-5">
-              <div className="h-px w-16" style={{ background: "#c9a84c" }} />
-              <span style={{ color: "#c9a84c" }}>✦</span>
-              <div className="h-px w-16" style={{ background: "#c9a84c" }} />
+            {/* Images + narrations */}
+            <div className="flex flex-col gap-10 w-full max-w-2xl">
+              {entry.images.map((img, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.04 }}
+                  className="flex flex-col gap-4"
+                >
+                  <img
+                    src={`data:${img.mimeType};base64,${img.imageData}`}
+                    alt={`Story scene ${i + 1}`}
+                    className="w-full rounded-2xl shadow-lg"
+                    style={{ border: "3px solid #e8d9b5" }}
+                  />
+                  {narrations[i] && (
+                    <p
+                      className="font-body text-lg leading-relaxed text-center px-4 italic"
+                      style={{ color: "#5c3d0e" }}
+                    >
+                      {narrations[i]}
+                    </p>
+                  )}
+                </motion.div>
+              ))}
             </div>
-            <p className="font-display text-3xl font-bold" style={{ color: "#5c3d0e" }}>
-              The End
-            </p>
-            <p className="font-body text-sm mt-2" style={{ color: "#9c7a3a" }}>
-              {entry.characterName} hopes you loved every moment ✨
-            </p>
+
+            {/* Badges */}
+            {(entry.badges ?? []).length > 0 && (
+              <div className="w-full max-w-2xl mt-10">
+                <p className="font-display text-lg font-bold text-center mb-4" style={{ color: "#5c3d0e" }}>
+                  🏅 Badges Earned
+                </p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {(entry.badges ?? []).map((b, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 px-4 py-2 rounded-full font-body text-sm"
+                      style={{ background: "#f5e6c0", border: "1px solid #c9a84c", color: "#5c3d0e" }}
+                    >
+                      <span className="text-xl">{b.emoji}</span>
+                      <div>
+                        <p className="font-semibold leading-tight">{b.name}</p>
+                        <p className="text-xs opacity-70">{b.reason}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* The End */}
+            <div className="text-center mt-14 mb-2">
+              <div className="flex items-center justify-center gap-3 mb-5">
+                <div className="h-px w-16" style={{ background: "#c9a84c" }} />
+                <span style={{ color: "#c9a84c" }}>✦</span>
+                <div className="h-px w-16" style={{ background: "#c9a84c" }} />
+              </div>
+              <p className="font-display text-3xl font-bold" style={{ color: "#5c3d0e" }}>
+                The End
+              </p>
+              <p className="font-body text-sm mt-2" style={{ color: "#9c7a3a" }}>
+                {entry.characterName} hopes you loved every moment ✨
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

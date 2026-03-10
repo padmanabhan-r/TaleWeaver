@@ -136,7 +136,14 @@ function useAudioPlayback() {
   const playChunk = useCallback((base64AudioData: string) => {
     const audioContext = audioContextRef.current;
     const gainNode = gainNodeRef.current;
-    if (!audioContext || !gainNode || audioContext.state === "suspended") return;
+    if (!audioContext || !gainNode) return;
+
+    // Safari may auto-suspend an AudioContext that hasn't played audio recently.
+    // Schedule the chunk to play immediately after resuming instead of dropping it.
+    if (audioContext.state === "suspended") {
+      audioContext.resume().then(() => playChunkRef.current(base64AudioData)).catch(console.warn);
+      return;
+    }
 
     // Decode base64 → PCM16 LE → Float32
     const binaryString = atob(base64AudioData);
@@ -259,18 +266,20 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
             setSessionState("ready");
             setCharacterState("thinking");
 
-            startCaptureRef.current().then(async () => {
+            // Resume playback AudioContext NOW — Gemini will start sending audio
+            // almost immediately after setupComplete (the "Begin!" trigger happens
+            // on the backend before the proxy starts). On Safari, AudioContext
+            // auto-suspends ~1 s after creation if nothing has played, so we must
+            // resume it before audio chunks arrive, not after mic starts.
+            const playbackCtx = playbackCtxRef.current;
+            if (playbackCtx && playbackCtx.state === "suspended") {
+              playbackCtx.resume().catch(console.warn);
+              console.log("[live-api] Playback AudioContext resumed at setupComplete");
+            }
+
+            startCaptureRef.current().then(() => {
               setSessionState("active");
               setCharacterState("idle");
-
-              // Resume playback AudioContext — browsers may suspend it before a
-              // user gesture on the playback context. getUserMedia counts as one,
-              // so this reliably unblocks audio after mic starts.
-              const playbackCtx = playbackCtxRef.current;
-              if (playbackCtx && playbackCtx.state === "suspended") {
-                await playbackCtx.resume();
-                console.log("[live-api] Playback AudioContext resumed after mic start");
-              }
             }).catch((err) => {
               console.error("[live-api] Mic capture failed:", err);
               setSessionState("error");
