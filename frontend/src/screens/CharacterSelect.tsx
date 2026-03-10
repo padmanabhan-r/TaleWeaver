@@ -81,9 +81,9 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={onBack}
-            className="mb-6 text-muted-foreground hover:text-foreground font-body transition-colors flex items-center gap-1.5"
+            className="mb-6 text-muted-foreground hover:text-foreground font-body transition-colors"
           >
-            🏠 Home
+            Home
           </motion.button>
         )}
 
