@@ -20,9 +20,11 @@ Turn your child's screen time into something genuinely fun and creative — a re
 - **Smart illustration timing** — Gemini calls a `generate_illustration` tool at visually rich moments (new location, character reveal, dramatic transformation); images match what Gemini just described rather than firing on a clock
 - **Visual continuity** — each image generation passes the previous image + scene description as context; characters and art style stay consistent across all scenes
 - **Unlimited scene illustrations** — images generate continuously throughout the session with no cap
-- **Story Recap** — after the session ends, a single Gemini call with `response_modalities=["TEXT","IMAGE"]` produces an interleaved storybook: alternating narration paragraphs and illustrations rendered from the session's actual images; all scenes included, no cap
+- **Story Recap** — after the session ends, a Gemini call produces an interleaved storybook: narration captions for each illustration, rendered from the session's actual images; title, captions, and badges all saved to the gallery
+- **Past Adventures** — completed stories are saved locally (localStorage) with title, images, narration captions, and badges; accessible from a "Past Adventures" button on the landing page
 - **Achievement badges** — Gemini awards a badge when the child makes a genuinely creative contribution (a wild idea, a new character name, an unexpected story twist); badge appears on screen instantly, auto-dismisses after 3s
 - **Pause / Resume** — child (or parent) can pause and resume the story at any time without losing the session
+- **Home button** — every screen (CharacterSelect, ThemeSelect, StoryScreen) has a 🏠 home button that saves state and returns to the landing page
 - **Life skills themes** — Sharing, Courage, Gratitude, Creativity, Kindness alongside adventure themes
 - **Content moderation** — typed themes, sketches, and camera props are safety-checked before the story starts
 - **Sketch a Theme** — drawing canvas with 19 colours; sketch is recreated as a storybook illustration and becomes the story's starting image
@@ -71,32 +73,36 @@ Turn your child's screen time into something genuinely fun and creative — a re
 ## Screenshots
 
 ### Landing Page
-![Landing Page](images/0.%20TaleWeaver%20-%20Landing%20Page.png)
+<p align="center">
+  <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="800"/>
+</p>
 
 ### Choose Your Storyteller
-![Choose Storyteller](images/1.%20Choose%20Storyteller.png)
+<p align="center">
+  <img src="images/1. Choose Storyteller.png" alt="Choose Your Storyteller" width="800"/>
+</p>
 
 ### Choose How to Start
-![Pick Mode](images/2.%20Pick%20mode.png)
+<p align="center">
+  <img src="images/2. Pick mode.png" alt="Choose How to Start" width="800"/>
+</p>
 
 ### Pick a Theme
-![Pick a Theme](images/3.%20Pick%20a%20theme.png)
+<p align="center">
+  <img src="images/3. Pick a theme.png" alt="Pick a Theme" width="800"/>
+</p>
 
 ### Magic Camera — Capture a Prop & See It Reimagined
-<table>
-<tr>
-<td><img src="images/4.%20Magic%20camera%20-%20photo.png" alt="Magic Camera - Photo" width="480"/></td>
-<td><img src="images/5.%20Magic%20camera%20-%20image.png" alt="Magic Camera - Illustrated" width="480"/></td>
-</tr>
-</table>
+<p align="center">
+  <img src="images/4. Magic camera - photo.png" alt="Magic Camera - Photo" width="400"/>
+  <img src="images/5. Magic camera - image.png" alt="Magic Camera - Illustrated" width="400"/>
+</p>
 
 ### Sketch a Theme — Draw & See It Come to Life
-<table>
-<tr>
-<td><img src="images/6.%20Sketch%20-%20drawing.png" alt="Sketch - Drawing" width="480"/></td>
-<td><img src="images/7.%20Sketch%20-%20image.png" alt="Sketch - Illustrated" width="480"/></td>
-</tr>
-</table>
+<p align="center">
+  <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="400"/>
+  <img src="images/7. Sketch - image.png" alt="Sketch - Illustrated" width="400"/>
+</p>
 
 ---
 
@@ -149,11 +155,18 @@ Child interrupts
     → Gemini weaves child's words into the next story beat
 
 Session ends (child says stop or presses End Story)
+    → story + badges saved to localStorage gallery automatically
     → "📖 See our story!" button appears
     → POST /api/story-recap with session images
-        → single Gemini call with response_modalities=["TEXT","IMAGE"]
-        → interleaved narration paragraphs + illustrations
+        → Gemini narrates each image in character voice
+        → title + per-image narration captions returned
     → StoryRecapModal renders scrollable storybook
+    → title + narration captions patched into localStorage gallery entry
+
+Past Adventures (landing page)
+    → "Past Adventures" modal shows story card grid (thumbnail, title, date)
+    → tap any story → StorybookView: same storybook style as recap
+        → title, per-image narrations, badges, "The End"
 ```
 
 ---

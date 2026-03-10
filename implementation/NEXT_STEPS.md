@@ -34,25 +34,25 @@
 | ✅ **Simplified badge system** | Badges now awarded only for spontaneous child creativity (max 2/session). No challenge-completion badges. `backend/characters.py` |
 | ✅ **Story continuity** | `clearBuffer()` removed from `awardBadge` handler. Added "NEVER restart mid-session" system prompt rule. Audio no longer cut mid-sentence on badge award. |
 | ✅ **Long-form narration** | System prompt instructs model to speak in 5–7 sentence sustained flows like an audiobook narrator, reducing perceived pause frequency. `backend/characters.py` |
-| ✅ **challenges.md** | New living doc at `implementation/challenges.md` — 9 hard-won lessons with symptom, root cause, fix, and file references. |
+| ✅ **challenges.md** | New living doc at `implementation/challenges.md` — 11 hard-won lessons with symptom, root cause, fix, and file references. |
+| ✅ **Story Gallery / Past Adventures (Phase 10B)** | `StoryGalleryEntry` in localStorage — saves title, images, narrations, badges, timestamp. `PastAdventuresModal` on landing page: grid of story cards → tap → `StorybookView` (same style as StoryRecapModal). Always saves even with 0 images. Narrations patched in after recap. |
+| ✅ **Home button** | 🏠 button on CharacterSelect, ThemeSelect, and StoryScreen — saves gallery state and returns to landing. `handleBackToLanding` wired in App.tsx. |
+| ✅ **Narrations saved to gallery** | `StoryRecapModal` now calls `onRecapGenerated(title, narrations[])`. `updateGalleryEntry` patches both `recapTitle` and `narrations` into localStorage. `StorybookView` displays narrations under each image — identical style to recap. |
+| ✅ **Anti-repetition system prompt** | Per-sentence self-check, explicit ban on rephrasing, resume-exactly-where-left-off rule after tool-call pauses, prohibited resumption phrases. Fixed mid-session repetition. `backend/characters.py` |
+| ✅ **Child safety calling** | Inappropriate child input now triggers an immediate warm call-out as the model's *first* response — before any story continuation. `backend/characters.py` |
+| ✅ **Double begin-turn fix** | Removed frontend begin-turn re-send that was causing story repetition at session start. AudioContext resume is the correct fix for auto-start. `frontend/src/hooks/useLiveAPI.ts` |
+| ✅ **Removed image interval control** | Developer-facing interval control removed from StoryScreen UI. Rate limit (8s fallback) hardcoded internally; not relevant for Vertex AI production quota. `frontend/src/screens/StoryScreen.tsx` |
 
 ---
 
 ## Next Up
 
 ### Phase 10A — Cloud Storage for Images
-Currently images are base64 in HTTP response body. Upload to GCS for persistence.
+Currently images are base64 in localStorage. Upload to GCS for cross-device persistence.
 
 - Upload to `gs://taleweaver-images/{session_id}/{timestamp}.png`
 - Return signed URL (1hr TTL) → frontend renders `<img src={signedUrl} />`
-- Prerequisite for Story Gallery
-
-### Phase 10B — Story Gallery
-After session ends, save and display past stories on the landing page.
-
-- Gemini generates 5-word title on session end
-- Save `{ title, character, imageUrls[], timestamp }` to localStorage
-- "Your Stories" grid on landing page
+- Prerequisite for user accounts + cross-device gallery
 
 ---
 
