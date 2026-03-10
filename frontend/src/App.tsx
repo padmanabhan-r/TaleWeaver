@@ -15,6 +15,7 @@ const App = () => {
   const [theme, setTheme] = useState<string | undefined>();
   const [propImage, setPropImage] = useState<string | undefined>();
   const [propDescription, setPropDescription] = useState<string | undefined>();
+  const [propImageMimeType, setPropImageMimeType] = useState<string | undefined>();
   const [muted, setMuted] = useState(false);
 
   // Ambient music plays on landing + character select, stops during story or when muted
@@ -25,10 +26,11 @@ const App = () => {
     setScreen("theme-select");
   };
 
-  const handleThemeConfirm = (t: string, img?: string, desc?: string) => {
+  const handleThemeConfirm = (t: string, img?: string, desc?: string, mimeType?: string) => {
     setTheme(t);
     setPropImage(img);
     setPropDescription(desc);
+    setPropImageMimeType(mimeType);
     setScreen("story");
   };
 
@@ -41,6 +43,7 @@ const App = () => {
     setTheme(undefined);
     setPropImage(undefined);
     setPropDescription(undefined);
+    setPropImageMimeType(undefined);
     setScreen("theme-select");
   };
 
@@ -50,6 +53,7 @@ const App = () => {
     setTheme(undefined);
     setPropImage(undefined);
     setPropDescription(undefined);
+    setPropImageMimeType(undefined);
   };
 
   return (
@@ -77,6 +81,7 @@ const App = () => {
           theme={theme}
           propImage={propImage}
           propDescription={propDescription}
+          propImageMimeType={propImageMimeType}
           onBack={handleBackFromStory}
           onHome={handleBackToLanding}
         />

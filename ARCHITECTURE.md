@@ -60,16 +60,20 @@
 
 | File | Role |
 |---|---|
-| `App.tsx` | Router: `landing → story-select → story` |
-| `screens/LandingPage.tsx` | Ambient landing: CTA, Framer Motion elements, ambient music, Gemini branding |
-| `screens/CharacterSelect.tsx` | 10 story characters (5 English + 5 Indian, two rows with divider) |
-| `screens/StoryScreen.tsx` | Live session: 1/5 character portrait + 4/5 scene canvas |
-| `hooks/useLiveAPI.ts` | WebSocket session + AudioWorklet state machine |
-| `hooks/useStoryImages.ts` | Image trigger, rolling story context, rate limiting |
+| `App.tsx` | Router: `landing → story-select → theme-select → story`; home navigation wired to all screens |
+| `screens/LandingPage.tsx` | Ambient landing: CTA, Past Adventures button, Framer Motion elements, ambient music |
+| `screens/CharacterSelect.tsx` | 10 story characters (5 English + 5 Indian, two rows with divider); 🏠 home button |
+| `screens/ThemeSelect.tsx` | Three start modes: theme tile, Magic Camera, Sketch; safety check; 🏠 home button |
+| `screens/StoryScreen.tsx` | Live session: 1/5 character panel + 4/5 scene canvas; saves gallery on end/home |
+| `hooks/useLiveAPI.ts` | WebSocket session + `AudioBufferSourceNode` scheduling; AudioContext resume on mic start |
+| `hooks/useStoryImages.ts` | Tool-call-first image trigger, fallback every 8s, unlimited scenes, AbortController cancel |
+| `components/StoryRecapModal.tsx` | Inline storybook after session; calls `/api/story-recap`; saves narrations via `onRecapGenerated` |
+| `components/PastAdventuresModal.tsx` | Story gallery grid + `StorybookView` (matches recap style with narrations + badges) |
+| `components/BadgePopup.tsx` | Centred badge overlay, 3s auto-dismiss, queued for multiple badges |
 | `components/FloatingElements.tsx` | Framer Motion animated stars/sparkles/clouds |
 | `components/MuteButton.tsx` | Ambient sound toggle |
-| `components/StorySceneGrid.tsx` | Scrollable grid of generated scene images |
-| `components/AudioVisualizer.tsx` | Real-time amplitude waveform |
+| `components/StorySceneGrid.tsx` | Scrollable grid of generated scene images with shimmer loading state |
+| `components/AudioVisualizer.tsx` | Real-time amplitude waveform (playback + capture) |
 | `characters/index.ts` | 10 character definitions (PNG portraits, voice, image style) |
 
 ### Backend (`backend/`)
@@ -108,11 +112,13 @@ Gemini Live → backend (transparent) → WebSocket → browser
   serverContent.modelTurn.parts[].inlineData.data  (base64 PCM 24kHz)
   │
 useLiveAPI → playChunk()
-  │  base64 → Int16Array (transferable)
+  │  base64 → Int16Array → Float32Array
+  │  creates AudioBuffer (24kHz, 1ch)
+  │  schedules source.start(nextStartTime)
+  │  nextStartTime += buffer.duration
   ▼
-playback.worklet.js  (FIFO queue, Int16 → Float32)
-  ▼
-AudioContext (24kHz) → GainNode → speakers
+AudioBufferSourceNode chain → GainNode → AudioContext (24kHz) → speakers
+  (no queue, no overflow cap — chunks scheduled into the future)
 ```
 
 ### Barge-in (child interrupts mid-story)
@@ -129,25 +135,32 @@ Gemini VAD detects child speech
 
 ## Image Generation Pipeline
 
+Two paths — tool call (primary) and fallback:
+
 ```
-turnComplete fires  (character finishes speaking)
+PATH 1: Gemini calls generate_illustration(scene_description)
   ▼
-onImageTrigger(fullTurnText)  →  useStoryImages
-  ├── append to rolling story context (last 2000 chars)
-  ├── guard: 20s session startup delay
-  ├── guard: 1 image per 30s
-  ├── guard: max 8 images per session
-  ├── guard: visual keyword pre-filter (EN / Tamil / Hindi / Telugu / Marathi / Bengali)
-  └── POST /api/image { scene_description, story_context, image_style, session_id }
+useLiveAPI → onGenerateIllustration(description)
+  ├── immediately sends toolResponse (Gemini doesn't wait for image)
+  └── useStoryImages → forceImageGeneration(description)
+        ├── bypasses all rate limits
+        ├── sets lastToolCallTimeRef (fallback stays silent for 25s)
+        └── POST /api/image { skip_extraction: true, ... }
+              ▼
+            image_gen.py → image generation model → base64
+  ▼
+StorySceneCard: shimmer skeleton → fade-in
+
+PATH 2: Fallback — turnComplete fires, no tool call in last 25s, 8s since last image
+  ▼
+useStoryImages → triggerImageGeneration(turnText)
+  ├── appends to rolling story context (last 2000 chars)
+  ├── guard: 3s minimum after session start (first image)
+  ├── guard: 8s between fallback images
+  └── POST /api/image { scene_description, story_context, image_style, session_id,
+                         previous_image_data, previous_image_mime_type, previous_scene_description }
         ▼
-      image_gen.py
-        ├── gemini-2.0-flash-lite
-        │     → 2-3 sentence painter-specific English scene description
-        │     → names exact character, exact setting, exact action
-        └── imagen-3.0-fast-generate-001
-              prompt = safety_prefix + character.image_style + extracted_scene
-              negative_prompt = character inconsistency, morphing, style mismatch
-              → base64 PNG (4:3)
+      image_gen.py → image generation model → base64 (with visual continuity context)
   ▼
 StorySceneCard: shimmer skeleton → fade-in
 ```

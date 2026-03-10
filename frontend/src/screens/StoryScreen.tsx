@@ -32,16 +32,46 @@ export interface StoryGalleryEntry {
   timestamp: number;
 }
 
-function saveToGallery(
+// Resize a base64 image before localStorage to stay within quota.
+// 800px wide at JPEG 0.8 ≈ 100–200 KB — sharp enough to fill the storybook view (max-w-2xl = 672px).
+function resizeImageForStorage(
+  imageData: string,
+  mimeType: string,
+  maxWidth = 800,
+): Promise<{ imageData: string; mimeType: string }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const resized = canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+      resolve({ imageData: resized, mimeType: "image/jpeg" });
+    };
+    img.onerror = () => resolve({ imageData, mimeType }); // fall back to original on error
+    img.src = `data:${mimeType};base64,${imageData}`;
+  });
+}
+
+async function saveToGallery(
   sessionId: string,
   character: Character,
   scenes: StoryScene[],
   storyFirstLine: string,
   badges: { emoji: string; name: string; reason: string }[] = [],
 ) {
-  const images = scenes
-    .filter((s) => s.status === "loaded" && s.imageData)
-    .map((s) => ({ imageData: s.imageData!, mimeType: s.mimeType! }));
+  // Resize each image to a thumbnail to stay within localStorage quota
+  const loadedScenes = scenes.filter((s) => s.status === "loaded" && s.imageData);
+  const rawImages = loadedScenes.map((s) => ({ imageData: s.imageData!, mimeType: s.mimeType! }));
+
+  const images = await Promise.all(
+    rawImages.map((img) => resizeImageForStorage(img.imageData, img.mimeType))
+  );
+
+  // Store transcript text as narrations — avoids LLM calls in recap
+  const narrations = loadedScenes.map((s) => s.description).filter(Boolean);
 
   const title = storyFirstLine
     ? storyFirstLine.split(" ").slice(0, 7).join(" ") + "…"
@@ -62,13 +92,15 @@ function saveToGallery(
       // Prefer the latest images, but fall back to previously saved ones so
       // a second call (e.g. when opening the recap) never downgrades the entry.
       images: images.length > 0 ? images : (prev?.images ?? []),
+      narrations: narrations.length > 0 ? narrations : prev?.narrations,
       badges,
       timestamp: prev?.timestamp ?? Date.now(),
     };
     const updated = [entry, ...existing.filter((e) => e.id !== sessionId)].slice(0, 20);
     localStorage.setItem("taleweaver_gallery", JSON.stringify(updated));
-  } catch {
-    // localStorage unavailable — ignore
+    console.log(`[gallery] Saved session ${sessionId} — ${images.length} thumbnails, ${updated.length} total stories`);
+  } catch (e) {
+    console.warn("[gallery] localStorage save failed:", e);
   }
 }
 
@@ -138,6 +170,7 @@ interface Props {
   theme?: string;
   propImage?: string;
   propDescription?: string;
+  propImageMimeType?: string;
   onBack: () => void;
   onHome: () => void;
 }
@@ -182,7 +215,7 @@ const STATUS_TEXT: Record<string, string> = {
   ended: "The end! That was a great story!",
 };
 
-const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onHome }: Props) => {
+const StoryScreen = ({ character, theme, propImage, propDescription, propImageMimeType, onBack, onHome }: Props) => {
   const sessionIdRef = useRef<string>(crypto.randomUUID());
   const intervalSeconds = 8;
 
@@ -197,7 +230,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
   // Capture first story line for gallery title
   const storyFirstLineRef = useRef("");
 
-  const { scenes, triggerImageGeneration, forceImageGeneration, stop: stopImages } = useStoryImages(
+  const { scenes, triggerImageGeneration, forceImageGeneration, stop: stopImages, seedPropImage } = useStoryImages(
     character.imageStyle,
     sessionIdRef.current,
     intervalSeconds
@@ -225,6 +258,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
     character,
     theme,
     propImage,
+    propDescription,
     onImageTrigger: triggerImageGeneration,
     onGenerateIllustration: forceImageGeneration,
     onTranscription: (msg) => {
@@ -235,25 +269,48 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
     onBadgeAwarded: handleBadgeAwarded,
   });
 
+  // Seed the prop illustration into the canvas as soon as the session goes active.
+  // This ensures camera/sketch images appear immediately and prime visual continuity.
+  useEffect(() => {
+    if (sessionState === "active" && propImage && propImageMimeType) {
+      seedPropImage(propImage, propImageMimeType, propDescription ?? "");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionState]);
+
+  // Auto-save to gallery whenever the session ends — regardless of whether
+  // the user clicked "End Story" or the WebSocket closed unexpectedly.
+  const prevSessionStateRef = useRef(sessionState);
+  useEffect(() => {
+    const prev = prevSessionStateRef.current;
+    prevSessionStateRef.current = sessionState;
+    if (
+      (sessionState === "ended" || sessionState === "error") &&
+      (prev === "active" || prev === "ready" || prev === "connecting")
+    ) {
+      void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    }
+  }, [sessionState, character]);
+
   const handleBegin = useCallback(() => {
     connect();
   }, [connect]);
 
   const endAndSave = useCallback(() => {
-    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     stopImages();
     disconnect();
   }, [character, disconnect, stopImages]);
 
   const handleBack = () => {
-    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     stopImages();
     disconnect();
     onBack();
   };
 
   const handleHome = () => {
-    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     stopImages();
     disconnect();
     onHome();
@@ -262,7 +319,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
   // Called when the recap is opened — re-saves with the latest scenes (in case
   // images finished loading after endAndSave was called) and current badges.
   const handleShowRecap = () => {
-    saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+    void saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
     setShowRecap(true);
   };
 
@@ -293,12 +350,20 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-border/30"
         >
-          <button
-            onClick={handleBack}
-            className="text-muted-foreground hover:text-foreground font-body transition-colors"
-          >
-            ← Back
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleBack}
+              className="text-muted-foreground hover:text-foreground font-body transition-colors"
+            >
+              ← Back
+            </button>
+            <button
+              onClick={handleHome}
+              className="text-muted-foreground hover:text-foreground font-body transition-colors"
+            >
+              Home
+            </button>
+          </div>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
           <div className="flex items-center justify-end gap-3 flex-shrink-0">
             {theme && theme !== "camera_prop" && theme !== "sketch" && (
@@ -316,13 +381,6 @@ const StoryScreen = ({ character, theme, propImage, propDescription, onBack, onH
                 ✏️ Sketch story
               </span>
             )}
-            <button
-              onClick={handleHome}
-              className="text-muted-foreground hover:text-foreground font-body transition-colors text-lg"
-              title="Go home"
-            >
-              🏠
-            </button>
           </div>
         </motion.header>
 
