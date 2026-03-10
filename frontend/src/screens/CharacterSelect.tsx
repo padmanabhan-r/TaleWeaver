@@ -59,7 +59,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const englishChars = CHARACTERS.filter((c) => c.category === "english");
-  const indianChars = CHARACTERS.filter((c) => c.category === "indian");
+  const otherChars = CHARACTERS.filter((c) => c.category === "other");
 
   const handleSelect = useCallback(
     (character: Character) => {
@@ -135,27 +135,27 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
         >
           <div className="flex-1 h-px bg-border/50" />
           <span className="font-display text-sm text-magic-orange font-bold px-3 py-1 rounded-full border border-magic-orange/30 bg-card/40 backdrop-blur-sm">
-            🇮🇳 Indian Languages
+            🌏 World Languages
           </span>
           <div className="flex-1 h-px bg-border/50" />
         </motion.div>
 
-        {/* Indian characters */}
+        {/* World language characters */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
           <h2 className="font-display text-xl sm:text-2xl font-bold text-magic-orange mb-5 text-center">
-            🇮🇳 Indian Storytellers
+            🌏 World Language Storytellers
           </h2>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
-            {indianChars.map((char, i) => (
+            {otherChars.map((char, i) => (
               <CharacterCard
                 key={char.id}
                 character={char}
                 onSelect={handleSelect}
-                index={i + 5}
+                index={i + 4}
                 disabled={!!selectedId}
                 selected={selectedId === char.id}
                 dismissed={!!selectedId && selectedId !== char.id}

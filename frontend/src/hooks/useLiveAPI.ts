@@ -279,7 +279,31 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
 
             startCaptureRef.current().then(() => {
               setSessionState("active");
-              setCharacterState("idle");
+              setCharacterState("thinking");
+
+              // Send "Begin!" now — mic is live and AudioContext is running,
+              // so Gemini's audio response is guaranteed to play immediately.
+              const beginParts: object[] = [];
+              if ((theme === "camera_prop" || theme === "sketch") && propImage) {
+                const charIntro = propDescription ? `This is ${propDescription}. ` : "";
+                const imageText = theme === "camera_prop"
+                  ? `Begin! ${charIntro}This is the hero of our story — the character the child brought. Start the story RIGHT NOW. Your very first sentence must name and introduce ${propDescription ?? "them"} as the main character. IMPORTANT: When you call generate_illustration, describe the character in their story world — NEVER describe a child or a hand holding the object.`
+                  : `Begin! ${charIntro}This is the hero of our story — the character the child drew. Start the story RIGHT NOW. Your very first sentence must name and introduce ${propDescription ?? "them"} as the main character.`;
+                beginParts.push({ inline_data: { mime_type: "image/jpeg", data: propImage } });
+                beginParts.push({ text: imageText });
+              } else if (theme) {
+                beginParts.push({ text: `Begin! Start your story RIGHT NOW. The theme is: ${theme}. Your very first sentence must immediately introduce something about ${theme}. Keep ${theme} as the central focus throughout the whole story.` });
+              } else {
+                beginParts.push({ text: "Begin!" });
+              }
+
+              ws.send(JSON.stringify({
+                client_content: {
+                  turns: [{ role: "user", parts: beginParts }],
+                  turn_complete: true,
+                },
+              }));
+              console.log("[live-api] Sent Begin! to Gemini");
             }).catch((err) => {
               console.error("[live-api] Mic capture failed:", err);
               setSessionState("error");
