@@ -86,7 +86,7 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
           status: "loading",
           imageData: null,
           mimeType: null,
-          description: transcriptionText.slice(0, 100),
+          description: transcriptionText.slice(0, 500),
         },
       ]);
 

@@ -354,6 +354,7 @@ class StoryRecapRequest(BaseModel):
     image_style: str
     scenes: list[RecapScene] = []        # preferred: actual session images
     scene_descriptions: list[str] = []  # legacy fallback (ignored when scenes provided)
+    narrations: list[str] = []          # pre-built narrations from transcript — skip LLM narration when provided
 
 
 class StoryRecapResponse(BaseModel):
@@ -448,21 +449,18 @@ async def generate_story_recap(request: StoryRecapRequest):
     if not scenes:
         raise HTTPException(status_code=400, detail="No scene images provided.")
 
-    print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
-
-    # Generate title + all narrations in parallel
-    all_results = await asyncio.gather(
-        _generate_title(scenes, request.character_name),
-        *[_narrate_scene(s, request.character_name) for s in scenes],
-        return_exceptions=True,
-    )
-
-    title = all_results[0] if isinstance(all_results[0], str) else f"A Story with {request.character_name}"
-    narration_results = all_results[1:]
-    narrations = [
-        r if isinstance(r, str) else (scene.description or "And the adventure continued…")
-        for r, scene in zip(narration_results, scenes)
-    ]
+    if request.narrations:
+        # Narrations already built from transcript — just generate a title
+        print(f"[story-recap] Title-only for {request.character_name} ({len(scenes)} scenes, narrations pre-built)")
+        title = await _generate_title(scenes, request.character_name)
+        narrations = request.narrations
+    else:
+        # Legacy path: no pre-built narrations — generate them via LLM (serialized to avoid 429)
+        print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
+        title = await _generate_title(scenes, request.character_name)
+        narrations = []
+        for s in scenes:
+            narrations.append(await _narrate_scene(s, request.character_name))
 
     print(f"[story-recap] Done — title: {title!r}, {len(narrations)} narrations for {request.character_name}")
     return StoryRecapResponse(title=title, narrations=narrations)
