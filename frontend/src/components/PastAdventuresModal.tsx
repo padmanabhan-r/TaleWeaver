@@ -34,10 +34,11 @@ function StorybookView({
   const character = CHARACTERS.find((c) => c.id === entry.characterId);
   const [recapTitle, setRecapTitle] = useState(entry.recapTitle || entry.title);
   const [narrations, setNarrations] = useState<string[]>(entry.narrations ?? []);
-  const [loading, setLoading] = useState(!entry.narrations && entry.images.length > 0);
+  // Need to fetch only if we have no recap title yet (narrations are always pre-built from transcript now)
+  const [loading, setLoading] = useState(!entry.recapTitle && entry.images.length > 0);
   const [error, setError] = useState("");
 
-  // Generate narrations on demand if they weren't saved from a previous recap
+  // Fetch a proper storybook title if we don't have one yet
   useEffect(() => {
     if (!loading) return;
 
@@ -52,6 +53,7 @@ function StorybookView({
           mime_type: img.mimeType,
           description: "",
         })),
+        narrations: entry.narrations ?? [],
       }),
     })
       .then((res) => {

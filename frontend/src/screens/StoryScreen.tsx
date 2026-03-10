@@ -63,13 +63,15 @@ async function saveToGallery(
   badges: { emoji: string; name: string; reason: string }[] = [],
 ) {
   // Resize each image to a thumbnail to stay within localStorage quota
-  const rawImages = scenes
-    .filter((s) => s.status === "loaded" && s.imageData)
-    .map((s) => ({ imageData: s.imageData!, mimeType: s.mimeType! }));
+  const loadedScenes = scenes.filter((s) => s.status === "loaded" && s.imageData);
+  const rawImages = loadedScenes.map((s) => ({ imageData: s.imageData!, mimeType: s.mimeType! }));
 
   const images = await Promise.all(
     rawImages.map((img) => resizeImageForStorage(img.imageData, img.mimeType))
   );
+
+  // Store transcript text as narrations — avoids LLM calls in recap
+  const narrations = loadedScenes.map((s) => s.description).filter(Boolean);
 
   const title = storyFirstLine
     ? storyFirstLine.split(" ").slice(0, 7).join(" ") + "…"
@@ -90,6 +92,7 @@ async function saveToGallery(
       // Prefer the latest images, but fall back to previously saved ones so
       // a second call (e.g. when opening the recap) never downgrades the entry.
       images: images.length > 0 ? images : (prev?.images ?? []),
+      narrations: narrations.length > 0 ? narrations : prev?.narrations,
       badges,
       timestamp: prev?.timestamp ?? Date.now(),
     };

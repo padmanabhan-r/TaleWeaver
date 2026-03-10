@@ -150,13 +150,57 @@ async def run_proxy_session(
 
             print(f"[proxy] Session ready for {character.name} (session: {session_id})")
 
-            # Start bidirectional proxy — the frontend sends "Begin!" once mic is live
+            # Start bidirectional proxy
             browser_to_gemini = asyncio.create_task(
                 proxy_browser_to_gemini(browser_ws, gemini_ws)
             )
             gemini_to_browser = asyncio.create_task(
                 proxy_gemini_to_browser(gemini_ws, browser_ws)
             )
+
+            # Yield one event-loop tick so both proxy tasks start and
+            # gemini_to_browser is already awaiting messages before we
+            # send Begin! — this ensures Gemini's audio response is
+            # forwarded to the browser immediately as it arrives.
+            await asyncio.sleep(0)
+
+            begin_parts: list = []
+            if theme in ("camera_prop", "sketch") and prop_image:
+                char_intro = f"This is {prop_description}. " if prop_description else ""
+                if theme == "camera_prop":
+                    image_text = (
+                        f"Begin! {char_intro}This is the hero of our story — the character the child brought. "
+                        f"Start the story RIGHT NOW. Your very first sentence must name and introduce "
+                        f"{'them' if not prop_description else prop_description} as the main character. "
+                        "IMPORTANT: When you call generate_illustration, describe the character in their "
+                        "story world — NEVER describe a child or a hand holding the object."
+                    )
+                else:
+                    image_text = (
+                        f"Begin! {char_intro}This is the hero of our story — the character the child drew. "
+                        f"Start the story RIGHT NOW. Your very first sentence must name and introduce "
+                        f"{'them' if not prop_description else prop_description} as the main character."
+                    )
+                begin_parts = [
+                    {"inline_data": {"mime_type": "image/jpeg", "data": prop_image}},
+                    {"text": image_text},
+                ]
+            elif theme:
+                begin_parts = [{"text": (
+                    f"Begin! Start your story RIGHT NOW. The theme is: {theme}. "
+                    f"Your very first sentence must immediately introduce something about {theme}. "
+                    f"Keep {theme} as the central focus throughout the whole story."
+                )}]
+            else:
+                begin_parts = [{"text": "Begin!"}]
+
+            await gemini_ws.send(json.dumps({
+                "client_content": {
+                    "turns": [{"role": "user", "parts": begin_parts}],
+                    "turn_complete": True,
+                }
+            }))
+            print(f"[proxy] Sent Begin! to Gemini for session {session_id}")
 
             SESSION_TIMEOUT = 900  # 15 minutes
             done, pending = await asyncio.wait(
