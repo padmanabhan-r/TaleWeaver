@@ -497,7 +497,7 @@ async def character_tts(request: TTSRequest):
     try:
         response = await asyncio.wait_for(
             _api_key_client.aio.models.generate_content(
-                model=EXTRACT_MODEL,
+                model="gemini-2.5-flash-preview-tts",
                 contents=request.text,
                 config=types.GenerateContentConfig(
                     response_modalities=["AUDIO"],
