@@ -167,8 +167,8 @@
   <text x="875" y="391" class="label" fill="#64748b">safety + captions</text>
   <path d="M 860 396 L 915 396 L 915 505 L 1050 505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
 
-  <!-- → Flash TTS (character voice): Z-shape bend at x=955 -->
-  <text x="875" y="446" class="label-bold" fill="#7e22ce">Character voice</text>
-  <path d="M 860 452 L 955 452 L 955 635 L 1050 635" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
+  <!-- → Flash TTS (character voice): L-shape from bottom of backend box -->
+  <path d="M 750 490 L 750 635 L 1050 635" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
+  <text x="758" y="572" class="label-bold" fill="#7e22ce">Character voice</text>
 
 </svg>
