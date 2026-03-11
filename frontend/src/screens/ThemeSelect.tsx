@@ -316,7 +316,14 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
     const scale = Math.min(1, MAX / Math.max(v.videoWidth, v.videoHeight));
     c.width  = Math.round(v.videoWidth  * scale);
     c.height = Math.round(v.videoHeight * scale);
-    c.getContext("2d")?.drawImage(v, 0, 0, c.width, c.height);
+    const ctx = c.getContext("2d");
+    if (ctx) {
+      if (facingMode === "user") {
+        ctx.translate(c.width, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(v, 0, 0, c.width, c.height);
+    }
     const dataUrl = c.toDataURL("image/jpeg", 0.75);
     // Strip "data:image/jpeg;base64," prefix — backend needs raw base64
     const base64 = dataUrl.split(",")[1];
@@ -341,7 +348,7 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
         <>
           <div className="relative w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden border-2 border-dashed border-primary/50 bg-card/40">
             <div className="absolute inset-0 rounded-2xl overflow-hidden">
-              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: facingMode === "user" ? "scaleX(-1)" : undefined }} />
             </div>
             {/* Flip camera button */}
             <button

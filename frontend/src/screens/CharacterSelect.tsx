@@ -51,6 +51,7 @@ const CharacterCard = ({
         {character.name}
       </h3>
       <p className="text-xs text-muted-foreground mt-0.5">{character.language}</p>
+      <p className="text-xs text-primary/70 mt-1 italic leading-tight">{character.tagline}</p>
     </div>
   </motion.button>
 );
@@ -74,14 +75,14 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
     <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
       <FloatingElements />
 
-      <div className="relative z-10 container mx-auto px-4 py-3 sm:py-5">
+      <div className="relative z-10 container mx-auto px-4 py-4 sm:py-6">
         {/* Home button */}
         {onBack && (
           <motion.button
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={onBack}
-            className="mb-6 text-muted-foreground hover:text-foreground font-body transition-colors"
+            className="mb-3 text-muted-foreground hover:text-foreground font-body transition-colors"
           >
             Home
           </motion.button>
@@ -91,7 +92,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
+          className="text-center mb-4"
         >
           <h1 className="font-display text-3xl sm:text-5xl font-extrabold text-primary mb-2">
             Choose Your Storyteller
@@ -106,7 +107,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="mb-10"
+          className="mb-6"
         >
           <h2 className="font-display text-xl sm:text-2xl font-bold text-magic-teal mb-5 text-center">
             🌍 English Storytellers
@@ -131,7 +132,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: selectedId ? 0 : 1 }}
           transition={{ duration: 0.3 }}
-          className="flex items-center gap-4 mb-10"
+          className="flex items-center gap-4 mb-6"
         >
           <div className="flex-1 h-px bg-border/50" />
           <span className="font-display text-sm text-magic-orange font-bold px-3 py-1 rounded-full border border-magic-orange/30 bg-card/40 backdrop-blur-sm">
@@ -146,7 +147,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
         >
-          <h2 className="font-display text-xl sm:text-2xl font-bold text-magic-orange mb-5 text-center">
+          <h2 className="font-display text-xl sm:text-2xl font-bold text-magic-orange mb-4 text-center">
             🌏 World Language Storytellers
           </h2>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
