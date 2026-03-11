@@ -76,21 +76,21 @@
 
 | File | Role |
 |---|---|
-| `App.tsx` | Screen router: `landing → character-select → theme-select → story` |
-| `screens/LandingPage.tsx` | Ambient landing page with CTA, floating animations, Past Adventures button |
-| `screens/CharacterSelect.tsx` | 10 character picker (5 English + 5 Indian language, two rows) |
-| `screens/ThemeSelect.tsx` | Three-option accordion: Pick a Theme / Magic Camera / Sketch a Theme |
-| `screens/StoryScreen.tsx` | Live session: character portrait + scene canvas; auto-saves to localStorage on end |
-| `hooks/useLiveAPI.ts` | WebSocket session state machine, AudioWorklet lifecycle, Begin! handshake |
-| `hooks/useStoryImages.ts` | Tool-call and fallback image triggers, rate limiting, visual continuity context |
-| `components/StoryRecapModal.tsx` | Scrollable storybook shown after "End Story"; uses transcript narrations |
-| `components/PastAdventuresModal.tsx` | Gallery of all saved sessions; opens any session as an illustrated storybook |
-| `components/AudioVisualizer.tsx` | Real-time mic amplitude waveform |
-| `components/StorySceneGrid.tsx` | Scrollable grid of generated scene images with shimmer skeletons |
+| `App.tsx` | Router: `landing → story-select → theme-select → story`; home navigation wired to all screens |
+| `screens/LandingPage.tsx` | Ambient landing: CTA, Past Adventures button, Framer Motion elements, ambient music |
+| `screens/CharacterSelect.tsx` | 10 story characters (5 English + 5 Indian, two rows with divider); 🏠 home button |
+| `screens/ThemeSelect.tsx` | Three start modes: theme tile, Magic Camera, Sketch; safety check; 🏠 home button |
+| `screens/StoryScreen.tsx` | Live session: 1/5 character panel + 4/5 scene canvas; saves gallery on end/home |
+| `hooks/useLiveAPI.ts` | WebSocket session + `AudioBufferSourceNode` scheduling; AudioContext resume on mic start |
+| `hooks/useStoryImages.ts` | Tool-call-first image trigger, fallback every 8s, unlimited scenes, AbortController cancel |
+| `components/StoryRecapModal.tsx` | Inline storybook after session; calls `/api/story-recap`; saves narrations via `onRecapGenerated` |
+| `components/PastAdventuresModal.tsx` | Story gallery grid + `StorybookView` (matches recap style with narrations + badges) |
+| `components/BadgePopup.tsx` | Centred badge overlay, 3s auto-dismiss, queued for multiple badges |
 | `components/FloatingElements.tsx` | Framer Motion animated stars/sparkles/clouds |
-| `characters/index.ts` | 10 character definitions (PNG portraits, voice, image style, language, category) |
-| `public/audio-processors/capture.worklet.js` | Float32 → Int16, 1024-sample chunks, off main thread |
-| `public/audio-processors/playback.worklet.js` | Legacy worklet (superseded by `AudioBufferSourceNode` scheduling in useLiveAPI) |
+| `components/MuteButton.tsx` | Ambient sound toggle |
+| `components/StorySceneGrid.tsx` | Scrollable grid of generated scene images with shimmer loading state |
+| `components/AudioVisualizer.tsx` | Real-time amplitude waveform (playback + capture) |
+| `characters/index.ts` | 10 character definitions (PNG portraits, voice, image style) |
 
 ### Backend (`backend/`)
 
@@ -131,12 +131,12 @@ Gemini Live → backend (transparent) → WebSocket → browser
   │
 useLiveAPI → playChunk()
   │  base64 → Int16Array → Float32Array
-  │  AudioBuffer created, scheduled at max(currentTime, nextStartTime)
+  │  creates AudioBuffer (24kHz, 1ch)
+  │  schedules source.start(nextStartTime)
+  │  nextStartTime += buffer.duration
   ▼
-AudioBufferSourceNode → GainNode → AudioContext(24kHz) → speakers
-
-Note: AudioContext resumed after getUserMedia() resolves (Safari: context
-      auto-suspends before user gesture on playback context)
+AudioBufferSourceNode chain → GainNode → AudioContext (24kHz) → speakers
+  (no queue, no overflow cap — chunks scheduled into the future)
 ```
 
 ### Barge-in (child interrupts mid-story)
@@ -183,66 +183,34 @@ Backend (after creating proxy tasks)
 
 ## Image Generation Pipeline
 
-### Tool-call path (primary)
+Two paths — tool call (primary) and fallback:
 
 ```
-Gemini calls generate_illustration tool mid-narration
-  → backend forwards tool call to browser
-  → browser sends tool response immediately (Gemini continues narrating without waiting)
-  → forceImageGeneration(scene_description)
-      → bypasses rate-limit timers
-      → POST /api/image { scene_description, story_context, image_style,
-                          previous_image_data, previous_scene_description,
-                          skip_extraction: true }
-      → image model generates illustration
-      → base64 image → StorySceneGrid (shimmer → fade-in)
-      → lastImageRef updated for next call's continuity context
-```
+PATH 1: Gemini calls generate_illustration(scene_description)
+  ▼
+useLiveAPI → onGenerateIllustration(description)
+  ├── immediately sends toolResponse (Gemini doesn't wait for image)
+  └── useStoryImages → forceImageGeneration(description)
+        ├── bypasses all rate limits
+        ├── sets lastToolCallTimeRef (fallback stays silent for 25s)
+        └── POST /api/image { skip_extraction: true, ... }
+              ▼
+            image_gen.py → image generation model → base64
+  ▼
+StorySceneCard: shimmer skeleton → fade-in
 
-### Fallback path (turn-complete)
-
-```
-turnComplete fires (character finishes a turn)
-  → triggerImageGeneration(transcriptionText)
-      → guard: no tool call in last 25 s? → skip (trust Gemini)
-      → guard: interval since last trigger < 30 s? → skip
-      → POST /api/image { scene_description: transcriptionText,
-                          story_context, image_style,
-                          previous_image_data, previous_scene_description }
-      → image model generates illustration
-```
-
-### Visual continuity
-
-Every `/api/image` call passes the previous image as a reference. The model is instructed to:
-- Maintain character designs and art style if same scene
-- Rebuild background but preserve carried-over characters if scene shifts
-- Start fresh if entirely new cast appears
-
----
-
-## Story Recap & Gallery
-
-```
-Session ends (child says stop or presses End Story)
-  │
-  ├── StoryScreen.saveToGallery()
-  │     → resizes all images to 800px JPEG 0.8 (~100–200 KB each)
-  │     → stores narrations from scene.description (transcript text, up to 500 chars)
-  │     → saves { id, characterId, images[], narrations[], badges[], timestamp } to localStorage
-  │
-  └── "📖 See our story!" → StoryRecapModal
-        → POST /api/story-recap
-            → narrations: already built from transcript → sent in request body
-            → backend: single Flash Lite call generates 4–6 word storybook title
-            → returns { title, narrations }
-        → renders scrollable storybook: title → scene image + narration pairs → "The End"
-
-Past Adventures
-  → PastAdventuresModal reads localStorage gallery
-  → each entry opens as StorybookView
-  → if recapTitle missing: one Flash Lite call to generate title (narrations already present)
-  → persists title back to localStorage for instant future opens
+PATH 2: Fallback — turnComplete fires, no tool call in last 25s, 8s since last image
+  ▼
+useStoryImages → triggerImageGeneration(turnText)
+  ├── appends to rolling story context (last 2000 chars)
+  ├── guard: 3s minimum after session start (first image)
+  ├── guard: 8s between fallback images
+  └── POST /api/image { scene_description, story_context, image_style, session_id,
+                         previous_image_data, previous_image_mime_type, previous_scene_description }
+        ▼
+      image_gen.py → image generation model → base64 (with visual continuity context)
+  ▼
+StorySceneCard: shimmer skeleton → fade-in
 ```
 
 ---

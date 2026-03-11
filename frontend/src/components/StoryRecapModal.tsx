@@ -43,6 +43,7 @@ export default function StoryRecapModal({ character, scenes, badges = [], onClos
         character_name: character.name,
         image_style: character.imageStyle,
         scenes: sceneData,
+        narrations: sceneData.map((s) => s.description).filter(Boolean),
       }),
     })
       .then((res) => {

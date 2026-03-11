@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 870" width="1500" height="870" font-family="Inter, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1040" width="1920" height="1040" font-family="Inter, Arial, sans-serif">
 
-  <!-- Defs: arrowheads and gradients -->
   <defs>
     <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#5f6368"/>
@@ -11,486 +10,406 @@
     <marker id="arrow-teal" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="#00acc1"/>
     </marker>
-    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-      <polygon points="0 0, 10 3.5, 0 7" fill="#4285f4"/>
+    <marker id="arrow-teal-start" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto-start-reverse">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#00acc1"/>
     </marker>
-    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
-      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-color="#00000022"/>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7b1fa2"/>
+    </marker>
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="108%">
+      <feDropShadow dx="2" dy="2" stdDeviation="4" flood-color="#00000020"/>
     </filter>
   </defs>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- BACKGROUND -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <rect width="1500" height="870" fill="#f0f4f8"/>
+  <!-- Background -->
+  <rect width="1920" height="1040" fill="#f0f4f8"/>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- TITLE -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <text x="750" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#1a1a2e" letter-spacing="0.5">TaleWeaver — System Architecture</text>
-  <text x="750" y="57" text-anchor="middle" font-size="11" fill="#5f6368">Voice-first interactive storytelling · Google Cloud Run · Gemini Live API · Vertex AI</text>
+  <!-- Title -->
+  <text x="960" y="42" text-anchor="middle" font-size="24" font-weight="700" fill="#1a1a2e" letter-spacing="0.5">TaleWeaver — System Architecture</text>
+  <text x="960" y="64" text-anchor="middle" font-size="12" fill="#5f6368">Voice-first interactive storytelling · Google Cloud Run · Gemini Live API · Vertex AI</text>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- CHILD / USER BOX -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <rect x="18" y="72" width="116" height="726" rx="10" fill="#ffffff" stroke="#bdbdbd" stroke-width="1.5" filter="url(#shadow)"/>
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- CHILD COLUMN                                                         -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <rect x="20" y="84" width="136" height="868" rx="10" fill="#ffffff" stroke="#bdbdbd" stroke-width="1.5" filter="url(#shadow)"/>
+  <rect x="20" y="84" width="136" height="36" rx="10" fill="#37474f"/>
+  <rect x="20" y="106" width="136" height="14" fill="#37474f"/>
+  <text x="88" y="107" text-anchor="middle" font-size="11" font-weight="700" fill="white">CHILD (User)</text>
 
-  <!-- User header -->
-  <rect x="18" y="72" width="116" height="34" rx="10" fill="#37474f"/>
-  <rect x="18" y="92" width="116" height="14" fill="#37474f"/>
-  <text x="76" y="94" text-anchor="middle" font-size="11" font-weight="700" fill="white">CHILD (User)</text>
+  <circle cx="88" cy="170" r="26" fill="#eceff1" stroke="#90a4ae" stroke-width="1.5"/>
+  <circle cx="88" cy="159" r="12" fill="#78909c"/>
+  <ellipse cx="88" cy="186" rx="16" ry="12" fill="#78909c"/>
 
-  <!-- Person icon area -->
-  <circle cx="76" cy="148" r="22" fill="#eceff1" stroke="#90a4ae" stroke-width="1.5"/>
-  <!-- Head -->
-  <circle cx="76" cy="138" r="10" fill="#78909c"/>
-  <!-- Body -->
-  <ellipse cx="76" cy="162" rx="14" ry="10" fill="#78909c"/>
+  <rect x="58" y="208" width="60" height="16" rx="8" fill="#e3f2fd" stroke="#42a5f5" stroke-width="1"/>
+  <text x="88" y="220" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="600">Microphone</text>
+  <text x="88" y="244" text-anchor="middle" font-size="9" fill="#546e7a">16kHz PCM</text>
+  <text x="88" y="258" text-anchor="middle" font-size="9" fill="#546e7a">audio stream</text>
 
-  <!-- Mic icon -->
-  <rect x="54" y="180" width="44" height="14" rx="7" fill="#e3f2fd" stroke="#42a5f5" stroke-width="1"/>
-  <text x="76" y="190" text-anchor="middle" font-size="9" fill="#1565c0" font-weight="600">Mic</text>
+  <line x1="34" y1="276" x2="142" y2="276" stroke="#e0e0e0" stroke-width="1"/>
 
-  <!-- Camera icon -->
-  <rect x="54" y="200" width="44" height="14" rx="7" fill="#f3e5f5" stroke="#ab47bc" stroke-width="1"/>
-  <text x="76" y="210" text-anchor="middle" font-size="9" fill="#6a1b9a" font-weight="600">Camera</text>
+  <text x="88" y="298" text-anchor="middle" font-size="8.5" fill="#78909c" font-style="italic">Real-time</text>
+  <text x="88" y="312" text-anchor="middle" font-size="8.5" fill="#78909c" font-style="italic">bidirectional</text>
+  <text x="88" y="326" text-anchor="middle" font-size="8.5" fill="#78909c" font-style="italic">WebSocket</text>
 
-  <!-- Voice label -->
-  <text x="76" y="232" text-anchor="middle" font-size="9" fill="#546e7a">16kHz PCM</text>
-  <text x="76" y="243" text-anchor="middle" font-size="9" fill="#546e7a">audio</text>
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- GOOGLE CLOUD RUN BOX                                                 -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <rect x="172" y="84" width="648" height="868" rx="12" fill="#e8f0fe" stroke="#4285f4" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="172" y="84" width="648" height="40" rx="12" fill="#4285f4"/>
+  <rect x="172" y="106" width="648" height="18" fill="#4285f4"/>
+  <rect x="184" y="91" width="28" height="20" rx="4" fill="#ffffff33"/>
+  <text x="198" y="105" text-anchor="middle" font-size="9" font-weight="700" fill="white">CR</text>
+  <text x="496" y="102" text-anchor="middle" font-size="13" font-weight="700" fill="white">Google Cloud Run</text>
+  <text x="496" y="116" text-anchor="middle" font-size="9.5" fill="#bbdefb">Single service · Cloud Build CI/CD · Docker multi-stage build · taleweaver.online</text>
 
-  <!-- JPEG label -->
-  <text x="76" y="262" text-anchor="middle" font-size="9" fill="#546e7a">JPEG frames</text>
-  <text x="76" y="273" text-anchor="middle" font-size="9" fill="#546e7a">@ 1fps</text>
+  <!-- ── FRONTEND SUB-BOX ── -->
+  <rect x="188" y="136" width="618" height="348" rx="8" fill="#fffde7" stroke="#f9a825" stroke-width="1.5"/>
+  <rect x="188" y="136" width="618" height="30" rx="8" fill="#f9a825"/>
+  <rect x="188" y="152" width="618" height="14" fill="#f9a825"/>
+  <rect x="200" y="141" width="22" height="16" rx="3" fill="#ffffff33"/>
+  <text x="211" y="153" text-anchor="middle" font-size="9" font-weight="700" fill="white">FE</text>
+  <text x="496" y="154" text-anchor="middle" font-size="11" font-weight="700" fill="white">TaleWeaver Frontend  —  React 19 + Vite + TypeScript</text>
+  <text x="496" y="168" text-anchor="middle" font-size="9" fill="#795548">TailwindCSS v3 · Framer Motion · AudioWorklet · AudioBufferSourceNode</text>
 
-  <!-- Divider -->
-  <line x1="28" y1="290" x2="124" y2="290" stroke="#e0e0e0" stroke-width="1"/>
+  <!-- Frontend left column: Audio + hooks -->
+  <rect x="196" y="178" width="296" height="292" rx="6" fill="#fff8e1" stroke="#ffca28" stroke-width="1"/>
+  <text x="344" y="196" text-anchor="middle" font-size="9.5" font-weight="700" fill="#e65100">Audio Pipeline + Hooks</text>
 
-  <!-- Connection details -->
-  <text x="76" y="308" text-anchor="middle" font-size="8.5" fill="#78909c" font-style="italic">Real-time</text>
-  <text x="76" y="320" text-anchor="middle" font-size="8.5" fill="#78909c" font-style="italic">bi-directional</text>
-  <text x="76" y="332" text-anchor="middle" font-size="8.5" fill="#78909c" font-style="italic">WebSocket</text>
+  <rect x="204" y="206" width="280" height="52" rx="4" fill="#e3f2fd" stroke="#64b5f6" stroke-width="1"/>
+  <text x="210" y="220" font-size="8.5" fill="#0d47a1" font-weight="600">CAPTURE</text>
+  <text x="210" y="233" font-size="8" fill="#1565c0">Mic → AudioContext(16kHz) → capture.worklet.js</text>
+  <text x="210" y="246" font-size="8" fill="#1565c0">Int16 chunks → base64 → WebSocket → Gemini</text>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- GOOGLE CLOUD RUN BOX -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <rect x="148" y="72" width="580" height="726" rx="12" fill="#e8f0fe" stroke="#4285f4" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="204" y="264" width="280" height="52" rx="4" fill="#fce4ec" stroke="#f48fb1" stroke-width="1"/>
+  <text x="210" y="278" font-size="8.5" fill="#880e4f" font-weight="600">PLAYBACK  (AudioBufferSourceNode)</text>
+  <text x="210" y="291" font-size="8" fill="#ad1457">base64 → Float32 → AudioBuffer → scheduled chain</text>
+  <text x="210" y="304" font-size="8" fill="#ad1457">Each chunk starts exactly when previous ends · no queue</text>
 
-  <!-- Cloud Run header bar -->
-  <rect x="148" y="72" width="580" height="38" rx="12" fill="#4285f4"/>
-  <rect x="148" y="92" width="580" height="18" fill="#4285f4"/>
+  <rect x="204" y="322" width="280" height="38" rx="4" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1"/>
+  <text x="210" y="336" font-size="8.5" fill="#1b5e20" font-weight="600">useLiveAPI  —  WebSocket state machine</text>
+  <text x="210" y="350" font-size="8" fill="#2e7d32">Session lifecycle · AudioContext resume on mic start · barge-in</text>
 
-  <!-- CR icon badge -->
-  <rect x="158" y="79" width="26" height="18" rx="4" fill="#ffffff33"/>
-  <text x="171" y="92" text-anchor="middle" font-size="9" font-weight="700" fill="white">CR</text>
+  <rect x="204" y="366" width="280" height="38" rx="4" fill="#fff3e0" stroke="#ffcc02" stroke-width="1"/>
+  <text x="210" y="380" font-size="8.5" fill="#bf360c" font-weight="600">useStoryImages  —  Image trigger + rate limiting</text>
+  <text x="210" y="394" font-size="8" fill="#e64a19">Tool-call path (no rate limit) · fallback every 8s · unlimited scenes</text>
 
-  <text x="450" y="88" text-anchor="middle" font-size="12" font-weight="700" fill="white">Google Cloud Run</text>
-  <text x="450" y="102" text-anchor="middle" font-size="9.5" fill="#bbdefb">Single service · Cloud Build CI/CD · Docker multi-stage build</text>
+  <rect x="204" y="410" width="280" height="38" rx="4" fill="#e0f7fa" stroke="#80deea" stroke-width="1"/>
+  <text x="210" y="424" font-size="8.5" fill="#006064" font-weight="600">PREWARM  —  /api/story-opening</text>
+  <text x="210" y="438" font-size="8" fill="#00838f">First image + opening text ready before Begin is clicked</text>
+  <text x="210" y="453" font-size="8.5" fill="#aaaaaa" font-style="italic">useLiveAPI.ts · useStoryImages.ts</text>
 
-  <!-- ─────────────────────────────────────────────────────── -->
-  <!-- FRONTEND SUB-BOX -->
-  <!-- ─────────────────────────────────────────────────────── -->
-  <rect x="163" y="118" width="548" height="310" rx="8" fill="#fffde7" stroke="#f9a825" stroke-width="1.5"/>
+  <!-- Frontend right column: UI + Screens -->
+  <rect x="502" y="178" width="296" height="292" rx="6" fill="#fff8e1" stroke="#ffca28" stroke-width="1"/>
+  <text x="650" y="196" text-anchor="middle" font-size="9.5" font-weight="700" fill="#e65100">UI Screens + Components</text>
 
-  <!-- Frontend header -->
-  <rect x="163" y="118" width="548" height="28" rx="8" fill="#f9a825"/>
-  <rect x="163" y="134" width="548" height="12" fill="#f9a825"/>
-  <text x="197" y="136" text-anchor="middle" font-size="9" font-weight="700" fill="white">FE</text>
-  <rect x="173" y="121" width="20" height="14" rx="3" fill="#ffffff33"/>
-  <text x="340" y="136" text-anchor="middle" font-size="11" font-weight="700" fill="white">TaleWeaver Frontend</text>
-  <text x="340" y="148" text-anchor="middle" font-size="9" fill="#795548">React 19 + Vite + TypeScript</text>
+  <rect x="510" y="206" width="280" height="80" rx="4" fill="#e8eaf6" stroke="#9fa8da" stroke-width="1"/>
+  <text x="516" y="220" font-size="8.5" fill="#1a237e" font-weight="600">SCREEN FLOW</text>
+  <text x="516" y="233" font-size="8" fill="#283593">LandingPage  →  CharacterSelect (🏠)</text>
+  <text x="516" y="246" font-size="8" fill="#283593">→  ThemeSelect (🏠): theme tile / Magic Camera / Sketch</text>
+  <text x="516" y="259" font-size="8" fill="#283593">→  StoryScreen (🏠): 1/5 char panel + 4/5 scene canvas</text>
+  <text x="516" y="272" font-size="8" fill="#283593">→  StoryRecapModal (inline) → PastAdventuresModal</text>
 
-  <!-- Frontend content — two columns -->
-  <!-- Left column: Audio + Camera -->
-  <rect x="172" y="156" width="252" height="258" rx="6" fill="#fff8e1" stroke="#ffca28" stroke-width="1"/>
-  <text x="298" y="171" text-anchor="middle" font-size="9.5" font-weight="700" fill="#e65100">Audio + Camera Pipeline</text>
+  <rect x="510" y="292" width="280" height="38" rx="4" fill="#fce4ec" stroke="#f48fb1" stroke-width="1"/>
+  <text x="516" y="306" font-size="8.5" fill="#880e4f" font-weight="600">10 CHARACTERS</text>
+  <text x="516" y="320" font-size="8" fill="#ad1457">5 English · 5 Indian-language (Hindi/Marathi/Tamil/Telugu/Bengali)</text>
 
-  <rect x="180" y="176" width="236" height="42" rx="4" fill="#e3f2fd" stroke="#64b5f6" stroke-width="1"/>
-  <text x="185" y="189" font-size="8.5" fill="#0d47a1" font-weight="600">CAPTURE</text>
-  <text x="185" y="201" font-size="8" fill="#1565c0">Mic → 16kHz PCM → AudioWorklet</text>
-  <text x="185" y="212" font-size="8" fill="#1565c0">→ base64 → WebSocket → Gemini</text>
+  <rect x="510" y="336" width="280" height="38" rx="4" fill="#f3e5f5" stroke="#ce93d8" stroke-width="1"/>
+  <text x="516" y="350" font-size="8.5" fill="#4a148c" font-weight="600">BadgePopup · StorySceneGrid · AudioVisualizer</text>
+  <text x="516" y="364" font-size="8" fill="#6a1b9a">Badge queue · shimmer loading cards · waveform display</text>
 
-  <rect x="180" y="222" width="236" height="42" rx="4" fill="#fce4ec" stroke="#f48fb1" stroke-width="1"/>
-  <text x="185" y="235" font-size="8.5" fill="#880e4f" font-weight="600">PLAYBACK</text>
-  <text x="185" y="247" font-size="8" fill="#ad1457">Gemini → base64 24kHz PCM</text>
-  <text x="185" y="258" font-size="8" fill="#ad1457">→ AudioWorklet → speakers</text>
+  <rect x="510" y="380" width="280" height="38" rx="4" fill="#fff3e0" stroke="#ffcc02" stroke-width="1"/>
+  <text x="516" y="394" font-size="8.5" fill="#bf360c" font-weight="600">StoryRecapModal  —  /api/story-recap</text>
+  <text x="516" y="408" font-size="8" fill="#e64a19">Inline storybook · narration captions · saves title+narrations</text>
 
-  <rect x="180" y="268" width="236" height="30" rx="4" fill="#f3e5f5" stroke="#ce93d8" stroke-width="1"/>
-  <text x="185" y="280" font-size="8.5" fill="#4a148c" font-weight="600">CAMERA</text>
-  <text x="185" y="291" font-size="8" fill="#6a1b9a">JPEG frames @ 1fps → WebSocket → Gemini</text>
+  <rect x="510" y="424" width="280" height="38" rx="4" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1"/>
+  <text x="516" y="438" font-size="8.5" fill="#1b5e20" font-weight="600">PastAdventuresModal  —  localStorage gallery</text>
+  <text x="516" y="452" font-size="8" fill="#2e7d32">Story cards grid → StorybookView (narrations + badges + The End)</text>
+  <text x="510" y="467" font-size="8.5" fill="#aaaaaa" font-style="italic">App.tsx · StoryScreen.tsx · StoryRecapModal.tsx · PastAdventuresModal.tsx</text>
 
-  <rect x="180" y="302" width="236" height="30" rx="4" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1"/>
-  <text x="185" y="314" font-size="8.5" fill="#1b5e20" font-weight="600">HOOK: useLiveAPI</text>
-  <text x="185" y="325" font-size="8" fill="#2e7d32">WebSocket state machine · session lifecycle</text>
+  <!-- ── BACKEND SUB-BOX ── -->
+  <rect x="188" y="498" width="618" height="440" rx="8" fill="#e8f5e9" stroke="#34a853" stroke-width="1.5"/>
+  <rect x="188" y="498" width="618" height="30" rx="8" fill="#34a853"/>
+  <rect x="188" y="514" width="618" height="14" fill="#34a853"/>
+  <rect x="200" y="503" width="22" height="16" rx="3" fill="#ffffff33"/>
+  <text x="211" y="515" text-anchor="middle" font-size="9" font-weight="700" fill="white">BE</text>
+  <text x="496" y="517" text-anchor="middle" font-size="11" font-weight="700" fill="white">FastAPI Backend  —  Python 3.13 · Uvicorn · SPA fallback</text>
+  <text x="496" y="529" text-anchor="middle" font-size="9" fill="#c8e6c9">All endpoints stateless · parallel-safe · no stored state</text>
 
-  <rect x="180" y="336" width="236" height="30" rx="4" fill="#fff3e0" stroke="#ffcc02" stroke-width="1"/>
-  <text x="185" y="348" font-size="8.5" fill="#bf360c" font-weight="600">HOOK: useStoryImages</text>
-  <text x="185" y="359" font-size="8" fill="#e64a19">Rate-limiting · 8s session delay · max 8/session</text>
+  <!-- Backend left panel: WS Proxy -->
+  <rect x="196" y="542" width="296" height="382" rx="6" fill="white" stroke="#34a853" stroke-width="1" stroke-dasharray="5,3"/>
+  <rect x="196" y="542" width="296" height="24" rx="6" fill="#43a04720"/>
+  <text x="344" y="558" text-anchor="middle" font-size="9" font-weight="700" fill="#1b5e20">WebSocket Proxy + ADK</text>
 
-  <rect x="180" y="370" width="236" height="30" rx="4" fill="#e0f7fa" stroke="#80deea" stroke-width="1"/>
-  <text x="185" y="382" font-size="8.5" fill="#006064" font-weight="600">PREWARM</text>
-  <text x="185" y="393" font-size="8" fill="#00838f">prewarmImageRef → shown on Begin click</text>
+  <rect x="204" y="572" width="280" height="66" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="210" y="586" font-size="8.5" fill="#1b5e20" font-weight="600">WS  /ws/story  —  proxy.py</text>
+  <text x="210" y="599" font-size="8" fill="#2e7d32">Bidirectional audio bridge: browser ↔ Gemini Live</text>
+  <text x="210" y="612" font-size="8" fill="#2e7d32">Injects character system prompt + voice config</text>
+  <text x="210" y="625" font-size="8" fill="#2e7d32">Sends "Begin!" before proxy starts · 15 min timeout</text>
 
-  <!-- Right column: UI + Characters -->
-  <rect x="432" y="156" width="270" height="258" rx="6" fill="#fff8e1" stroke="#ffca28" stroke-width="1"/>
-  <text x="567" y="171" text-anchor="middle" font-size="9.5" font-weight="700" fill="#e65100">UI Screens + Characters</text>
+  <rect x="204" y="644" width="280" height="52" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="210" y="658" font-size="8.5" fill="#1b5e20" font-weight="600">Session Config  —  characters.py</text>
+  <text x="210" y="671" font-size="8" fill="#2e7d32">proactive_audio · affective dialog · VAD LOW sensitivity</text>
+  <text x="210" y="684" font-size="8" fill="#2e7d32">10 voices · anti-repetition · content safety · no bad input ignored</text>
 
-  <rect x="440" y="176" width="254" height="66" rx="4" fill="#e8eaf6" stroke="#9fa8da" stroke-width="1"/>
-  <text x="445" y="189" font-size="8.5" fill="#1a237e" font-weight="600">SCREEN FLOW</text>
-  <text x="445" y="201" font-size="8" fill="#283593">CharacterSelect</text>
-  <text x="445" y="212" font-size="8" fill="#283593">→ ThemeSelect</text>
-  <text x="445" y="223" font-size="8" fill="#283593">→ StoryScreen</text>
-  <text x="445" y="234" font-size="8" fill="#283593">→ StoryRecapModal</text>
+  <rect x="204" y="702" width="280" height="66" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="210" y="716" font-size="8.5" fill="#1b5e20" font-weight="600">ADK Story Planner  —  story_planner.py</text>
+  <text x="210" y="729" font-size="8" fill="#2e7d32">google.adk.agents.LlmAgent</text>
+  <text x="210" y="742" font-size="8" fill="#2e7d32">Runner + InMemorySessionService</text>
+  <text x="210" y="755" font-size="8" fill="#2e7d32">4-beat story plan per session · returns opening_text hint</text>
 
-  <rect x="440" y="246" width="254" height="38" rx="4" fill="#fce4ec" stroke="#f48fb1" stroke-width="1"/>
-  <text x="445" y="259" font-size="8.5" fill="#880e4f" font-weight="600">CHARACTERS (10 total)</text>
-  <text x="445" y="270" font-size="8" fill="#ad1457">5 English storytellers</text>
-  <text x="445" y="281" font-size="8" fill="#ad1457">5 Indian-language grandmothers (5 languages)</text>
+  <rect x="204" y="774" width="280" height="38" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="210" y="788" font-size="8.5" fill="#1b5e20" font-weight="600">POST  /api/story-plan</text>
+  <text x="210" y="802" font-size="8" fill="#2e7d32">ADK LlmAgent generates story plan → used to seed Gemini Live</text>
 
-  <rect x="440" y="288" width="254" height="28" rx="4" fill="#e0f7fa" stroke="#80deea" stroke-width="1"/>
-  <text x="445" y="300" font-size="8.5" fill="#006064" font-weight="600">StorySceneGrid</text>
-  <text x="445" y="309" font-size="8" fill="#00838f">Loading cards → loaded images · visual gallery</text>
+  <rect x="204" y="818" width="280" height="38" rx="4" fill="#f1f8e9" stroke="#aed581" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="344" y="832" text-anchor="middle" font-size="8.5" fill="#33691e" font-weight="600">proxy.py · characters.py · story_planner.py</text>
+  <text x="344" y="846" text-anchor="middle" font-size="8" fill="#558b2f">WebSocket session orchestration · character configs</text>
+  <text x="344" y="870" font-size="8.5" fill="#aaaaaa" font-style="italic">build_gemini_setup_message() · run_proxy_session()</text>
 
-  <rect x="440" y="320" width="254" height="28" rx="4" fill="#f3e5f5" stroke="#ce93d8" stroke-width="1"/>
-  <text x="445" y="332" font-size="8.5" fill="#4a148c" font-weight="600">Badge Popup Overlay</text>
-  <text x="445" y="341" font-size="8" fill="#6a1b9a">Shown on awardBadge tool call · child confirmation</text>
+  <!-- Backend right panel: HTTP API -->
+  <rect x="502" y="542" width="296" height="382" rx="6" fill="white" stroke="#34a853" stroke-width="1" stroke-dasharray="5,3"/>
+  <rect x="502" y="542" width="296" height="24" rx="6" fill="#43a04720"/>
+  <text x="650" y="558" text-anchor="middle" font-size="9" font-weight="700" fill="#1b5e20">HTTP API Endpoints  —  image_gen.py · main.py</text>
 
-  <rect x="440" y="352" width="254" height="28" rx="4" fill="#fff3e0" stroke="#ffcc02" stroke-width="1"/>
-  <text x="445" y="364" font-size="8.5" fill="#bf360c" font-weight="600">StoryRecapModal</text>
-  <text x="445" y="373" font-size="8" fill="#e64a19">Interleaved text+image pages · recap narration</text>
+  <rect x="510" y="572" width="280" height="52" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="516" y="586" font-size="8.5" fill="#1b5e20" font-weight="600">POST  /api/story-opening</text>
+  <text x="516" y="599" font-size="8" fill="#2e7d32">Flash Lite: story plan + opening line + first scene description</text>
+  <text x="516" y="612" font-size="8" fill="#2e7d32">→ image gen → canvas seeded before Begin click</text>
 
-  <rect x="440" y="384" width="254" height="26" rx="4" fill="#e8f5e9" stroke="#a5d6a7" stroke-width="1"/>
-  <text x="445" y="396" font-size="8.5" fill="#1b5e20" font-weight="600">AudioVisualizer · FloatingElements</text>
-  <text x="445" y="405" font-size="8" fill="#2e7d32">Framer Motion animations · character portraits</text>
+  <rect x="510" y="630" width="280" height="52" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="516" y="644" font-size="8.5" fill="#1b5e20" font-weight="600">POST  /api/image</text>
+  <text x="516" y="657" font-size="8" fill="#2e7d32">Direct image gen from narration or tool call description</text>
+  <text x="516" y="670" font-size="8" fill="#2e7d32">prev image + scene passed for visual continuity</text>
 
-  <!-- ─────────────────────────────────────────────────────── -->
-  <!-- BACKEND SUB-BOX -->
-  <!-- ─────────────────────────────────────────────────────── -->
-  <rect x="163" y="442" width="548" height="342" rx="8" fill="#e8f5e9" stroke="#34a853" stroke-width="1.5"/>
+  <rect x="510" y="688" width="280" height="38" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="516" y="702" font-size="8.5" fill="#1b5e20" font-weight="600">POST  /api/check-theme</text>
+  <text x="516" y="716" font-size="8" fill="#2e7d32">Flash Lite safety check on custom themes → SAFE / UNSAFE</text>
 
-  <!-- Backend header -->
-  <rect x="163" y="442" width="548" height="28" rx="8" fill="#34a853"/>
-  <rect x="163" y="458" width="548" height="12" fill="#34a853"/>
-  <rect x="173" y="445" width="20" height="14" rx="3" fill="#ffffff33"/>
-  <text x="183" y="456" text-anchor="middle" font-size="9" font-weight="700" fill="white">BE</text>
-  <text x="450" y="460" text-anchor="middle" font-size="11" font-weight="700" fill="white">FastAPI Backend</text>
-  <text x="450" y="471" text-anchor="middle" font-size="9" fill="#c8e6c9">Python 3.13 · Uvicorn · SPA fallback serving</text>
+  <rect x="510" y="732" width="280" height="38" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="516" y="746" font-size="8.5" fill="#1b5e20" font-weight="600">POST  /api/sketch-preview</text>
+  <text x="516" y="760" font-size="8" fill="#2e7d32">Flash Lite labels sketch → storybook illustration preview</text>
 
-  <!-- WS + ADK panel -->
-  <rect x="172" y="480" width="256" height="294" rx="6" fill="white" stroke="#34a853" stroke-width="1" stroke-dasharray="5,3"/>
-  <rect x="172" y="480" width="256" height="20" rx="6" fill="#43a04720"/>
-  <rect x="172" y="492" width="256" height="8" fill="#43a04720"/>
-  <text x="300" y="494" text-anchor="middle" font-size="9" font-weight="700" fill="#1b5e20">WebSocket Proxy + ADK</text>
+  <rect x="510" y="776" width="280" height="52" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
+  <text x="516" y="790" font-size="8.5" fill="#1b5e20" font-weight="600">POST  /api/story-recap</text>
+  <text x="516" y="803" font-size="8" fill="#2e7d32">Receives actual session images (base64) + character context</text>
+  <text x="516" y="816" font-size="8" fill="#2e7d32">asyncio.gather → parallel per-image narration → title + captions</text>
 
-  <rect x="179" y="502" width="242" height="56" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="184" y="514" font-size="8.5" fill="#1b5e20" font-weight="600">WS /ws/story</text>
-  <text x="184" y="525" font-size="8" fill="#2e7d32">Bidirectional audio proxy: Browser ↔ Gemini Live</text>
-  <text x="184" y="536" font-size="8" fill="#2e7d32">Injects character system prompt + voice config</text>
-  <text x="184" y="547" font-size="8" fill="#2e7d32">Injects opening_text as fake model turn</text>
+  <rect x="510" y="834" width="280" height="38" rx="4" fill="#f1f8e9" stroke="#aed581" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="650" y="848" text-anchor="middle" font-size="8.5" fill="#33691e" font-weight="600">image_gen.py · main.py</text>
+  <text x="650" y="862" text-anchor="middle" font-size="8" fill="#558b2f">Narrations + title → saved to localStorage gallery</text>
+  <text x="650" y="876" font-size="8.5" fill="#aaaaaa" font-style="italic">_build_scene_prompt() · _build_contents() · _narrate_scene()</text>
 
-  <rect x="179" y="562" width="242" height="36" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="184" y="574" font-size="8.5" fill="#1b5e20" font-weight="600">Session Management</text>
-  <text x="184" y="585" font-size="8" fill="#2e7d32">15 min timeout · forwards tool calls to browser</text>
-  <text x="184" y="595" font-size="8" fill="#2e7d32">Barge-in interrupt handling</text>
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- GEMINI LIVE API BOX                                                  -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <rect x="842" y="84" width="400" height="512" rx="12" fill="#e0f7fa" stroke="#00acc1" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="842" y="84" width="400" height="40" rx="12" fill="#00acc1"/>
+  <rect x="842" y="106" width="400" height="18" fill="#00acc1"/>
+  <rect x="854" y="91" width="26" height="20" rx="4" fill="#ffffff33"/>
+  <text x="867" y="105" text-anchor="middle" font-size="9" font-weight="700" fill="white">GL</text>
+  <text x="1044" y="103" text-anchor="middle" font-size="13" font-weight="700" fill="white">Gemini Live API</text>
+  <text x="1044" y="117" text-anchor="middle" font-size="9.5" fill="#b2ebf2">gemini-live-2.5-flash-native-audio  ·  Vertex AI</text>
 
-  <rect x="179" y="602" width="242" height="50" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="184" y="614" font-size="8.5" fill="#1b5e20" font-weight="600">ADK Story Planner</text>
-  <text x="184" y="625" font-size="8" fill="#2e7d32">google.adk.agents.LlmAgent</text>
-  <text x="184" y="636" font-size="8" fill="#2e7d32">Runner + InMemorySessionService</text>
-  <text x="184" y="645" font-size="8" fill="#2e7d32">Generates 4-beat story plan</text>
+  <rect x="854" y="132" width="374" height="66" rx="6" fill="#b2ebf2" stroke="#0097a7" stroke-width="1"/>
+  <text x="860" y="147" font-size="8.5" fill="#004d40" font-weight="700">Real-time Bidirectional WebSocket</text>
+  <text x="860" y="161" font-size="8" fill="#00695c">Input:   16kHz PCM audio stream  (mic → Gemini)</text>
+  <text x="860" y="175" font-size="8" fill="#00695c">Output:  24kHz PCM audio + output transcription  (Gemini → speakers)</text>
+  <text x="860" y="189" font-size="8" fill="#00695c">Barge-in: child interrupts mid-sentence via VAD</text>
 
-  <rect x="179" y="656" width="242" height="36" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="184" y="668" font-size="8.5" fill="#1b5e20" font-weight="600">POST /api/story-plan</text>
-  <text x="184" y="679" font-size="8" fill="#2e7d32">→ 4-beat story plan → returns opening_text hint</text>
-  <text x="184" y="689" font-size="8" fill="#2e7d32">Used to seed story continuity</text>
+  <rect x="854" y="206" width="374" height="52" rx="6" fill="#b2ebf2" stroke="#0097a7" stroke-width="1"/>
+  <text x="860" y="221" font-size="8.5" fill="#004d40" font-weight="700">Session Configuration</text>
+  <text x="860" y="235" font-size="8" fill="#00695c">proactive_audio + affective dialog enabled · LOW speech sensitivity</text>
+  <text x="860" y="249" font-size="8" fill="#00695c">2s silence timeout · 10 unique voices · system prompt per character</text>
 
-  <rect x="179" y="696" width="242" height="28" rx="4" fill="#f1f8e9" stroke="#aed581" stroke-width="1" stroke-dasharray="4,2"/>
-  <text x="300" y="708" text-anchor="middle" font-size="8.5" fill="#33691e" font-weight="600">proxy.py · characters.py</text>
-  <text x="300" y="718" text-anchor="middle" font-size="8" fill="#558b2f">WebSocket session orchestration</text>
+  <rect x="854" y="266" width="374" height="38" rx="6" fill="#b2ebf2" stroke="#0097a7" stroke-width="1"/>
+  <text x="860" y="280" font-size="8.5" fill="#004d40" font-weight="700">System Prompt Guarantees</text>
+  <text x="860" y="294" font-size="8" fill="#00695c">Anti-repetition · no story ending · content safety call-out · 5-7 sentence flows</text>
 
-  <!-- HTTP API panel -->
-  <rect x="436" y="480" width="266" height="294" rx="6" fill="white" stroke="#34a853" stroke-width="1" stroke-dasharray="5,3"/>
-  <rect x="436" y="480" width="266" height="20" rx="6" fill="#43a04720"/>
-  <rect x="436" y="492" width="266" height="8" fill="#43a04720"/>
-  <text x="569" y="494" text-anchor="middle" font-size="9" font-weight="700" fill="#1b5e20">HTTP API Endpoints</text>
+  <rect x="854" y="312" width="374" height="16" rx="4" fill="#00838f"/>
+  <text x="1042" y="324" text-anchor="middle" font-size="9" font-weight="700" fill="white">Autonomous Tool Calls</text>
 
-  <rect x="443" y="502" width="252" height="38" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="448" y="514" font-size="8.5" fill="#1b5e20" font-weight="600">POST /api/story-opening</text>
-  <text x="448" y="525" font-size="8" fill="#2e7d32">Flash Lite: story opening + first image (prewarm)</text>
-  <text x="448" y="535" font-size="8" fill="#2e7d32">STORY + SCENE format response</text>
+  <rect x="854" y="334" width="374" height="72" rx="6" fill="#ffffff" stroke="#00acc1" stroke-width="1.5"/>
+  <text x="860" y="350" font-size="9" fill="#006064" font-weight="700">generate_illustration(scene_description)</text>
+  <text x="860" y="364" font-size="8" fill="#004d40">Called at: scene changes, character reveals, dramatic moments</text>
+  <text x="860" y="378" font-size="8" fill="#004d40">skip_extraction=true — narration passed directly to image model</text>
+  <text x="860" y="392" font-size="8" fill="#004d40">Frontend responds immediately — Gemini doesn't wait for image</text>
 
-  <rect x="443" y="544" width="252" height="38" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="448" y="556" font-size="8.5" fill="#1b5e20" font-weight="600">POST /api/image</text>
-  <text x="448" y="567" font-size="8" fill="#2e7d32">Flash Lite scene extraction → image generation</text>
-  <text x="448" y="577" font-size="8" fill="#2e7d32">Parallel HTTP · never blocks audio</text>
+  <rect x="854" y="412" width="374" height="66" rx="6" fill="#ffffff" stroke="#00acc1" stroke-width="1.5"/>
+  <text x="860" y="428" font-size="9" fill="#006064" font-weight="700">awardBadge(emoji, name, reason)</text>
+  <text x="860" y="442" font-size="8" fill="#004d40">Only on explicit child verbal creativity (story idea, imaginative suggestion)</text>
+  <text x="860" y="456" font-size="8" fill="#004d40">Max 2 per session · badge popup overlay auto-dismisses after 3s</text>
+  <text x="860" y="470" font-size="8" fill="#004d40">Saved in StoryGalleryEntry.badges → shown in Past Adventures</text>
 
-  <rect x="443" y="586" width="252" height="30" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="448" y="598" font-size="8.5" fill="#1b5e20" font-weight="600">POST /api/check-theme</text>
-  <text x="448" y="609" font-size="8" fill="#2e7d32">Flash Lite content safety check → SAFE/UNSAFE</text>
+  <rect x="854" y="486" width="374" height="28" rx="4" fill="#e0f7fa" stroke="#80deea" stroke-width="1"/>
+  <text x="1042" y="505" text-anchor="middle" font-size="8.5" fill="#006064" font-weight="600">Model inference via Vertex AI · gemini-live-2.5-flash-native-audio</text>
 
-  <rect x="443" y="620" width="252" height="30" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="448" y="632" font-size="8.5" fill="#1b5e20" font-weight="600">POST /api/sketch-preview</text>
-  <text x="448" y="643" font-size="8" fill="#2e7d32">Flash Lite labels prop/sketch → storybook illus.</text>
-
-  <rect x="443" y="654" width="252" height="38" rx="4" fill="#e8f5e9" stroke="#81c784" stroke-width="1"/>
-  <text x="448" y="666" font-size="8.5" fill="#1b5e20" font-weight="600">POST /api/story-recap</text>
-  <text x="448" y="677" font-size="8" fill="#2e7d32">Gemini 2.0 Flash narrates actual session images</text>
-  <text x="448" y="688" font-size="8" fill="#2e7d32">asyncio.gather → parallel, no hallucination</text>
-
-  <rect x="443" y="696" width="252" height="28" rx="4" fill="#f1f8e9" stroke="#aed581" stroke-width="1" stroke-dasharray="4,2"/>
-  <text x="569" y="708" text-anchor="middle" font-size="8.5" fill="#33691e" font-weight="600">image_gen.py · main.py</text>
-  <text x="569" y="718" text-anchor="middle" font-size="8" fill="#558b2f">All endpoints stateless · parallel safe</text>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- GEMINI LIVE API BOX -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <rect x="790" y="72" width="355" height="426" rx="12" fill="#e0f7fa" stroke="#00acc1" stroke-width="2" filter="url(#shadow)"/>
-
-  <!-- Gemini Live header -->
-  <rect x="790" y="72" width="355" height="38" rx="12" fill="#00acc1"/>
-  <rect x="790" y="92" width="355" height="18" fill="#00acc1"/>
-  <rect x="800" y="79" width="24" height="18" rx="4" fill="#ffffff33"/>
-  <text x="812" y="92" text-anchor="middle" font-size="9" font-weight="700" fill="white">GL</text>
-  <text x="975" y="89" text-anchor="middle" font-size="12" font-weight="700" fill="white">Gemini Live API</text>
-  <text x="975" y="103" text-anchor="middle" font-size="9.5" fill="#b2ebf2">gemini-live-2.5-flash-native-audio</text>
-
-  <!-- Model info -->
-  <rect x="800" y="118" width="326" height="52" rx="6" fill="#b2ebf2" stroke="#0097a7" stroke-width="1"/>
-  <text x="806" y="131" font-size="8.5" fill="#004d40" font-weight="700">Real-time bidirectional WebSocket connection</text>
-  <text x="806" y="143" font-size="8" fill="#00695c">Input:  16kHz PCM audio stream + JPEG camera frames</text>
-  <text x="806" y="154" font-size="8" fill="#00695c">Output: 24kHz PCM audio stream + output transcription</text>
-  <text x="806" y="163" font-size="8" fill="#00695c">Barge-in: child can interrupt mid-sentence</text>
-
-  <!-- Features -->
-  <rect x="800" y="174" width="326" height="40" rx="6" fill="#b2ebf2" stroke="#0097a7" stroke-width="1"/>
-  <text x="806" y="187" font-size="8.5" fill="#004d40" font-weight="700">Session Configuration</text>
-  <text x="806" y="198" font-size="8" fill="#00695c">Proactive audio + affective dialog enabled</text>
-  <text x="806" y="208" font-size="8" fill="#00695c">HIGH sensitivity AAD · 1500ms silence timeout</text>
-
-  <!-- Characters -->
-  <rect x="800" y="218" width="326" height="30" rx="6" fill="#b2ebf2" stroke="#0097a7" stroke-width="1"/>
-  <text x="806" y="230" font-size="8.5" fill="#004d40" font-weight="700">10 Characters × Unique Voice Assignment</text>
-  <text x="806" y="241" font-size="8" fill="#00695c">Aoede · Charon · Kore · Puck · Fenrir · Leda · Orus · Zephyr</text>
-
-  <!-- Movement challenges -->
-  <rect x="800" y="252" width="326" height="26" rx="6" fill="#b2ebf2" stroke="#0097a7" stroke-width="1"/>
-  <text x="806" y="264" font-size="8.5" fill="#004d40" font-weight="700">Movement Challenges</text>
-  <text x="806" y="272" font-size="8" fill="#00695c">Physical activity prompts every ~60 seconds</text>
-
-  <!-- Tool calls divider -->
-  <rect x="800" y="282" width="326" height="14" rx="4" fill="#00838f"/>
-  <text x="963" y="293" text-anchor="middle" font-size="9" font-weight="700" fill="white">Autonomous Tool Calls</text>
-
-  <!-- generate_illustration -->
-  <rect x="800" y="298" width="326" height="60" rx="6" fill="#ffffff" stroke="#00acc1" stroke-width="1.5"/>
-  <text x="806" y="311" font-size="9" fill="#006064" font-weight="700">generate_illustration(scene_description)</text>
-  <text x="806" y="322" font-size="8" fill="#004d40">Gemini decides when to call (not rate-limited)</text>
-  <text x="806" y="333" font-size="8" fill="#004d40">skip_extraction=true — bypasses scene extraction</text>
-  <text x="806" y="344" font-size="8" fill="#004d40">Direct to image generation · faster path</text>
-  <text x="806" y="355" font-size="8" fill="#004d40">Triggered on narrative visual moments</text>
-
-  <!-- awardBadge -->
-  <rect x="800" y="362" width="326" height="52" rx="6" fill="#ffffff" stroke="#00acc1" stroke-width="1.5"/>
-  <text x="806" y="375" font-size="9" fill="#006064" font-weight="700">awardBadge(emoji, name, reason)</text>
-  <text x="806" y="386" font-size="8" fill="#004d40">Only on explicit child verbal confirmation</text>
-  <text x="806" y="397" font-size="8" fill="#004d40">Maximum 2 badges per session</text>
-  <text x="806" y="408" font-size="8" fill="#004d40">Triggers badge popup overlay in frontend</text>
-
-  <!-- Inference label -->
-  <rect x="800" y="418" width="326" height="24" rx="4" fill="#e0f7fa" stroke="#80deea" stroke-width="1"/>
-  <text x="963" y="432" text-anchor="middle" font-size="8.5" fill="#006064" font-weight="600">Model inference via Vertex AI · managed runtime</text>
-
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- VERTEX AI BOX -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <rect x="1200" y="72" width="280" height="726" rx="12" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2" filter="url(#shadow)"/>
-
-  <!-- Vertex AI header -->
-  <rect x="1200" y="72" width="280" height="38" rx="12" fill="#7b1fa2"/>
-  <rect x="1200" y="92" width="280" height="18" fill="#7b1fa2"/>
-  <rect x="1210" y="79" width="28" height="18" rx="4" fill="#ffffff33"/>
-  <text x="1224" y="92" text-anchor="middle" font-size="9" font-weight="700" fill="white">VAI</text>
-  <text x="1342" y="89" text-anchor="middle" font-size="12" font-weight="700" fill="white">Vertex AI</text>
-  <text x="1342" y="103" text-anchor="middle" font-size="9.5" fill="#e1bee7">Google Cloud AI Platform</text>
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- VERTEX AI BOX                                                        -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <rect x="1280" y="84" width="620" height="868" rx="12" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="1280" y="84" width="620" height="40" rx="12" fill="#7b1fa2"/>
+  <rect x="1280" y="106" width="620" height="18" fill="#7b1fa2"/>
+  <rect x="1294" y="91" width="28" height="20" rx="4" fill="#ffffff33"/>
+  <text x="1308" y="105" text-anchor="middle" font-size="9" font-weight="700" fill="white">VAI</text>
+  <text x="1590" y="103" text-anchor="middle" font-size="13" font-weight="700" fill="white">Vertex AI — Gemini Models</text>
+  <text x="1590" y="117" text-anchor="middle" font-size="9.5" fill="#e1bee7">Google Cloud AI Platform · Application Default Credentials · us-central1</text>
 
   <!-- Flash Lite section -->
-  <rect x="1210" y="118" width="260" height="14" rx="4" fill="#6a1b9a"/>
-  <text x="1340" y="129" text-anchor="middle" font-size="9" font-weight="700" fill="white">Gemini 2.0 Flash Lite</text>
+  <rect x="1294" y="134" width="592" height="16" rx="4" fill="#6a1b9a"/>
+  <text x="1590" y="146" text-anchor="middle" font-size="9" font-weight="700" fill="white">Gemini 2.5 Flash Lite  (Text + Safety + Planning)</text>
 
-  <rect x="1210" y="135" width="260" height="30" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="147" font-size="8.5" fill="#4a148c" font-weight="600">Scene Extraction</text>
-  <text x="1215" y="157" font-size="8" fill="#6a1b9a">Transcription text → visual scene description</text>
+  <rect x="1294" y="156" width="288" height="38" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1300" y="170" font-size="8.5" fill="#4a148c" font-weight="600">Story Opening Generation</text>
+  <text x="1300" y="184" font-size="8" fill="#6a1b9a">STORY + SCENE format · coherent plan + opening line</text>
 
-  <rect x="1210" y="169" width="260" height="30" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="181" font-size="8.5" fill="#4a148c" font-weight="600">Story Opening Generation</text>
-  <text x="1215" y="191" font-size="8" fill="#6a1b9a">STORY + SCENE format · prewarm image</text>
+  <rect x="1596" y="156" width="288" height="38" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1602" y="170" font-size="8.5" fill="#4a148c" font-weight="600">Theme Safety Check</text>
+  <text x="1602" y="184" font-size="8" fill="#6a1b9a">Custom themes, sketches, camera props → SAFE / UNSAFE</text>
 
-  <rect x="1210" y="203" width="260" height="30" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="215" font-size="8.5" fill="#4a148c" font-weight="600">Theme Safety Check</text>
-  <text x="1215" y="225" font-size="8" fill="#6a1b9a">Returns SAFE / UNSAFE classification</text>
+  <rect x="1294" y="200" width="288" height="38" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1300" y="214" font-size="8.5" fill="#4a148c" font-weight="600">Prop / Sketch Label Extraction</text>
+  <text x="1300" y="228" font-size="8" fill="#6a1b9a">Camera prop / drawing → storybook illustration label</text>
 
-  <rect x="1210" y="237" width="260" height="30" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="249" font-size="8.5" fill="#4a148c" font-weight="600">Prop / Sketch Label Extraction</text>
-  <text x="1215" y="259" font-size="8" fill="#6a1b9a">Camera sketch → storybook illustration label</text>
+  <rect x="1596" y="200" width="288" height="38" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1602" y="214" font-size="8.5" fill="#4a148c" font-weight="600">ADK Story Planner</text>
+  <text x="1602" y="228" font-size="8" fill="#6a1b9a">4-beat story plan · LlmAgent + Runner + InMemorySessionService</text>
 
-  <rect x="1210" y="271" width="260" height="22" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="282" font-size="8.5" fill="#4a148c" font-weight="600">ADK Story Planner</text>
-  <text x="1215" y="290" font-size="8" fill="#6a1b9a">4-beat story plans via LlmAgent</text>
+  <line x1="1294" y1="248" x2="1886" y2="248" stroke="#ce93d8" stroke-width="1.5"/>
 
-  <!-- Divider -->
-  <line x1="1210" y1="300" x2="1470" y2="300" stroke="#ce93d8" stroke-width="1"/>
+  <!-- Image Generation section -->
+  <rect x="1294" y="258" width="592" height="16" rx="4" fill="#6a1b9a"/>
+  <text x="1590" y="270" text-anchor="middle" font-size="9" font-weight="700" fill="white">Image Generation  (Gemini Flash Image Preview)</text>
 
-  <!-- Image generation section -->
-  <rect x="1210" y="306" width="260" height="14" rx="4" fill="#6a1b9a"/>
-  <text x="1340" y="317" text-anchor="middle" font-size="9" font-weight="700" fill="white">Image Generation (Gemini / Imagen)</text>
+  <rect x="1294" y="280" width="288" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1300" y="294" font-size="8.5" fill="#4a148c" font-weight="600">Input</text>
+  <text x="1300" y="308" font-size="8" fill="#6a1b9a">scene_description (from tool call or turn text) + story context</text>
 
-  <rect x="1210" y="324" width="260" height="22" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="336" font-size="8.5" fill="#4a148c" font-weight="600">Model</text>
-  <text x="1215" y="342" font-size="8" fill="#6a1b9a">Gemini 3.1 Flash Image Preview / Imagen 3.1</text>
+  <rect x="1596" y="280" width="288" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1602" y="294" font-size="8.5" fill="#4a148c" font-weight="600">Visual Continuity</text>
+  <text x="1602" y="308" font-size="8" fill="#6a1b9a">Previous image + scene description passed as reference</text>
 
-  <rect x="1210" y="350" width="260" height="22" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="362" font-size="8.5" fill="#4a148c" font-weight="600">Output</text>
-  <text x="1215" y="370" font-size="8" fill="#6a1b9a">Storybook illustrations · 4:3 aspect ratio</text>
+  <rect x="1294" y="324" width="288" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1300" y="338" font-size="8.5" fill="#4a148c" font-weight="600">Output</text>
+  <text x="1300" y="352" font-size="8" fill="#6a1b9a">4:3 storybook illustration · base64 PNG/JPEG</text>
 
-  <rect x="1210" y="376" width="260" height="22" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="388" font-size="8.5" fill="#4a148c" font-weight="600">Visual Continuity</text>
-  <text x="1215" y="396" font-size="8" fill="#6a1b9a">Previous image passed as reference</text>
+  <rect x="1596" y="324" width="288" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1602" y="338" font-size="8.5" fill="#4a148c" font-weight="600">Safety</text>
+  <text x="1602" y="352" font-size="8" fill="#6a1b9a">SAFETY_PREFIX on all prompts · character image_style descriptor</text>
 
-  <rect x="1210" y="402" width="260" height="34" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="414" font-size="8.5" fill="#4a148c" font-weight="600">Rate Limiting + Retry</text>
-  <text x="1215" y="424" font-size="8" fill="#6a1b9a">Retry once on 500 · 2s delay</text>
-  <text x="1215" y="434" font-size="8" fill="#6a1b9a">8s min between fallback images</text>
+  <rect x="1294" y="368" width="592" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1300" y="382" font-size="8.5" fill="#4a148c" font-weight="600">Rate Limiting + Retry</text>
+  <text x="1300" y="396" font-size="8" fill="#6a1b9a">Retry once on 500 · 8s minimum between fallback images · tool calls bypass all limits</text>
 
-  <!-- Divider -->
-  <line x1="1210" y1="443" x2="1470" y2="443" stroke="#ce93d8" stroke-width="1"/>
+  <line x1="1294" y1="416" x2="1886" y2="416" stroke="#ce93d8" stroke-width="1.5"/>
 
-  <!-- Flash 2.0 section -->
-  <rect x="1210" y="449" width="260" height="14" rx="4" fill="#6a1b9a"/>
-  <text x="1340" y="460" text-anchor="middle" font-size="9" font-weight="700" fill="white">Gemini 2.0 Flash (Story Recap)</text>
+  <!-- Story Recap section -->
+  <rect x="1294" y="426" width="592" height="16" rx="4" fill="#6a1b9a"/>
+  <text x="1590" y="438" text-anchor="middle" font-size="9" font-weight="700" fill="white">Gemini Flash  (Story Recap Narration)</text>
 
-  <rect x="1210" y="467" width="260" height="30" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="479" font-size="8.5" fill="#4a148c" font-weight="600">Input</text>
-  <text x="1215" y="489" font-size="8" fill="#6a1b9a">Actual session images (base64) + character context</text>
+  <rect x="1294" y="448" width="288" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1300" y="462" font-size="8.5" fill="#4a148c" font-weight="600">Input</text>
+  <text x="1300" y="476" font-size="8" fill="#6a1b9a">Actual session images (base64) + character name + style</text>
 
-  <rect x="1210" y="501" width="260" height="30" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="513" font-size="8.5" fill="#4a148c" font-weight="600">Narration</text>
-  <text x="1215" y="523" font-size="8" fill="#6a1b9a">Each image narrated in character voice · 2 sentences</text>
+  <rect x="1596" y="448" width="288" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1602" y="462" font-size="8.5" fill="#4a148c" font-weight="600">Execution</text>
+  <text x="1602" y="476" font-size="8" fill="#6a1b9a">asyncio.gather · parallel _narrate_scene() per image</text>
 
-  <rect x="1210" y="535" width="260" height="30" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="547" font-size="8.5" fill="#4a148c" font-weight="600">Execution</text>
-  <text x="1215" y="557" font-size="8" fill="#6a1b9a">asyncio.gather · parallel · no hallucination</text>
+  <rect x="1294" y="492" width="288" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1300" y="506" font-size="8.5" fill="#4a148c" font-weight="600">Narration</text>
+  <text x="1300" y="520" font-size="8" fill="#6a1b9a">Each image narrated in character voice · 2 sentences · no hallucination</text>
 
-  <rect x="1210" y="569" width="260" height="22" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1215" y="581" font-size="8.5" fill="#4a148c" font-weight="600">Output</text>
-  <text x="1215" y="589" font-size="8" fill="#6a1b9a">Interleaved text+image pages for StoryRecapModal</text>
+  <rect x="1596" y="492" width="288" height="38" rx="5" fill="#e1bee7" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1602" y="506" font-size="8.5" fill="#4a148c" font-weight="600">Output Saved to Gallery</text>
+  <text x="1602" y="520" font-size="8" fill="#6a1b9a">recapTitle + narrations[] patched into localStorage gallery entry</text>
 
-  <!-- Divider -->
-  <line x1="1210" y1="598" x2="1470" y2="598" stroke="#ce93d8" stroke-width="1"/>
+  <line x1="1294" y1="540" x2="1886" y2="540" stroke="#ce93d8" stroke-width="1.5"/>
 
-  <!-- GCP authentication info -->
-  <rect x="1210" y="604" width="260" height="54" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1340" y="618" text-anchor="middle" font-size="8.5" fill="#4a148c" font-weight="700">GCP Authentication</text>
-  <text x="1215" y="630" font-size="8" fill="#6a1b9a">Application Default Credentials</text>
-  <text x="1215" y="641" font-size="8" fill="#6a1b9a">GEMINI_API_KEY from Secret Manager</text>
-  <text x="1215" y="652" font-size="8" fill="#6a1b9a">Region: us-central1</text>
+  <!-- GCP Auth + Safety -->
+  <rect x="1294" y="550" width="288" height="66" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1438" y="566" text-anchor="middle" font-size="8.5" fill="#4a148c" font-weight="700">GCP Authentication</text>
+  <text x="1300" y="580" font-size="8" fill="#6a1b9a">Application Default Credentials</text>
+  <text x="1300" y="594" font-size="8" fill="#6a1b9a">GEMINI_API_KEY from Secret Manager</text>
+  <text x="1300" y="608" font-size="8" fill="#6a1b9a">Region: us-central1</text>
 
-  <!-- Safety / SAFETY_PREFIX note -->
-  <rect x="1210" y="662" width="260" height="40" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
-  <text x="1340" y="675" text-anchor="middle" font-size="8.5" fill="#4a148c" font-weight="700">Image Safety</text>
-  <text x="1215" y="687" font-size="8" fill="#6a1b9a">SAFETY_PREFIX applied to all prompts</text>
-  <text x="1215" y="697" font-size="8" fill="#6a1b9a">Character image_style descriptors per character</text>
+  <rect x="1596" y="550" width="288" height="66" rx="5" fill="#f8bbd9" stroke="#ce93d8" stroke-width="1"/>
+  <text x="1740" y="566" text-anchor="middle" font-size="8.5" fill="#4a148c" font-weight="700">Image Safety</text>
+  <text x="1602" y="580" font-size="8" fill="#6a1b9a">SAFETY_PREFIX on every image prompt</text>
+  <text x="1602" y="594" font-size="8" fill="#6a1b9a">child-safe · no violence · no adult themes</text>
+  <text x="1602" y="608" font-size="8" fill="#6a1b9a">character image_style per character</text>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- ARROWS / DATA FLOWS -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- DATA FLOW ARROWS                                                     -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
 
-  <!-- ── 1. User ↔ Frontend: Voice (16kHz PCM) at y≈200 ── -->
-  <line x1="134" y1="200" x2="163" y2="200" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
+  <!-- 1. User ↔ Frontend: Voice (bidirectional) -->
+  <line x1="156" y1="224" x2="172" y2="224" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
         marker-end="url(#arrow-gray)" marker-start="url(#arrow-gray-start)"/>
-  <rect x="96" y="176" width="68" height="22" rx="3" fill="#ffffffcc"/>
-  <text x="130" y="188" text-anchor="middle" font-size="7.5" fill="#37474f" font-weight="600">Voice</text>
-  <text x="130" y="197" text-anchor="middle" font-size="7" fill="#546e7a">16kHz PCM</text>
+  <rect x="104" y="204" width="66" height="22" rx="3" fill="#ffffffcc"/>
+  <text x="137" y="216" text-anchor="middle" font-size="7.5" fill="#37474f" font-weight="600">Voice</text>
+  <text x="137" y="225" text-anchor="middle" font-size="7" fill="#546e7a">16kHz PCM</text>
 
-  <!-- ── 1b. User ↔ Frontend: Camera (JPEG 1fps) at y≈260 ── -->
-  <line x1="134" y1="260" x2="163" y2="260" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
+  <!-- 2. Frontend ↔ Backend: Internal WebSocket -->
+  <line x1="398" y1="488" x2="398" y2="498" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
         marker-end="url(#arrow-gray)" marker-start="url(#arrow-gray-start)"/>
-  <rect x="90" y="239" width="76" height="22" rx="3" fill="#ffffffcc"/>
-  <text x="128" y="251" text-anchor="middle" font-size="7.5" fill="#37474f" font-weight="600">Camera</text>
-  <text x="128" y="260" text-anchor="middle" font-size="7" fill="#546e7a">JPEG @ 1fps</text>
+  <rect x="314" y="490" width="130" height="16" rx="3" fill="#ffffffcc"/>
+  <text x="379" y="501" text-anchor="middle" font-size="8" fill="#37474f" font-weight="600">Internal WebSocket</text>
 
-  <!-- ── 2. Frontend ↔ Backend: Internal WebSocket (vertical within Cloud Run) ── -->
-  <line x1="340" y1="428" x2="340" y2="442" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
-        marker-end="url(#arrow-gray)" marker-start="url(#arrow-gray-start)"/>
-  <rect x="264" y="431" width="120" height="14" rx="3" fill="#ffffffcc"/>
-  <text x="324" y="441" text-anchor="middle" font-size="8" fill="#37474f" font-weight="600">Internal WebSocket</text>
+  <!-- 3. Backend ↔ Gemini Live: WebSocket audio proxy (curve from right side of CR to left of GL) -->
+  <path d="M 820 660 C 836 660 836 310 842 310" fill="none" stroke="#00acc1" stroke-width="2" stroke-dasharray="7,4"
+        marker-end="url(#arrow-teal)" marker-start="url(#arrow-teal-start)"/>
+  <rect x="826" y="456" width="52" height="40" rx="3" fill="#e0f7facc"/>
+  <text x="852" y="469" text-anchor="middle" font-size="7.5" fill="#006064" font-weight="600">WS audio</text>
+  <text x="852" y="480" text-anchor="middle" font-size="7" fill="#00838f">proxy</text>
+  <text x="852" y="490" text-anchor="middle" font-size="7" fill="#00838f">real-time</text>
 
-  <!-- ── 3. Backend ↔ Gemini Live: WebSocket audio proxy (bezier curve) ── -->
-  <!-- From Cloud Run right edge mid (728, 580) to Gemini Live left edge top area (790, 270) -->
-  <path d="M 728 580 C 760 580 760 290 790 290" fill="none" stroke="#00acc1" stroke-width="2" stroke-dasharray="7,4"
-        marker-end="url(#arrow-teal)" marker-start="url(#arrow-gray-start)"/>
-  <!-- Label -->
-  <rect x="733" y="408" width="54" height="34" rx="3" fill="#e0f7facc"/>
-  <text x="760" y="420" text-anchor="middle" font-size="7.5" fill="#006064" font-weight="600">WS audio</text>
-  <text x="760" y="430" text-anchor="middle" font-size="7" fill="#00838f">proxy</text>
-  <text x="760" y="440" text-anchor="middle" font-size="7" fill="#00838f">real-time</text>
-
-  <!-- ── 4. Gemini Live → Backend: Tool call responses ── -->
-  <!-- From Gemini Live left (790, 390) to Cloud Run right (728, 700) -->
-  <path d="M 790 400 C 758 400 758 710 728 710" fill="none" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
+  <!-- 4. Gemini Live → Backend: Tool call responses -->
+  <path d="M 842 456 C 826 456 826 756 820 756" fill="none" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
         marker-end="url(#arrow-gray)"/>
-  <!-- Label -->
-  <rect x="730" y="535" width="60" height="46" rx="3" fill="#ffffffcc"/>
-  <text x="760" y="548" text-anchor="middle" font-size="7.5" fill="#37474f" font-weight="600">Tool calls</text>
-  <text x="760" y="558" text-anchor="middle" font-size="7" fill="#546e7a">generate_</text>
-  <text x="760" y="568" text-anchor="middle" font-size="7" fill="#546e7a">illustration</text>
-  <text x="760" y="577" text-anchor="middle" font-size="7" fill="#546e7a">awardBadge</text>
+  <rect x="822" y="596" width="60" height="52" rx="3" fill="#ffffffcc"/>
+  <text x="852" y="610" text-anchor="middle" font-size="7.5" fill="#37474f" font-weight="600">Tool calls</text>
+  <text x="852" y="622" text-anchor="middle" font-size="7" fill="#546e7a">generate_</text>
+  <text x="852" y="632" text-anchor="middle" font-size="7" fill="#546e7a">illustration</text>
+  <text x="852" y="642" text-anchor="middle" font-size="7" fill="#546e7a">awardBadge</text>
 
-  <!-- ── 5,6,7. Backend → Vertex AI: HTTP endpoints ── -->
-  <!-- Route below Gemini Live (which ends at y≈498), so route at y=730 -->
-  <!-- Horizontal line from Cloud Run right edge (728,730) to Vertex AI left (1200,730) -->
-  <line x1="728" y1="730" x2="1198" y2="730" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
+  <!-- 5. Backend → Vertex AI: HTTP API calls -->
+  <line x1="820" y1="836" x2="1278" y2="836" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"
         marker-end="url(#arrow-gray)"/>
-  <!-- Labels spread across -->
-  <rect x="835" y="714" width="145" height="32" rx="3" fill="#ffffffcc"/>
-  <text x="907" y="726" text-anchor="middle" font-size="7.5" fill="#37474f" font-weight="600">HTTP (scene extract,</text>
-  <text x="907" y="736" text-anchor="middle" font-size="7" fill="#546e7a">story opening, safety,</text>
-  <text x="907" y="744" text-anchor="middle" font-size="7" fill="#546e7a">sketch, illustration, recap)</text>
+  <rect x="926" y="820" width="208" height="32" rx="3" fill="#ffffffcc"/>
+  <text x="1030" y="832" text-anchor="middle" font-size="7.5" fill="#37474f" font-weight="600">HTTP (image · opening · safety · sketch · recap)</text>
+  <text x="1030" y="844" text-anchor="middle" font-size="7" fill="#546e7a">narrations + title returned → saved to gallery</text>
 
-  <!-- ── 8. Gemini Live ↔ Vertex AI: Model inference (solid, horizontal) ── -->
-  <line x1="1145" y1="280" x2="1198" y2="280" stroke="#7b1fa2" stroke-width="2"
+  <!-- 6. Gemini Live ↔ Vertex AI: Model inference -->
+  <line x1="1242" y1="310" x2="1278" y2="310" stroke="#7b1fa2" stroke-width="2"
         marker-end="url(#arrow-gray)" marker-start="url(#arrow-gray-start)"/>
-  <rect x="1148" y="260" width="52" height="22" rx="3" fill="#f3e5f5cc"/>
-  <text x="1174" y="272" text-anchor="middle" font-size="7.5" fill="#4a148c" font-weight="600">Model</text>
-  <text x="1174" y="281" text-anchor="middle" font-size="7" fill="#6a1b9a">inference</text>
+  <rect x="1246" y="290" width="54" height="24" rx="3" fill="#f3e5f5cc"/>
+  <text x="1273" y="303" text-anchor="middle" font-size="7.5" fill="#4a148c" font-weight="600">Model</text>
+  <text x="1273" y="311" text-anchor="middle" font-size="7" fill="#6a1b9a">inference</text>
 
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <!-- LEGEND -->
-  <!-- ═══════════════════════════════════════════════════════════════ -->
-  <rect x="18" y="810" width="460" height="46" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
-  <text x="30" y="825" font-size="9" font-weight="700" fill="#37474f">Legend:</text>
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <!-- LEGEND                                                               -->
+  <!-- ════════════════════════════════════════════════════════════════════ -->
+  <rect x="20" y="976" width="580" height="50" rx="6" fill="white" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="34" y="994" font-size="9" font-weight="700" fill="#37474f">Legend:</text>
 
-  <!-- Dashed arrow -->
-  <line x1="80" y1="820" x2="120" y2="820" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrow-gray)"/>
-  <text x="126" y="824" font-size="8.5" fill="#546e7a">HTTP / WebSocket (dashed)</text>
+  <line x1="90" y1="988" x2="140" y2="988" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrow-gray)"/>
+  <text x="148" y="992" font-size="8.5" fill="#546e7a">HTTP / WebSocket</text>
 
-  <!-- Solid arrow -->
-  <line x1="80" y1="840" x2="120" y2="840" stroke="#7b1fa2" stroke-width="2" marker-end="url(#arrow-gray)"/>
-  <text x="126" y="844" font-size="8.5" fill="#546e7a">Model inference (solid, purple)</text>
+  <line x1="90" y1="1012" x2="140" y2="1012" stroke="#7b1fa2" stroke-width="2" marker-end="url(#arrow-gray)"/>
+  <text x="148" y="1016" font-size="8.5" fill="#546e7a">Model inference (solid, purple)</text>
 
-  <!-- Bidirectional -->
-  <line x1="270" y1="820" x2="320" y2="820" stroke="#00acc1" stroke-width="2" stroke-dasharray="6,4"
-        marker-end="url(#arrow-teal)" marker-start="url(#arrow-gray-start)"/>
-  <text x="326" y="824" font-size="8.5" fill="#546e7a">Bidirectional stream</text>
+  <line x1="270" y1="988" x2="320" y2="988" stroke="#00acc1" stroke-width="2" stroke-dasharray="6,4"
+        marker-end="url(#arrow-teal)" marker-start="url(#arrow-teal-start)"/>
+  <text x="328" y="992" font-size="8.5" fill="#546e7a">Bidirectional stream</text>
 
-  <!-- Color boxes -->
-  <rect x="270" y="831" width="12" height="12" rx="2" fill="#fffde7" stroke="#f9a825" stroke-width="1"/>
-  <text x="286" y="842" font-size="8.5" fill="#546e7a">Frontend</text>
-  <rect x="330" y="831" width="12" height="12" rx="2" fill="#e8f5e9" stroke="#34a853" stroke-width="1"/>
-  <text x="346" y="842" font-size="8.5" fill="#546e7a">Backend</text>
-  <rect x="390" y="831" width="12" height="12" rx="2" fill="#e0f7fa" stroke="#00acc1" stroke-width="1"/>
-  <text x="406" y="842" font-size="8.5" fill="#546e7a">Gemini Live</text>
+  <rect x="270" y="1003" width="12" height="12" rx="2" fill="#fffde7" stroke="#f9a825" stroke-width="1"/>
+  <text x="286" y="1014" font-size="8.5" fill="#546e7a">Frontend</text>
+  <rect x="336" y="1003" width="12" height="12" rx="2" fill="#e8f5e9" stroke="#34a853" stroke-width="1"/>
+  <text x="352" y="1014" font-size="8.5" fill="#546e7a">Backend</text>
+  <rect x="402" y="1003" width="12" height="12" rx="2" fill="#e0f7fa" stroke="#00acc1" stroke-width="1"/>
+  <text x="418" y="1014" font-size="8.5" fill="#546e7a">Gemini Live</text>
+  <rect x="478" y="1003" width="12" height="12" rx="2" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="1"/>
+  <text x="494" y="1014" font-size="8.5" fill="#546e7a">Vertex AI</text>
 
-  <!-- Version note -->
-  <text x="1480" y="860" text-anchor="end" font-size="8" fill="#9e9e9e">TaleWeaver Architecture · v2026.03</text>
+  <text x="1900" y="1030" text-anchor="end" font-size="8" fill="#9e9e9e">TaleWeaver Architecture · v2026.03</text>
 
 </svg>

@@ -8,6 +8,7 @@ from google import genai
 from google.genai import types
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from characters import get_character
 
 router = APIRouter()
 
@@ -353,6 +354,7 @@ class StoryRecapRequest(BaseModel):
     image_style: str
     scenes: list[RecapScene] = []        # preferred: actual session images
     scene_descriptions: list[str] = []  # legacy fallback (ignored when scenes provided)
+    narrations: list[str] = []          # pre-built narrations from transcript — skip LLM narration when provided
 
 
 class StoryRecapResponse(BaseModel):
@@ -447,21 +449,78 @@ async def generate_story_recap(request: StoryRecapRequest):
     if not scenes:
         raise HTTPException(status_code=400, detail="No scene images provided.")
 
-    print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
-
-    # Generate title + all narrations in parallel
-    all_results = await asyncio.gather(
-        _generate_title(scenes, request.character_name),
-        *[_narrate_scene(s, request.character_name) for s in scenes],
-        return_exceptions=True,
-    )
-
-    title = all_results[0] if isinstance(all_results[0], str) else f"A Story with {request.character_name}"
-    narration_results = all_results[1:]
-    narrations = [
-        r if isinstance(r, str) else (scene.description or "And the adventure continued…")
-        for r, scene in zip(narration_results, scenes)
-    ]
+    if request.narrations:
+        # Narrations already built from transcript — just generate a title
+        print(f"[story-recap] Title-only for {request.character_name} ({len(scenes)} scenes, narrations pre-built)")
+        title = await _generate_title(scenes, request.character_name)
+        narrations = request.narrations
+    else:
+        # Legacy path: no pre-built narrations — generate them via LLM (serialized to avoid 429)
+        print(f"[story-recap] Narrating {len(scenes)} actual scene images for {request.character_name}")
+        title = await _generate_title(scenes, request.character_name)
+        narrations = []
+        for s in scenes:
+            narrations.append(await _narrate_scene(s, request.character_name))
 
     print(f"[story-recap] Done — title: {title!r}, {len(narrations)} narrations for {request.character_name}")
     return StoryRecapResponse(title=title, narrations=narrations)
+
+
+# ── Character TTS ───────────────────────────────────────────────────────────────
+
+class TTSRequest(BaseModel):
+    text: str
+    character_id: str
+
+
+class TTSResponse(BaseModel):
+    audio_data: str   # base64 PCM16 at 24kHz
+    mime_type: str    # e.g. "audio/pcm;rate=24000"
+
+
+@router.post("/api/tts", response_model=TTSResponse)
+async def character_tts(request: TTSRequest):
+    """
+    Generate a short character voice line using Gemini's audio generation.
+    Uses the same voice name as the character's Gemini Live narrator.
+    """
+    if not _api_key_client:
+        raise HTTPException(status_code=503, detail="TTS not available — GEMINI_API_KEY not set")
+
+    character = get_character(request.character_id)
+    voice_name = character.voice_name if character else "Kore"
+
+    print(f"[tts] Generating for character={request.character_id}, voice={voice_name}")
+
+    try:
+        response = await asyncio.wait_for(
+            _api_key_client.aio.models.generate_content(
+                model="gemini-2.5-flash-preview-tts",
+                contents=request.text,
+                config=types.GenerateContentConfig(
+                    response_modalities=["AUDIO"],
+                    speech_config=types.SpeechConfig(
+                        voice_config=types.VoiceConfig(
+                            prebuilt_voice_config=types.PrebuiltVoiceConfig(
+                                voice_name=voice_name,
+                            )
+                        )
+                    ),
+                ),
+            ),
+            timeout=15.0,
+        )
+        for part in response.candidates[0].content.parts:
+            if part.inline_data and part.inline_data.data:
+                audio_b64 = base64.b64encode(part.inline_data.data).decode()
+                mime = part.inline_data.mime_type or "audio/pcm;rate=24000"
+                print(f"[tts] Done — {len(audio_b64)} chars, mime={mime}")
+                return TTSResponse(audio_data=audio_b64, mime_type=mime)
+        raise HTTPException(status_code=500, detail="No audio in TTS response")
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="TTS timed out")
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[tts] Error: {e}")
+        raise HTTPException(status_code=500, detail="TTS generation failed")

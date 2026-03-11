@@ -9,7 +9,7 @@ interface Props {
   character: Character;
   onBack: () => void;
   onHome: () => void;
-  onConfirm: (theme: string, propImage?: string, propDescription?: string) => void;
+  onConfirm: (theme: string, propImage?: string, propDescription?: string, propImageMimeType?: string) => void;
 }
 
 /* ── Theme tiles ── */
@@ -341,7 +341,7 @@ const CameraViewfinder = ({ onCapture }: { onCapture: (dataUrl: string) => void 
         <>
           <div className="relative w-full max-w-md aspect-[4/3] rounded-2xl overflow-hidden border-2 border-dashed border-primary/50 bg-card/40">
             <div className="absolute inset-0 rounded-2xl overflow-hidden">
-              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: facingMode === "user" ? "scaleX(-1)" : "none" }} />
+              <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: "scaleX(-1)" }} />
             </div>
             {/* Flip camera button */}
             <button
@@ -405,6 +405,38 @@ const OPTION_CARDS: { id: OptionId; emoji: string; title: string; description: s
   { id: "sketch", emoji: "✏️", title: "Sketch a Theme",  description: "Draw whatever's in your head — I'll bring it to life as your story!" },
 ];
 
+/* ── Character voice announcement via Gemini TTS ── */
+async function playCharacterTTS(text: string, characterId: string) {
+  try {
+    const res = await fetch(`${API_BASE}/api/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text, character_id: characterId }),
+    });
+    if (!res.ok) return;
+    const data: { audio_data: string; mime_type: string } = await res.json();
+
+    // Decode PCM16 → Float32 and play via AudioContext (same path as story playback)
+    const audioCtx = new AudioContext({ sampleRate: 24000 });
+    await audioCtx.resume();
+    const binary = atob(data.audio_data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const int16 = new Int16Array(bytes.buffer);
+    const float32 = new Float32Array(int16.length);
+    for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+    const audioBuffer = audioCtx.createBuffer(1, float32.length, 24000);
+    audioBuffer.getChannelData(0).set(float32);
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioCtx.destination);
+    source.start();
+    source.onended = () => audioCtx.close();
+  } catch {
+    // TTS failed — silently continue, image is already showing
+  }
+}
+
 /* ── Main screen ── */
 const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
   const [expanded, setExpanded] = useState<OptionId | null>(null);
@@ -442,7 +474,7 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
   const canConfirmPick   = !!(selectedTheme || customText.trim());
   const canConfirmSketch = !!sketchImage && !sketchPreview?.loading;
 
-  async function callPreviewAPI(imageData: string, setter: (p: Preview | null) => void) {
+  async function callPreviewAPI(imageData: string, setter: (p: Preview | null) => void, mode: "camera" | "sketch") {
     setter({ loading: true, label: null, imageData: null, mimeType: "" });
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 50_000);
@@ -465,6 +497,14 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
       }
       const data = await res.json();
       setter({ loading: false, label: data.label, imageData: data.image_data, mimeType: data.mime_type });
+      // Speak out loud in the character's voice as soon as the object is identified
+      if (data.label) {
+        const action = mode === "camera" ? "brought" : "drew";
+        playCharacterTTS(
+          `Oh wow, you ${action} ${data.label}! Let me bring it to life in your story!`,
+          character.id,
+        );
+      }
     } catch (err) {
       console.error("[preview] failed:", err);
       setter({ loading: false, label: null, imageData: null, mimeType: "" });
@@ -473,8 +513,8 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
     }
   }
 
-  const handleSketchPreview = () => sketchImage && callPreviewAPI(sketchImage, setSketchPreview);
-  const handleCameraCapture = (base64: string) => { setCapturedImage(base64); callPreviewAPI(base64, setCameraPreview); };
+  const handleSketchPreview = () => sketchImage && callPreviewAPI(sketchImage, setSketchPreview, "sketch");
+  const handleCameraCapture = (base64: string) => { setCapturedImage(base64); callPreviewAPI(base64, setCameraPreview, "camera"); };
 
   const handleGo = async () => {
     if (expanded === "pick") {
@@ -503,9 +543,9 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
       setContentWarning(null);
       onConfirm(text || selectedTheme || "");
     } else if (expanded === "camera" && cameraPreview?.imageData) {
-      onConfirm("camera_prop", cameraPreview.imageData, cameraPreview.label ?? undefined);
+      onConfirm("camera_prop", cameraPreview.imageData, cameraPreview.label ?? undefined, cameraPreview.mimeType || "image/jpeg");
     } else if (expanded === "sketch" && sketchPreview?.imageData) {
-      onConfirm("sketch", sketchPreview.imageData, sketchPreview.label ?? undefined);
+      onConfirm("sketch", sketchPreview.imageData, sketchPreview.label ?? undefined, sketchPreview.mimeType || "image/jpeg");
     }
   };
 
@@ -520,12 +560,18 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
           animate={{ opacity: 1, y: 0 }}
           className="flex items-center justify-between mb-4"
         >
-          <div className="flex-1">
+          <div className="flex-1 flex items-center gap-4">
             <button
               onClick={handleBack}
               className="text-muted-foreground hover:text-foreground font-body transition-colors"
             >
               ← Back
+            </button>
+            <button
+              onClick={onHome}
+              className="text-muted-foreground hover:text-foreground font-body transition-colors"
+            >
+              Home
             </button>
           </div>
           <h1 className="font-display text-lg sm:text-xl font-bold text-primary">TaleWeaver</h1>
@@ -535,13 +581,6 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
               <img src={character.image} alt={character.name} className="w-full h-full object-cover" />
             </div>
             <span className="font-body text-sm text-foreground hidden sm:inline">{character.name}</span>
-            <button
-              onClick={onHome}
-              className="text-muted-foreground hover:text-foreground font-body transition-colors text-lg"
-              title="Go home"
-            >
-              🏠
-            </button>
           </div>
         </motion.div>
 

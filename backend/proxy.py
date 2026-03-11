@@ -82,6 +82,7 @@ async def run_proxy_session(
     session_id: str,
     theme: str | None = None,
     prop_image: str | None = None,
+    prop_description: str | None = None,
 ) -> None:
     """
     Establishes a Gemini Live API session for a character and proxies it to the browser.
@@ -149,19 +150,37 @@ async def run_proxy_session(
 
             print(f"[proxy] Session ready for {character.name} (session: {session_id})")
 
-            # Kick off the story from the backend before the proxy starts.
-            # Sending directly to Gemini here (not via the browser proxy) is
-            # more reliable than waiting for the frontend to send "Begin!" —
-            # especially with proactive_audio, Gemini responds immediately.
+            # Start bidirectional proxy
+            browser_to_gemini = asyncio.create_task(
+                proxy_browser_to_gemini(browser_ws, gemini_ws)
+            )
+            gemini_to_browser = asyncio.create_task(
+                proxy_gemini_to_browser(gemini_ws, browser_ws)
+            )
+
+            # Yield one event-loop tick so both proxy tasks start and
+            # gemini_to_browser is already awaiting messages before we
+            # send Begin! — this ensures Gemini's audio response is
+            # forwarded to the browser immediately as it arrives.
+            await asyncio.sleep(0)
+
             begin_parts: list = []
             if theme in ("camera_prop", "sketch") and prop_image:
-                image_text = (
-                    "The story is about the object in this image — keep it as the main character. "
-                    "IMPORTANT: When you call generate_illustration, describe only the object as a "
-                    "living story character in its story world — NEVER describe a child or person holding it."
-                    if theme == "camera_prop"
-                    else "The story is about the subject of this drawing — keep that character as the hero."
-                )
+                char_intro = f"This is {prop_description}. " if prop_description else ""
+                if theme == "camera_prop":
+                    image_text = (
+                        f"Begin! {char_intro}This is the hero of our story — the character the child brought. "
+                        f"Start the story RIGHT NOW. Your very first sentence must name and introduce "
+                        f"{'them' if not prop_description else prop_description} as the main character. "
+                        "IMPORTANT: When you call generate_illustration, describe the character in their "
+                        "story world — NEVER describe a child or a hand holding the object."
+                    )
+                else:
+                    image_text = (
+                        f"Begin! {char_intro}This is the hero of our story — the character the child drew. "
+                        f"Start the story RIGHT NOW. Your very first sentence must name and introduce "
+                        f"{'them' if not prop_description else prop_description} as the main character."
+                    )
                 begin_parts = [
                     {"inline_data": {"mime_type": "image/jpeg", "data": prop_image}},
                     {"text": image_text},
@@ -181,14 +200,7 @@ async def run_proxy_session(
                     "turn_complete": True,
                 }
             }))
-
-            # Start bidirectional proxy
-            browser_to_gemini = asyncio.create_task(
-                proxy_browser_to_gemini(browser_ws, gemini_ws)
-            )
-            gemini_to_browser = asyncio.create_task(
-                proxy_gemini_to_browser(gemini_ws, browser_ws)
-            )
+            print(f"[proxy] Sent Begin! to Gemini for session {session_id}")
 
             SESSION_TIMEOUT = 900  # 15 minutes
             done, pending = await asyncio.wait(
