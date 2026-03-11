@@ -32,6 +32,7 @@ steps:
       - --memory=1Gi
       - --cpu=2
       - --concurrency=80
+      - --min-instances=1
       - --set-env-vars=GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GOOGLE_CLOUD_LOCATION=us-central1,IMAGE_MODEL=gemini-3.1-flash-image-preview,IMAGE_LOCATION=global
       - --update-secrets=GEMINI_API_KEY=gemini-api-key:latest
       - --project=$PROJECT_ID
