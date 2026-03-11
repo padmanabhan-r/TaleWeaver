@@ -75,7 +75,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
     <div className="relative min-h-screen bg-sky-gradient overflow-hidden">
       <FloatingElements />
 
-      <div className="relative z-10 container mx-auto px-4 py-3 sm:py-5">
+      <div className="relative z-10 container mx-auto px-4 py-1 sm:py-2">
         {/* Home button */}
         {onBack && (
           <motion.button
@@ -92,7 +92,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-10"
+          className="text-center mb-6"
         >
           <h1 className="font-display text-3xl sm:text-5xl font-extrabold text-primary mb-2">
             Choose Your Storyteller
