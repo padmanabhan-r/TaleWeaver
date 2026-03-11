@@ -41,8 +41,8 @@ Turn your child's screen time into something genuinely fun and creative — a re
 | Conversation | `gemini-live-2.5-flash-native-audio` via Vertex AI |
 | Story pre-warm | `gemini-2.5-flash-lite` — generates plan + opening + scene in one call |
 | Content moderation | `gemini-2.5-flash-lite` — safety-checks themes, sketches, and camera props |
-| Image generation | `gemini-2.0-flash-preview-image-generation` — raw narration passed directly, no extraction step |
-| Story recap title | `gemini-2.5-flash-lite` — generates a 4–6 word storybook title from the opening image |
+| Image generation | `gemini-3.1-flash-image-preview` — raw narration passed directly, no extraction step |
+| Story recap | `gemini-2.5-flash-lite` — generates storybook title + per-scene narrations from scene images (all in parallel) |
 | Backend | Python 3.13 + FastAPI + WebSocket |
 | Frontend | React 19 + Vite + TailwindCSS v3 + TypeScript + Framer Motion |
 | Audio I/O | Web Audio API + AudioWorklet (16kHz capture); `AudioBufferSourceNode` scheduling (24kHz playback) |
@@ -114,7 +114,7 @@ Child opens app → Landing page (ambient music, floating animations)
         Option C: Sketch a Theme — draw on canvas (19 colours) → AI recreates drawing
                   → confirm illustrated version → start story
 
-    → POST /api/story-opening → Flash Lite (single call)
+    → POST /api/story-opening → Flash Lite (single gemini-2.5-flash-lite call)
         → generates story plan + opening line + visual scene description
         → image model generates first illustration from scene
         → all three are coherent (same characters, setting, plot)
@@ -153,11 +153,11 @@ Child interrupts (barge-in)
     → Gemini weaves child's words into the next story beat
 
 Session ends (child says stop or presses End Story)
-    → Story auto-saved to localStorage with all images + narrations from transcript
+    → Story auto-saved to localStorage with all images
     → "📖 See our story!" button appears
-    → POST /api/story-recap with session images + transcript narrations
-        → single Flash Lite call generates storybook title from opening image
-        → narrations come directly from transcript (no extra LLM calls)
+    → POST /api/story-recap with all session images
+        → gemini-2.5-flash-lite generates title (from first image) + narrations (from each image) in parallel
+        → one 2-sentence narration generated per scene image, in the character's voice
     → StoryRecapModal renders scrollable storybook
 
 Past Adventures
@@ -212,7 +212,7 @@ pip install -r requirements.txt
 export GOOGLE_CLOUD_PROJECT=your-project-id
 export GOOGLE_CLOUD_LOCATION=us-central1
 export GOOGLE_GENAI_USE_VERTEXAI=true
-export IMAGE_MODEL=gemini-2.0-flash-preview-image-generation
+export IMAGE_MODEL=gemini-3.1-flash-image-preview
 export IMAGE_LOCATION=global
 export GEMINI_API_KEY=your-gemini-api-key
 
@@ -246,7 +246,7 @@ Browser (React)
   ├── WebSocket /ws/story ───────→ Backend → Gemini Live API (Vertex AI)
   │     bidirectional audio/text proxy; no audio stored server-side
   ├── POST /api/image ───────────→ Backend → Gemini image gen
-  └── POST /api/story-recap ─────→ Backend → Flash Lite (title only; narrations from transcript)
+  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations from images, parallel)
 ```
 
 ### Begin! timing (critical path)
@@ -276,15 +276,16 @@ Each call passes the previous image as reference for visual continuity.
 
 ### Story Recap
 
-- Narrations come from the **story transcript** stored with each scene at session-save time — zero LLM calls for narration
-- Only the **storybook title** requires a Flash Lite call (1 LLM call total, regardless of scene count)
-- Eliminates the 429 RESOURCE_EXHAUSTED errors from 11-parallel narration calls
+- `POST /api/story-recap` sends all session images to `gemini-2.5-flash-lite`
+- Title generation (from first image) + all per-scene narrations run in **parallel** (`asyncio.gather`)
+- Each narration is 2 sentences generated from the scene image in the character's storytelling voice
+- Original session images are reused — no new images generated during recap
 
 ### Deployment
 
 - Single Cloud Run service — multi-stage Docker: Node 22 builds React, Python 3.13 serves API + static files
-- uvicorn with `--timeout-graceful-shutdown 25` — cleanly closes WebSocket sessions on SIGTERM before Cloud Run's 30 s SIGKILL
-- CI/CD: push to `main` → Cloud Build → Artifact Registry → Cloud Run
+- uvicorn with `--loop uvloop --http h11 --workers 1` — single worker, optimised for async I/O
+- CI/CD: push to `main` → Cloud Build → Artifact Registry → Cloud Run (`cloudbuild.yaml`)
 - Secrets: `GEMINI_API_KEY` from Secret Manager; GCP auth via Application Default Credentials
 
 ---
@@ -303,7 +304,7 @@ Set credentials for local Vertex AI access:
 gcloud auth application-default login
 export GOOGLE_CLOUD_PROJECT=your-project-id
 export GOOGLE_CLOUD_LOCATION=us-central1
-export IMAGE_MODEL=gemini-2.0-flash-preview-image-generation
+export IMAGE_MODEL=gemini-3.1-flash-image-preview
 export IMAGE_LOCATION=global
 export GEMINI_API_KEY=your_key_here
 ```
