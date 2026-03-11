@@ -34,9 +34,11 @@
 
   <!-- User -->
   <g id="user-group">
-    <circle cx="90" cy="245" r="18" fill="#e0e7ff" stroke="#4f46e5" stroke-width="2" />
-    <path d="M 90 236 A 6 6 0 1 0 90 224 A 6 6 0 1 0 90 236 Z" fill="#4f46e5" />
-    <path d="M 75 258 C 75 240, 105 240, 105 258 Z" fill="#4f46e5" />
+    <circle cx="90" cy="245" r="22" fill="#e0e7ff" stroke="#4f46e5" stroke-width="1.5" />
+    <!-- Head -->
+    <circle cx="90" cy="238" r="7" fill="#4f46e5" />
+    <!-- Shoulders -->
+    <path d="M 76 260 Q 76 249 90 249 Q 104 249 104 260 Z" fill="#4f46e5" />
     <text x="90" y="285" class="title" font-size="14" text-anchor="middle" fill="#0f172a">Child</text>
     <text x="90" y="305" font-size="12" text-anchor="middle" fill="#475569">TaleWeaver Web App</text>
     <path d="M 140 250 L 230 250" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" />
@@ -156,20 +158,17 @@
   <!-- Arrows: backend (right edge x=860) → Gemini services (left edge x=1040) — 180px gap -->
 
   <!-- → Gemini Live (realtime voice) -->
-  <path d="M 860 205 L 1050 205" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" />
-  <rect x="868" y="184" width="116" height="30" fill="#ffffff" />
-  <text x="950" y="195" class="label-bold" text-anchor="middle" fill="#7e22ce">Realtime storytelling</text>
-  <text x="950" y="209" class="label" text-anchor="middle">Live voice session</text>
+  <text x="950" y="188" class="label-bold" text-anchor="middle" fill="#7e22ce">Realtime storytelling</text>
+  <text x="950" y="201" class="label" text-anchor="middle">Live voice session</text>
+  <path d="M 860 208 L 1050 208" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" />
 
   <!-- → Flash Lite (moderation + recap) -->
   <path d="M 860 390 C 950 390, 950 505, 1050 505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
-  <rect x="868" y="415" width="120" height="30" fill="#ffffff" />
-  <text x="950" y="426" class="label-bold" text-anchor="middle" fill="#7e22ce">Moderation + recap</text>
-  <text x="950" y="440" class="label" text-anchor="middle">safety + captions</text>
+  <text x="875" y="412" class="label-bold" fill="#7e22ce">Moderation + recap</text>
+  <text x="875" y="426" class="label" fill="#64748b">safety + captions</text>
 
   <!-- → Flash TTS (character voice) -->
   <path d="M 860 460 C 960 460, 960 635, 1050 635" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
-  <rect x="868" y="530" width="110" height="18" fill="#ffffff" />
-  <text x="950" y="543" class="label-bold" text-anchor="middle" fill="#7e22ce">Character voice</text>
+  <text x="875" y="482" class="label-bold" fill="#7e22ce">Character voice</text>
 
 </svg>
