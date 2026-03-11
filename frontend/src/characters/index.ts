@@ -73,7 +73,7 @@ export const CHARACTERS: Character[] = [
     id: "rajkumari",
     name: "Rajkumari Meera",
     language: "English",
-    tagline: "Indian tales in English",
+    tagline: "Indian tales · Indian accent",
     description: "A graceful Indian princess with Panchatantra tales in English",
     image: rajkumariImg,
     greeting: "Namaste! Come, let me tell you a wonderful story!",

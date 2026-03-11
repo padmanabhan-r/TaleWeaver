@@ -153,7 +153,7 @@ Children get a scrollable storybook with title, illustrated scenes, narration ca
 | Fairy Flora | English | Enchanted fairy tales |
 | Captain Coco | English | Pirate adventures |
 | Robo Ricky | English | Sci-fi robot stories |
-| Rajkumari Meera | English | Indian folk tales |
+| Rajkumari Meera | English (Indian accent) | Indian folk tales |
 | Dadi Maa | Hindi | Traditional bedtime stories |
 | Raja Vikram | Tamil | Legendary Tamil tales |
 | Yé Ye | Mandarin | Wise storytelling |
