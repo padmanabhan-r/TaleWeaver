@@ -10,11 +10,21 @@ Using **Gemini Live**, the storyteller speaks, listens, adapts to interruptions,
 
 Kids don't just listen to a story — **they shape it.**
 
+<p align="center">
+  <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="800"/>
+</p>
+
 ---
 
 # The Experience
 
 Children start a story in **three magical ways**:
+
+<p align="center">
+  <img src="images/2. Pick mode.png" alt="Choose How to Start" width="800"/>
+</p>
+
+---
 
 ### 1. Pick a Theme
 
@@ -29,6 +39,10 @@ Choose from adventure themes or life-skills topics like:
 - Gratitude
 
 Or type **anything their imagination invents**.
+
+<p align="center">
+  <img src="images/3. Pick a theme.png" alt="Pick a Theme" width="800"/>
+</p>
 
 ---
 
@@ -50,6 +64,11 @@ Stuffed bear   → Sleepy forest explorer
 LEGO rocket    → Galactic rescue pilot
 ```
 
+<p align="center">
+  <img src="images/4. Magic camera - photo.png" alt="Magic Camera - Photo" width="400"/>
+  <img src="images/5. Magic camera - image.png" alt="Magic Camera - Illustrated" width="400"/>
+</p>
+
 ---
 
 ### 3. Sketch a Theme
@@ -59,6 +78,11 @@ Kids can **draw anything** on a canvas.
 The AI turns the drawing into a **storybook illustration** and starts a story around it.
 
 Draw a robot, a dragon, a castle, a flying whale — and watch it come to life.
+
+<p align="center">
+  <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="400"/>
+  <img src="images/7. Sketch - image.png" alt="Sketch - Illustrated" width="400"/>
+</p>
 
 ---
 
@@ -146,56 +170,8 @@ Children get a scrollable storybook with title, illustrated scenes, narration ca
 
 Each storyteller **always speaks in their own language**.
 
----
-
-# Screenshots
-
-### Landing Page
-
-<p align="center">
-  <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="800"/>
-</p>
-
----
-
-### Choose Your Storyteller
-
 <p align="center">
   <img src="images/1. Choose Storyteller.png" alt="Choose Your Storyteller" width="800"/>
-</p>
-
----
-
-### Choose How to Start
-
-<p align="center">
-  <img src="images/2. Pick mode.png" alt="Choose How to Start" width="800"/>
-</p>
-
----
-
-### Pick a Theme
-
-<p align="center">
-  <img src="images/3. Pick a theme.png" alt="Pick a Theme" width="800"/>
-</p>
-
----
-
-### Magic Camera — Capture a Prop & See It Reimagined
-
-<p align="center">
-  <img src="images/4. Magic camera - photo.png" alt="Magic Camera - Photo" width="400"/>
-  <img src="images/5. Magic camera - image.png" alt="Magic Camera - Illustrated" width="400"/>
-</p>
-
----
-
-### Sketch a Theme — Draw & See It Come to Life
-
-<p align="center">
-  <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="400"/>
-  <img src="images/7. Sketch - image.png" alt="Sketch - Illustrated" width="400"/>
 </p>
 
 ---
