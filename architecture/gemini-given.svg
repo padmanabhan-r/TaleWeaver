@@ -179,6 +179,7 @@
 
   <!-- → Flash TTS (character voice): L-shape from bottom of backend box -->
   <path d="M 750 490 L 750 635 L 1050 635" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
-  <text x="758" y="572" class="label-bold" fill="#7e22ce">Character voice</text>
+  <text x="758" y="565" class="label-bold" fill="#7e22ce">Speaks prop /</text>
+  <text x="758" y="578" class="label-bold" fill="#7e22ce">sketch label aloud</text>
 
 </svg>
