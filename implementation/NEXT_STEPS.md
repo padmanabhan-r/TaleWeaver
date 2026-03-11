@@ -1,5 +1,5 @@
 # TaleWeaver — Next Steps
-### Updated 9 Mar 2026
+### Updated 11 Mar 2026
 
 ---
 
@@ -7,10 +7,9 @@
 
 | Feature | Notes |
 |---|---|
-| ~~Story Branching~~  | **Removed** — appeared randomly, disappeared randomly; all branching now via voice |
-| ✅ Badge System (7.4) | `awardBadge` tool + `BadgePopup` centred on screen, 3s auto-dismiss |
+| ✅ Badge System (7.4) | `awardBadge` tool + `BadgePopup` centred on screen, 3s auto-dismiss, max 2/session |
 | ✅ Sketch a Theme | Drawing canvas (19 colours) → `/api/sketch-preview` → AI recreates → confirm & start |
-| ✅ Content Moderation | `/api/check-theme`, safety check on sketch label, camera label; friendly block message |
+| ✅ Content Moderation | `/api/check-theme`, safety check on sketch label and camera label; friendly block message |
 | ✅ Life Skills Themes | 5 life-skill tiles in ThemeSelect (Sharing, Courage, Gratitude, Creativity, Kindness) |
 | ✅ Custom domain | `taleweaver.online` mapped to Cloud Run; added to CORS allowlist |
 | ✅ Unlimited scenes | `MAX_SCENES = Infinity` — image generation continues for entire session |
@@ -72,6 +71,8 @@ RUN uv sync --frozen --no-dev
 
 | Item | Notes |
 |---|---|
-| **Story Director Agent (Phase A)** | Full ADK `run_live()` replacement for `proxy.py` — tools fire as Python functions, images pushed via WS. High risk; deferred post-hackathon. See `NEW_PLAN.md` Phase A for design. |
+| **Cloud Storage for images** | Upload to GCS for persistence beyond localStorage; signed URLs for SPA rendering |
+| **User accounts** | Required for cross-device story gallery |
+| **Story Director Agent (Phase A)** | Full ADK `run_live()` replacement for `proxy.py` — tools fire as Python functions, images pushed via WS. High risk; deferred post-hackathon. See `NEW_PLAN.md`. |
 | OpenTelemetry observability | Structured traces to Cloud Trace |
-| User accounts | Required for cross-device story gallery |
+| uv package manager | `pyproject.toml` and `uv.lock` exist at repo root; just wire Dockerfile |
