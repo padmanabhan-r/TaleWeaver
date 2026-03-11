@@ -1,5 +1,5 @@
 # TaleWeaver — Next Steps
-### Updated 9 Mar 2026
+### Updated 11 Mar 2026
 
 ---
 
@@ -7,64 +7,30 @@
 
 | Feature | Notes |
 |---|---|
-| ~~Story Branching~~  | **Removed** — appeared randomly, disappeared randomly; all branching now via voice |
-| ✅ Badge System (7.4) | `awardBadge` tool + `BadgePopup` centred on screen, 3s auto-dismiss |
+| ✅ Badge System (7.4) | `awardBadge` tool + `BadgePopup` centred on screen, 3s auto-dismiss, max 2/session |
 | ✅ Sketch a Theme | Drawing canvas (19 colours) → `/api/sketch-preview` → AI recreates → confirm & start |
-| ✅ Content Moderation | `/api/check-theme`, safety check on sketch label, camera label; friendly block message |
+| ✅ Content Moderation | `/api/check-theme`, safety check on sketch label and camera label; friendly block message |
 | ✅ Life Skills Themes | 5 life-skill tiles in ThemeSelect (Sharing, Courage, Gratitude, Creativity, Kindness) |
 | ✅ Custom domain | `taleweaver.online` mapped to Cloud Run; added to CORS allowlist |
 | ✅ Unlimited scenes | `MAX_SCENES = Infinity` — image generation continues for entire session |
 | ✅ NEVER-END story rule | System prompt explicitly forbids Gemini from ending the story unprompted |
 | ✅ Story pre-warm | `POST /api/story-opening` generates opening + first image before Begin is clicked; canvas never blank |
-| ✅ Server-side image trigger | `generate_illustration` tool call → `forceImageGeneration` bypasses rate limit + skips Flash Lite extraction |
-| ✅ **Story Planner ADK Agent** | `backend/story_planner.py` — `google.adk LlmAgent` + `Runner` + `InMemorySessionService`; `POST /api/story-plan` generates structured 4-beat story plan before session starts; returns `opening_text` hint injected into WebSocket init |
-| ✅ **Story Recap (Interleaved Output)** | `backend/image_gen.py` — `POST /api/story-recap` uses `response_modalities=["TEXT","IMAGE"]`; single Gemini call produces alternating text paragraphs + illustrations; satisfies Creative Storyteller hackathon mandatory requirement |
-| ✅ **StoryRecapModal** | `frontend/src/components/StoryRecapModal.tsx` — modal launched from "📖 See our story!" button in `sessionState === "ended"`; renders interleaved pages in a scrollable storybook layout |
-| ✅ **Recap uses session images** | Recap now passes actual base64 session images to Gemini for narration — no new image generation, no hallucination. Parallel `_narrate_scene()` calls via `asyncio.gather`. |
-| ✅ **Movement Challenges (7.2)** | Physical challenges in system prompt every ~60s (was: once per story). Character instructs child to jump/spin/roar; camera stream lets Gemini visually confirm and react. |
-| ✅ **Opening image timing** | Prewarm image stored in `prewarmImageRef`, seeded into canvas only when "Begin" is clicked via `handleBegin()` — not before. |
-| ✅ **Opening image ↔ story match** | `_begin_turns()` injects `opening_text` as a fake model turn so Gemini Live continues naturally from Flash Lite's opening, matching the image shown on screen. |
-| ✅ **ThemeSelect responsiveness** | `goLoading` state shows "Checking… ✨" immediately on custom theme submit — no frozen button during `/api/check-theme` call. |
-| ✅ **Audio garbling fix** | Replaced AudioWorklet queue with `AudioBufferSourceNode` scheduling — each chunk scheduled to start exactly when the previous ends using `audioContext.currentTime`. Gemini streams 30s of audio in 5s; it just schedules into the future. No queue overflow, no garbling. `frontend/src/hooks/useLiveAPI.ts` |
-| ✅ **WebSocket 30s drop fix** | Disabled standard WebSocket ping frames (`ping_interval=None`) — Gemini Live API does not respond to WS pings, causing 1006 drops. `backend/proxy.py` |
-| ✅ **AudioContext suspension fix** | `audioContext.resume()` now awaited in `initPlayback()` — first chunks no longer scheduled on a frozen timeline. `frontend/src/hooks/useLiveAPI.ts` |
-| ✅ **"Begin!" moved to backend** | Kick-off message sent directly to Gemini before bidirectional proxy starts, preventing mic audio from racing with the first response. `backend/proxy.py` |
-| ✅ **Removed participation challenges** | Challenges removed entirely — non-verbal actions (clapping, roaring) are below VAD threshold with `START_SENSITIVITY_LOW`; combined with `proactive_audio` the model never waited reliably. `backend/characters.py` |
-| ✅ **Removed camera during storytelling** | Camera caused model to stop and say "I see you!" mid-story, breaking narrative flow. Removed from `StoryScreen` entirely. `frontend/src/screens/StoryScreen.tsx`, `frontend/src/hooks/useLiveAPI.ts` |
-| ✅ **Simplified badge system** | Badges now awarded only for spontaneous child creativity (max 2/session). No challenge-completion badges. `backend/characters.py` |
-| ✅ **Story continuity** | `clearBuffer()` removed from `awardBadge` handler. Added "NEVER restart mid-session" system prompt rule. Audio no longer cut mid-sentence on badge award. |
-| ✅ **Long-form narration** | System prompt instructs model to speak in 5–7 sentence sustained flows like an audiobook narrator, reducing perceived pause frequency. `backend/characters.py` |
-| ✅ **challenges.md** | New living doc at `implementation/challenges.md` — 9 hard-won lessons with symptom, root cause, fix, and file references. |
-
----
-
-## Next Up
-
-### Phase 10A — Cloud Storage for Images
-Currently images are base64 in HTTP response body. Upload to GCS for persistence.
-
-- Upload to `gs://taleweaver-images/{session_id}/{timestamp}.png`
-- Return signed URL (1hr TTL) → frontend renders `<img src={signedUrl} />`
-- Prerequisite for Story Gallery
-
-### Phase 10B — Story Gallery
-After session ends, save and display past stories on the landing page.
-
-- Gemini generates 5-word title on session end
-- Save `{ title, character, imageUrls[], timestamp }` to localStorage
-- "Your Stories" grid on landing page
-
----
-
-## Lower Priority / Future
-
-### uv Package Manager
-`pyproject.toml` and `uv.lock` already exist at repo root. Just wire the Dockerfile.
-
-```dockerfile
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
-RUN uv sync --frozen --no-dev
-```
+| ✅ Server-side image trigger | `generate_illustration` tool call → `forceImageGeneration` bypasses rate limit + skips extraction step |
+| ✅ Story Recap | `POST /api/story-recap` uses actual session images; single Flash Lite call for title; narrations from transcript |
+| ✅ StoryRecapModal | Scrollable storybook layout launched from "📖 See our story!" button |
+| ✅ **Past Adventures gallery** | Auto-saves every session to localStorage; "Past Adventures" button on landing page; opens as illustrated storybook |
+| ✅ **Begin! timing fix** | `await asyncio.sleep(0)` after creating proxy tasks ensures `gemini_to_browser` is in its event-loop before Begin! is sent — Gemini's first audio is never lost |
+| ✅ **Recap 429 fix** | Narrations now come from story transcript stored at session-save time; `/api/story-recap` only makes 1 LLM call (title); eliminated parallel narration requests that caused RESOURCE_EXHAUSTED |
+| ✅ **Description storage** | Scene descriptions stored at 500 chars (up from 100) so recap narrations have meaningful text |
+| ✅ **Anti-repetition** | System prompt: model must never re-exclaim on subsequent turns; must never re-introduce itself mid-story; if child goes silent, keep narrating instead of meta-commentary |
+| ✅ **Language guardrail** | Non-English characters must never switch to English regardless of child's request; enforced in system prompt |
+| ✅ **generate_illustration guard** | Tool must not be called during meta-commentary — only during active story narration |
+| ✅ **Audio garbling fix** | Replaced AudioWorklet queue with `AudioBufferSourceNode` scheduling — chunks scheduled at `max(currentTime, nextStartTime)` |
+| ✅ **AudioContext suspension fix** | Context resumed after `getUserMedia()` resolves; ensures first audio chunks play immediately (Safari) |
+| ✅ **WebSocket 30s drop fix** | `ping_interval=None` on Gemini WebSocket — Gemini Live doesn't respond to WS pings |
+| ✅ **Graceful shutdown** | `--timeout-graceful-shutdown 25` in uvicorn CMD — Cloud Run SIGTERM sends clean close frames within 30s grace window |
+| ✅ **Long-form narration** | System prompt: 5–7 sentence sustained flows; no stopping after 1–2 sentences |
+| ✅ **challenges.md** | Living doc at `implementation/challenges.md` — hard-won lessons with symptom/root cause/fix |
 
 ---
 
@@ -72,6 +38,8 @@ RUN uv sync --frozen --no-dev
 
 | Item | Notes |
 |---|---|
-| **Story Director Agent (Phase A)** | Full ADK `run_live()` replacement for `proxy.py` — tools fire as Python functions, images pushed via WS. High risk; deferred post-hackathon. See `NEW_PLAN.md` Phase A for design. |
+| **Cloud Storage for images** | Upload to GCS for persistence beyond localStorage; signed URLs for SPA rendering |
+| **User accounts** | Required for cross-device story gallery |
+| **Story Director Agent (Phase A)** | Full ADK `run_live()` replacement for `proxy.py` — tools fire as Python functions, images pushed via WS. High risk; deferred post-hackathon. See `NEW_PLAN.md`. |
 | OpenTelemetry observability | Structured traces to Cloud Trace |
-| User accounts | Required for cross-device story gallery |
+| uv package manager | `pyproject.toml` and `uv.lock` exist at repo root; just wire Dockerfile |
