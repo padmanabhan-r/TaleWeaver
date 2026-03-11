@@ -120,9 +120,10 @@
       <text x="1075" y="195" class="bullet">• Real-time voice conversation</text>
       <text x="1075" y="215" class="bullet">• Story narration engine</text>
       <text x="1075" y="235" class="bullet">• Barge-in interruption</text>
-      <text x="1075" y="255" class="bullet">• Tool calls</text>
+      <text x="1075" y="255" class="bullet">• Tool calls (generate_illustration, awardBadge)</text>
     </g>
 
+    <!-- generate_illustration tool call → image box (dashed) -->
     <path d="M 1280 270 L 1280 294" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-purple)" fill="none" />
     <text x="1288" y="284" font-size="11" font-weight="600" fill="#9333ea">Tool call: generate_illustration</text>
 
@@ -130,10 +131,10 @@
       <rect x="1060" y="295" width="440" height="130" rx="8" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5" filter="url(#shadow)" />
       <rect x="1060" y="295" width="440" height="35" fill="#f3e8ff" clip-path="url(#clip-image)" />
       <text x="1075" y="317" class="mono" font-size="13" fill="#6b21a8">gemini-3.1-flash-image-preview</text>
-      <text x="1075" y="350" class="bullet">• Scene illustrations</text>
-      <text x="1075" y="370" class="bullet">• Visual continuity</text>
-      <text x="1075" y="390" class="bullet">• Camera + sketch images</text>
-      <text x="1075" y="410" class="bullet">• Tool call from Gemini Live</text>
+      <text x="1075" y="350" class="bullet">• Story scene illustrations (via tool call)</text>
+      <text x="1075" y="370" class="bullet">• Visual continuity (prev. image as context)</text>
+      <text x="1075" y="390" class="bullet">• Sketch preview (direct call)</text>
+      <text x="1075" y="410" class="bullet">• Magic Camera reimagining (direct call)</text>
     </g>
 
     <g id="lite-box">
