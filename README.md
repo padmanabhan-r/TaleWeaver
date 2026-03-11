@@ -12,15 +12,6 @@ Kids don't just listen to a story — **they shape it.**
 
 ---
 
-## Live Demo
-
-**https://taleweaver.online**
-
-No account required.
-Just allow microphone access and start your adventure.
-
----
-
 # The Experience
 
 Children start a story in **three magical ways**:
@@ -427,3 +418,13 @@ npm run dev
 ```
 
 Open http://localhost:5173 and follow the Quick Start steps above.
+
+---
+
+# Live Demo
+
+**https://taleweaver-950758825854.us-central1.run.app**
+
+Custom domain: **https://taleweaver.online**
+
+No account required. Just allow microphone access and start your adventure.
