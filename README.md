@@ -28,15 +28,7 @@ Children start a story in **three magical ways**:
 
 ### 1. Pick a Theme
 
-Choose from adventure themes or life-skills topics like:
-
-- Space Adventure
-- Underwater Quest
-- Jungle Journey
-- Courage
-- Kindness
-- Creativity
-- Gratitude
+Choose from adventure themes or life-skills topics
 
 Or type **anything their imagination invents**.
 
