@@ -290,6 +290,10 @@ Past Adventures (landing page)
 
 # Architecture
 
+<p align="center">
+  <img src="architecture/architecture-v1.gif" alt="TaleWeaver Architecture" width="900"/>
+</p>
+
 ### Data flow
 
 ```
