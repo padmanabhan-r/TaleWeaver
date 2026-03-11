@@ -81,7 +81,7 @@
       <rect x="640" y="140" width="220" height="350" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" filter="url(#shadow)" />
       <rect x="640" y="140" width="220" height="40" fill="#f1f5f9" clip-path="url(#clip-backend)" />
       <text x="655" y="165" class="title" font-size="14" fill="#334155">FastAPI Backend</text>
-      <image href="gcp-icons/FastAPI_logo.svg" x="762" y="151" width="90" height="17" />
+      <image href="gcp-icons/FastAPI_logo.svg" x="800" y="155" width="52" height="10" />
       <text x="655" y="200" class="bullet">• WebSocket proxy</text>
       <text x="655" y="225" class="bullet">• Session orchestration</text>
       <text x="655" y="250" class="bullet">• Story state manager</text>
