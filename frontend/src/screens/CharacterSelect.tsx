@@ -51,6 +51,7 @@ const CharacterCard = ({
         {character.name}
       </h3>
       <p className="text-xs text-muted-foreground mt-0.5">{character.language}</p>
+      <p className="text-xs text-primary/70 mt-1 italic leading-tight">{character.tagline}</p>
     </div>
   </motion.button>
 );
