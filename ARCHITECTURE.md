@@ -2,55 +2,71 @@
 
 ---
 
-## Current Architecture (Phase 1–4, live)
+## System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                            Browser                                  │
-│                                                                     │
-│   React SPA (Vite + TailwindCSS + Framer Motion)                    │
-│                                                                     │
-│   ┌──────────────┐  PCM audio (16kHz, Int16)   ┌─────────────────┐ │
-│   │   capture    │ ──────────────────────────► │                 │ │
-│   │  .worklet.js │                              │  WebSocket      │ │
-│   └──────────────┘  PCM audio (24kHz, Int16)   │  /ws/story      │ │
-│   ┌──────────────┐ ◄────────────────────────── │                 │ │
-│   │  playback    │                              └────────┬────────┘ │
-│   │  .worklet.js │                                       │          │
-│   └──────────────┘  HTTP POST /api/image                │          │
-│   ┌──────────────┐ ────────────────────────────────────►│          │
-│   │useStoryImages│                                       │          │
-│   └──────────────┘                                       │          │
-└───────────────────────────────────────────────────────── │ ─────────┘
-                                                           │
-                                    ── Cloud Run ──────────┼───────────
-                                                           │
-┌──────────────────────────────────────────────────────────▼──────────┐
-│                         FastAPI Backend                             │
-│                                                                     │
-│   /ws/story ──► proxy.py ─────────────────────────────────────►    │
-│                    │        WebSocket (wss + Bearer token)          │
-│                    │ ◄───────────────────────────────────────────   │
-│                    │        Gemini Live API (Vertex AI)             │
-│                    │        gemini-live-2.5-flash-native-audio      │
-│                                                                     │
-│   /api/image ──► image_gen.py                                      │
-│                    ├─► gemini-2.0-flash-lite   (scene extraction)  │
-│                    └─► imagen-3.0-fast-generate-001  (image gen)   │
-│                                                                     │
-│   /*  ──────────► FileResponse(frontend/dist/)   (React SPA)       │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                            Browser                                   │
+│                                                                      │
+│   React SPA (Vite + TailwindCSS + Framer Motion)                     │
+│                                                                      │
+│   ┌──────────────────┐  16kHz PCM (base64)  ┌──────────────────┐    │
+│   │ capture.worklet  │ ───────────────────► │                  │    │
+│   │ (AudioWorklet)   │                      │  WebSocket       │    │
+│   └──────────────────┘  24kHz PCM (base64)  │  /ws/story       │    │
+│   ┌──────────────────┐ ◄─────────────────── │                  │    │
+│   │ AudioBufferSource│                      └────────┬─────────┘    │
+│   │ Node scheduling  │                               │              │
+│   └──────────────────┘  POST /api/image              │              │
+│   ┌──────────────────┐ ─────────────────────────────►│              │
+│   │ useStoryImages   │  POST /api/story-opening       │              │
+│   └──────────────────┘ ─────────────────────────────►│              │
+│                         POST /api/story-recap         │              │
+│   ┌──────────────────┐ ─────────────────────────────►│              │
+│   │ localStorage     │ ◄── auto-saved on session end  │              │
+│   │ (gallery)        │                               │              │
+│   └──────────────────┘                               │              │
+└──────────────────────────────────────────────── ─────┼──────────────┘
+                                                        │
+                                   ── Cloud Run ────────┼─────────────
+                                                        │
+┌───────────────────────────────────────────────────────▼─────────────┐
+│                          FastAPI Backend                             │
+│                                                                      │
+│   /ws/story ──► proxy.py ◄────────────────────────────────────────  │
+│                    │       WebSocket (wss, Vertex AI auth)           │
+│                    │ ──────────────────────────────────────────────► │
+│                    │       Gemini Live 2.5 Flash (Native Audio)      │
+│                                                                      │
+│   /api/story-opening ──► image_gen.py                               │
+│                    └─► gemini-2.5-flash-lite  (plan + opening)      │
+│                    └─► gemini image gen       (first illustration)   │
+│                                                                      │
+│   /api/image ──► image_gen.py                                       │
+│                    └─► gemini image gen  (scene illustrations)       │
+│                                                                      │
+│   /api/story-recap ──► image_gen.py                                 │
+│                    └─► gemini-2.5-flash-lite  (storybook title)     │
+│                                                                      │
+│   /*  ──────────────► FileResponse(frontend/dist/)  (React SPA)    │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-### Key design decisions
+---
+
+## Key Design Decisions
 
 | Decision | Reason |
 |---|---|
-| Backend as WebSocket proxy | Browser cannot auth to Vertex AI directly (CORS, credentials) |
-| Single Cloud Run service | Frontend bundled into Python container — no separate hosting, no CORS |
-| AudioWorklet (not ScriptProcessor) | Low-latency, runs off main thread — no audio dropouts |
-| Image trigger at `turnComplete` | Full turn text (100–300 words) gives the model enough context; mid-sentence fragments produced garbage images |
-| Client-side image rate limiting | Simple; backend `/api/image` trusts client rate, avoids over-engineering |
+| Backend as WebSocket proxy | Browser cannot authenticate to Vertex AI directly (CORS, credentials) |
+| Single Cloud Run service | Frontend bundled into Python container — no separate hosting, no cross-origin issues |
+| AudioWorklet capture | Runs off main thread — no audio dropouts; `AudioContext({ sampleRate: 16000 })` handles resampling |
+| `AudioBufferSourceNode` scheduling for playback | Each chunk scheduled at `max(currentTime, nextStartTime)` — Gemini can stream 30 s of audio in 5 s without queue overflow or garbling |
+| `asyncio.sleep(0)` before Begin! | Yields one event-loop tick so `gemini_to_browser` task enters its `async for` loop before Gemini's first audio arrives — no audio is ever silently dropped |
+| `generate_illustration` tool call | Gemini picks visually rich moments rather than a fixed clock; image always matches what was just narrated |
+| Narrations from transcript, not LLM | Recap narrations stored from story transcript at session-save time — no parallel LLM calls, no 429 rate limit errors |
+| `ping_interval=None` on Gemini WS | Gemini Live does not respond to standard WS ping frames; disabling prevents 1006 drops |
+| `--timeout-graceful-shutdown 25` | uvicorn cleanly closes WebSocket sessions on Cloud Run SIGTERM before the 30 s SIGKILL |
 
 ---
 
@@ -80,21 +96,22 @@
 
 | File | Role |
 |---|---|
-| `main.py` | FastAPI app: routes, CORS, SPA static file serving |
-| `proxy.py` | Authenticated bidirectional WebSocket proxy to Gemini Live API |
-| `characters.py` | 10 character configs: system prompts, voices, image styles |
-| `image_gen.py` | `/api/image`: scene extraction (Flash Lite) → image generation (Imagen) |
+| `main.py` | FastAPI app: routes, CORS, SPA static file serving, graceful WebSocket error handling |
+| `proxy.py` | Authenticated bidirectional WebSocket proxy to Gemini Live; sends Begin! after `asyncio.sleep(0)` |
+| `characters.py` | 10 character configs: system prompts, voice names, image styles, Gemini setup message builder |
+| `image_gen.py` | `/api/story-opening`, `/api/image`, `/api/story-recap`, `/api/sketch-preview`, `/api/check-theme`, `/api/tts` |
 
 ---
 
 ## Audio Pipeline
 
 ### Capture (browser → Gemini)
+
 ```
-Microphone  (getUserMedia — mono, echoCancellation, noiseSuppression)
+Microphone  (getUserMedia — mono, echoCancellation, noiseSuppression, autoGainControl)
   │
-AudioContext (16kHz)
-  │  Float32 samples at device rate → resampled to 16kHz
+AudioContext({ sampleRate: 16000 })
+  │  resamples from device native rate to 16kHz
   ▼
 capture.worklet.js  (AudioWorkletProcessor, off main thread)
   │  Float32 → Int16, 1024-sample chunks
@@ -107,6 +124,7 @@ WebSocket → backend (transparent) → Gemini Live
 ```
 
 ### Playback (Gemini → speaker)
+
 ```
 Gemini Live → backend (transparent) → WebSocket → browser
   serverContent.modelTurn.parts[].inlineData.data  (base64 PCM 24kHz)
@@ -122,13 +140,43 @@ AudioBufferSourceNode chain → GainNode → AudioContext (24kHz) → speakers
 ```
 
 ### Barge-in (child interrupts mid-story)
+
 ```
-Gemini VAD detects child speech
-  → Gemini sends serverContent.interrupted = true
-  → clearBuffer() sent to playback worklet → FIFO drains instantly
+Child speaks while Gemini is narrating
+  → Gemini VAD detects speech
+  → serverContent.interrupted = true arrives
+  → clearBuffer(): all scheduled AudioBufferSourceNodes stopped instantly
   → characterState = "listening"
-  → child audio continues streaming to Gemini in real time
+  → child audio continues streaming to Gemini
   → Gemini weaves child's words into next story beat
+```
+
+---
+
+## Session Startup (Begin! Handshake)
+
+```
+Browser clicks Begin
+  → useLiveAPI.connect()
+  → initPlayback() — AudioContext(24kHz) created and resumed
+  → new WebSocket("/ws/story")
+
+WebSocket open
+  → browser sends { character_id, theme, prop_image, prop_description }
+  → backend: connects to Gemini Live (Vertex AI, authenticated)
+  → backend: sends setup message (system prompt, voice, tools, audio config)
+  → Gemini sends { setupComplete }
+  → backend: sends { setupComplete: true, characterName } to browser
+
+Browser receives setupComplete
+  → startCapture() — AudioContext(16kHz) + AudioWorklet started
+  → AudioContext(24kHz) resumed (getUserMedia counts as user gesture)
+  → sessionState = "active"
+
+Backend (after creating proxy tasks)
+  → asyncio.sleep(0)   ← yields one tick; gemini_to_browser is now in its async for loop
+  → sends Begin! message directly to Gemini Live
+  → Gemini starts narrating; audio forwarded immediately
 ```
 
 ---
@@ -172,132 +220,75 @@ StorySceneCard: shimmer skeleton → fade-in
 ```
 idle ──── connect() ────► connecting
                                │
-                          setupComplete
+                          WS open + setupComplete
                                │
                                ▼
-                            ready ──► mic capture starts
+                            ready
+                               │
+                          startCapture() resolves
                                │
                                ▼
-                ┌───────── active ─────────────┐
-                │                              │
-          interrupted                    turnComplete
-          (barge-in)                          │
-                │                      image trigger fires
-          clearBuffer()                       │
-          state="listening"         state="thinking/speaking"
-                │                             │
-                └─────────────────────────────┘
+                ┌───────── active ──────────────────────┐
+                │                                       │
+          interrupted                             turnComplete
+          (barge-in)                        image trigger fires
+                │                         state = "thinking/speaking"
+          clearBuffer()                               │
+          state = "listening"                         │
+                │                                     │
+                └─────────────────────────────────────┘
                                │
-                         ws.onclose / error
+                   ws.onclose or user clicks End Story
                                │
-                        ended / error
+                    ┌──────────┴──────────┐
+                 ended                 error
+             (user-initiated)    (unexpected drop)
 ```
 
 ---
 
-## Deployment Architecture (current)
+## Deployment
 
 ```
-GitHub  ──push to main──►  GitHub Actions (.github/workflows/deploy.yml)
-                                │
-                          google-github-actions/auth  (GCP_SA_KEY secret)
-                                │
-                          docker build --platform linux/amd64
-                          (Stage 1: node:22-slim  builds React → dist/)
-                          (Stage 2: python:3.13-slim  serves FastAPI + dist/)
-                                │
-                          docker push → Artifact Registry
-                          us-central1-docker.pkg.dev/.../taleweaver/backend
-                                │
-                          gcloud run deploy taleweaver
-                                │
-                                ▼
-                    Cloud Run (us-central1)  — 1Gi / 2 vCPU / 3600s timeout
-                    https://taleweaver-backend-950758825854.us-central1.run.app
-                          ├── React SPA (frontend/dist/)
-                          ├── /ws/story  → Gemini Live API (Vertex AI)
-                          └── /api/image → Gemini Flash Lite + Imagen (Vertex AI)
+Push to main branch
+  │
+  ▼
+Cloud Build (cloudbuild.yaml)
+  │  Stage 1: node:22-slim  — npm ci + npm run build → frontend/dist/
+  │  Stage 2: python:3.13-slim — pip install + copy dist/
+  │
+  ▼
+Artifact Registry
+  us-central1-docker.pkg.dev/…/taleweaver/backend
+  │
+  ▼
+Cloud Run (us-central1)
+  Service: taleweaver
+  Memory: 1Gi | CPU: 2 | Max instances: 10 | Timeout: 3600s
+  CMD: uvicorn main:app --workers 1 --loop uvloop --http h11
+       --timeout-graceful-shutdown 25
+
+  ├── React SPA  (frontend/dist/ via FileResponse)
+  ├── /ws/story  → Gemini Live API (Vertex AI, ADC auth)
+  ├── /api/image → Gemini image gen (GEMINI_API_KEY from Secret Manager)
+  └── /api/story-* → gemini-2.5-flash-lite (Vertex AI, ADC auth)
+
+Custom domain: taleweaver.online → Cloud Run URL mapping
 ```
-
-GCP auth on Cloud Run uses the service account's attached identity — no API keys in the container.
-
-**To activate CI/CD:** Add `GCP_SA_KEY` secret to GitHub repo → Settings → Secrets → Actions.
-
----
-
-## Future Architecture — Multi-Agent Pipeline
-
-The next evolution (inspired by the reference architecture) introduces a multi-agent pipeline
-to separate concerns, improve image quality, and enable richer story intelligence:
-
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                     Google Cloud Run Services                        │
-│                                                                      │
-│   ┌────────────────────────┐       ┌─────────────────────────────┐  │
-│   │    TaleWeaver Frontend │       │    TaleWeaver Backend       │  │
-│   │    React SPA           │◄─────►│    FastAPI Service           │  │
-│   │    (same-origin)       │       │                             │  │
-│   └────────────────────────┘       └──────────┬──────────────────┘  │
-│                                               │                      │
-└───────────────────────────────────────────────┼──────────────────────┘
-                                                │
-                          ┌─────────────────────▼──────────────────────┐
-                          │       Multi-Agent Pipeline (ADK)           │
-                          │                                            │
-                          │  ┌─────────────────────────────────────┐  │
-                          │  │  1. Story Narrator Agent             │  │
-                          │  │  Gemini Live 2.5 Flash Native Audio  │  │
-                          │  │  Bidirectional voice conversation    │  │
-                          │  └─────────────────┬───────────────────┘  │
-                          │                    │                       │
-                          │                    ▼                       │
-                          │  ┌─────────────────────────────────────┐  │
-                          │  │  2. Scene Detector Agent             │  │
-                          │  │  Gemini 2.0 Flash Lite               │  │
-                          │  │  Extracts visual scenes from turns   │  │
-                          │  └─────────────────┬───────────────────┘  │
-                          │                    │                       │
-                          │                    ▼                       │
-                          │  ┌─────────────────────────────────────┐  │
-                          │  │  3. Illustrator Agent                │  │
-                          │  │  Imagen 3.0 / Gemini 2.0 Flash Image │  │
-                          │  │  Generates consistent scene images   │  │
-                          │  └─────────────────────────────────────┘  │
-                          └────────────────────────────────────────────┘
-                                                │
-                          ┌─────────────────────▼──────────────────────┐
-                          │           Vertex AI Models                 │
-                          │                                            │
-                          │  Gemini Live 2.5 Flash  (voice)           │
-                          │  Gemini 2.0 Flash Lite  (text/scene)      │
-                          │  Imagen 3.0              (images)          │
-                          └────────────────────────────────────────────┘
-```
-
-### Why multi-agent?
-
-| Current (monolithic proxy) | Future (multi-agent) |
-|---|---|
-| Scene detection is client-side keyword matching | Dedicated agent with semantic understanding |
-| Image prompt built from raw turn text | Agent crafts precise painter-style prompts |
-| No story arc awareness | Story Intelligence agent tracks narrative arc, pacing, engagement |
-| Image generation blocks on one model | Agents run in parallel — scene detect + image gen overlap |
-| No session memory across turns | Shared context store feeds all agents |
 
 ---
 
 ## Characters
 
-| ID | Name | Language | Voice | Style |
-|---|---|---|---|---|
-| grandma-rose | Grandma Rose | English | Aoede | Bedtime / fairy tales |
-| captain-leo | Captain Leo | English | Charon | Adventure / seafaring |
-| fairy-sparkle | Fairy Sparkle | English | Kore | Magic / fantasy |
-| professor-whiz | Professor Whiz | English | Puck | Science / discovery |
-| dragon-blaze | Dragon Blaze | English | Fenrir | Comedy / dragon fun |
-| paati | Paati | Tamil | Leda | Traditional Tamil stories |
-| dadi | Dadi | Hindi | Orus | Hindi folk tales |
-| ammamma | Ammamma | Telugu | Zephyr | Telugu mythology |
-| aaji | Aaji | Marathi | Autonoe | Marathi folk tales |
-| dida | Dida | Bengali | Umbriel | Bengali fairy tales |
+| ID | Name | Language | Voice |
+|---|---|---|---|
+| wizard | Wizard Wally | English | Puck |
+| fairy | Fairy Flora | English | Aoede |
+| pirate | Captain Coco | English | Charon |
+| robot | Robo Ricky | English | Laomedeia |
+| dragon | Draco the Dragon | English | Fenrir |
+| dadi | Dadi Maa | Hindi हिंदी | Autonoe |
+| maharaja | Raja Vikram | Marathi मराठी | Umbriel |
+| hanuman | Little Hanuman | Tamil தமிழ் | Alnilam |
+| rajkumari | Rajkumari Meera | Telugu తెలుగు | Kore |
+| rishi | Rishi Bodhi | Bengali বাংলা | Puck |
