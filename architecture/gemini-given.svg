@@ -169,9 +169,9 @@
   <path d="M 860 356 L 1050 356" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-gray)" fill="none" />
 
   <!-- → Flash Lite (moderation + recap): Z-shape bend at x=960 -->
-  <text x="900" y="378" class="label-bold" fill="#7e22ce">Moderation + recap</text>
-  <text x="900" y="391" class="label" fill="#64748b">safety + captions</text>
-  <path d="M 860 396 L 960 396 L 960 505 L 1050 505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
+  <text x="900" y="408" class="label-bold" fill="#7e22ce">Moderation + recap</text>
+  <text x="900" y="421" class="label" fill="#64748b">safety + captions</text>
+  <path d="M 860 426 L 960 426 L 960 505 L 1050 505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
 
   <!-- → Flash TTS (character voice): L-shape from bottom of backend box -->
   <path d="M 750 490 L 750 635 L 1050 635" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
