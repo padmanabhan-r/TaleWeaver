@@ -162,10 +162,10 @@
   <text x="950" y="201" class="label" text-anchor="middle">Live voice session</text>
   <path d="M 860 208 L 1050 208" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" />
 
-  <!-- → Flash Lite (moderation + recap): Z-shape bend at x=915 -->
-  <text x="875" y="378" class="label-bold" fill="#7e22ce">Moderation + recap</text>
-  <text x="875" y="391" class="label" fill="#64748b">safety + captions</text>
-  <path d="M 860 396 L 915 396 L 915 505 L 1050 505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
+  <!-- → Flash Lite (moderation + recap): Z-shape bend at x=960 -->
+  <text x="900" y="378" class="label-bold" fill="#7e22ce">Moderation + recap</text>
+  <text x="900" y="391" class="label" fill="#64748b">safety + captions</text>
+  <path d="M 860 396 L 960 396 L 960 505 L 1050 505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
 
   <!-- → Flash TTS (character voice): L-shape from bottom of backend box -->
   <path d="M 750 490 L 750 635 L 1050 635" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
