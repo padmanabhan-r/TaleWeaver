@@ -164,9 +164,8 @@
   <path d="M 860 208 L 1050 208" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" />
 
   <!-- → Image gen (sketch / camera): direct dotted arrow from backend -->
-  <text x="950" y="338" class="label-bold" text-anchor="middle" fill="#7e22ce">Sketch / Camera</text>
-  <text x="950" y="351" class="label" text-anchor="middle">POST /api/sketch-preview</text>
-  <path d="M 860 356 L 1050 356" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-gray)" fill="none" />
+  <text x="950" y="344" class="label-bold" text-anchor="middle" fill="#7e22ce">Sketch / Camera Preview</text>
+  <path d="M 860 350 L 1050 350" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-gray)" fill="none" />
 
   <!-- → Flash Lite (moderation + recap): Z-shape bend at x=960 -->
   <text x="900" y="408" class="label-bold" fill="#7e22ce">Moderation + recap</text>
