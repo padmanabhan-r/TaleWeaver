@@ -85,12 +85,13 @@
       <text x="655" y="250" class="bullet">• Story state manager</text>
       <text x="655" y="275" class="bullet">• Gemini tool routing</text>
       <line x1="655" y1="295" x2="845" y2="295" stroke="#e2e8f0" stroke-width="1" />
-      <text x="655" y="320" class="endpoint">/ws/story</text>
-      <text x="655" y="341" class="endpoint">/api/image</text>
-      <text x="655" y="362" class="endpoint">/api/sketch-preview</text>
-      <text x="655" y="383" class="endpoint">/api/check-theme</text>
-      <text x="655" y="404" class="endpoint">/api/tts</text>
-      <text x="655" y="425" class="endpoint">/api/story-recap</text>
+      <text x="655" y="313" class="endpoint">/api/health</text>
+      <text x="655" y="331" class="endpoint">/ws/story</text>
+      <text x="655" y="349" class="endpoint">/api/image</text>
+      <text x="655" y="367" class="endpoint">/api/sketch-preview</text>
+      <text x="655" y="385" class="endpoint">/api/check-theme</text>
+      <text x="655" y="403" class="endpoint">/api/tts</text>
+      <text x="655" y="421" class="endpoint">/api/story-recap</text>
     </g>
   </g>
 
