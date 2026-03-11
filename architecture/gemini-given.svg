@@ -162,13 +162,13 @@
   <text x="950" y="201" class="label" text-anchor="middle">Live voice session</text>
   <path d="M 860 208 L 1050 208" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" />
 
-  <!-- → Flash Lite (moderation + recap) -->
-  <path d="M 860 390 C 950 390, 950 505, 1050 505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
-  <text x="875" y="412" class="label-bold" fill="#7e22ce">Moderation + recap</text>
-  <text x="875" y="426" class="label" fill="#64748b">safety + captions</text>
+  <!-- → Flash Lite (moderation + recap): Z-shape bend at x=915 -->
+  <text x="875" y="378" class="label-bold" fill="#7e22ce">Moderation + recap</text>
+  <text x="875" y="391" class="label" fill="#64748b">safety + captions</text>
+  <path d="M 860 396 L 915 396 L 915 505 L 1050 505" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
 
-  <!-- → Flash TTS (character voice) -->
-  <path d="M 860 460 C 960 460, 960 635, 1050 635" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
-  <text x="875" y="482" class="label-bold" fill="#7e22ce">Character voice</text>
+  <!-- → Flash TTS (character voice): Z-shape bend at x=955 -->
+  <text x="875" y="446" class="label-bold" fill="#7e22ce">Character voice</text>
+  <path d="M 860 452 L 955 452 L 955 635 L 1050 635" stroke="#64748b" stroke-width="1.5" marker-end="url(#arrow-gray)" fill="none" />
 
 </svg>
