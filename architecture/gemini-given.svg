@@ -123,9 +123,8 @@
       <text x="1075" y="255" class="bullet">• Tool calls</text>
     </g>
 
-    <path d="M 1280 270 L 1280 285" stroke="#9333ea" stroke-width="1.5" marker-end="url(#arrow-purple)" />
-    <rect x="1290" y="271" width="160" height="14" fill="#faf5ff" />
-    <text x="1290" y="282" font-size="11" font-weight="600" fill="#9333ea">Tool call: generate_illustration</text>
+    <path d="M 1280 270 L 1280 294" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-purple)" fill="none" />
+    <text x="1288" y="284" font-size="11" font-weight="600" fill="#9333ea">Tool call: generate_illustration</text>
 
     <g id="image-box">
       <rect x="1060" y="295" width="440" height="130" rx="8" fill="#ffffff" stroke="#d8b4fe" stroke-width="1.5" filter="url(#shadow)" />
