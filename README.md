@@ -12,11 +12,11 @@ Turn your child's screen time into something genuinely fun and creative — a re
 
 ## Features
 
-- **10 storyteller characters** — 5 English (Wizard Wally, Fairy Flora, Captain Coco, Robo Ricky, Draco the Dragon) and 5 Indian language storytellers (Dadi Maa/Hindi, Raja Vikram/Marathi, Little Hanuman/Tamil, Rajkumari Meera/Telugu, Rishi Bodhi/Bengali)
+- **10 storyteller characters** — 5 English storytellers (Wizard Wally, Fairy Flora, Captain Coco, Robo Ricky, Rajkumari Meera) and 5 world language storytellers (Dadi Maa/Hindi, Raja Vikram/Tamil, Yé Ye/Mandarin, Abuelo Miguel/Spanish, Mamie Claire/French)
 - **Three ways to start a story** — Pick a theme tile, use the Magic Camera to hold up a real-world prop, or Sketch a Theme on a drawing canvas
 - **Real-time bidirectional voice** via WebSocket + Gemini Live API — the child can interrupt, redirect, or add ideas at any moment
 - **Native audio** — no TTS/STT round-trips; Gemini handles voice directly at 24kHz
-- **Story pre-warm** — before the session starts, a single Flash Lite call generates a coherent plan + opening line + first illustration; the opening is spoken word-for-word by Gemini Live so narration and image always align
+- **Instant session start** — confirming a theme goes straight into the live session; no loading screen or pre-warm step
 - **Smart illustration timing** — Gemini calls a `generate_illustration` tool at visually rich moments (new location, character reveal, dramatic transformation); images match what Gemini just described
 - **Visual continuity** — each image generation passes the previous image + scene description as context; characters and art style stay consistent across all scenes
 - **Unlimited scene illustrations** — images generate continuously throughout the session with no cap
@@ -29,7 +29,7 @@ Turn your child's screen time into something genuinely fun and creative — a re
 - **Content moderation** — typed themes, sketches, and camera props are safety-checked before the story starts
 - **Sketch a Theme** — drawing canvas with 19 colours; sketch is recreated as a storybook illustration and becomes the story's starting image
 - **Kid-safe** — all characters are warm, age-appropriate, and tuned for children aged 4–10; story never ends unless the child presses End Story
-- **Multilingual** — Indian storytellers tell stories in Hindi, Marathi, Tamil, Telugu, and Bengali; language-locked (characters never switch to English even if asked)
+- **Multilingual** — world language storytellers tell stories in Hindi, Tamil, Mandarin, Spanish, and French; language-locked (characters never switch to English even if asked)
 - **15-minute session timeout** — idle sessions close automatically
 - **Graceful shutdown** — Cloud Run SIGTERM handled cleanly; active sessions receive a proper WebSocket close frame within the 30 s grace window
 
@@ -40,8 +40,8 @@ Turn your child's screen time into something genuinely fun and creative — a re
 | Layer | Technology |
 |---|---|
 | Conversation | `gemini-live-2.5-flash-native-audio` via Vertex AI |
-| Story pre-warm | `gemini-2.5-flash-lite` — generates plan + opening + scene in one call |
 | Content moderation | `gemini-2.5-flash-lite` — safety-checks themes, sketches, and camera props |
+| Character TTS | `gemini-2.5-flash-preview-tts` — speaks prop/sketch label in character's voice on ThemeSelect |
 | Image generation | `gemini-3.1-flash-image-preview` — raw narration passed directly, no extraction step |
 | Story recap | `gemini-2.5-flash-lite` — generates storybook title + per-scene narrations from scene images (all in parallel) |
 | Backend | Python 3.13 + FastAPI + WebSocket |
@@ -62,12 +62,12 @@ Turn your child's screen time into something genuinely fun and creative — a re
 | fairy | Fairy Flora | English | Aoede |
 | pirate | Captain Coco | English | Charon |
 | robot | Robo Ricky | English | Laomedeia |
-| dragon | Draco the Dragon | English | Fenrir |
+| rajkumari | Rajkumari Meera | English (Indian tales) | Kore |
 | dadi | Dadi Maa | Hindi हिंदी | Autonoe |
-| maharaja | Raja Vikram | Marathi मराठी | Umbriel |
-| hanuman | Little Hanuman | Tamil தமிழ் | Alnilam |
-| rajkumari | Rajkumari Meera | Telugu తెలుగు | Kore |
-| rishi | Rishi Bodhi | Bengali বাংলা | Puck |
+| rajvikram | Raja Vikram | Tamil தமிழ் | Umbriel |
+| naInai | Yé Ye | Mandarin 普通话 | Alnilam |
+| abuela | Abuelo Miguel | Spanish | Kore |
+| mamie | Mamie Claire | French | Fenrir |
 
 ---
 
@@ -113,19 +113,15 @@ Turn your child's screen time into something genuinely fun and creative — a re
 Child opens app → Landing page (ambient music, floating animations)
     → "Begin Your Adventure" → CharacterSelect
     → picks a character → ThemeSelect
-        Option A: Pick a Theme — adventure tiles + 5 life skills + free-text custom
+        Option A: Pick a Theme — 12 adventure tiles + 5 life skills + free-text custom
         Option B: Magic Camera — live viewfinder → capture prop → safety check
+                  → AI labels prop → character speaks the label aloud via TTS
                   → AI recreates prop as storybook illustration → confirm & start
-        Option C: Sketch a Theme — draw on canvas (19 colours) → AI recreates drawing
-                  → confirm illustrated version → start story
+        Option C: Sketch a Theme — draw on canvas (19 colours) → AI labels sketch
+                  → character speaks the label aloud via TTS
+                  → AI recreates drawing as illustration → confirm & start
 
-    → POST /api/story-opening → Flash Lite (single gemini-2.5-flash-lite call)
-        → generates story plan + opening line + visual scene description
-        → image model generates first illustration from scene
-        → all three are coherent (same characters, setting, plot)
-        → Begin button activates (~5–8 s)
-
-    → StoryScreen mounts → useLiveAPI.connect()
+    → onConfirm() → StoryScreen mounts → useLiveAPI.connect()
         → WebSocket → backend /ws/story
         → backend connects to Gemini Live API (Vertex AI)
         → sends character system prompt + voice config
@@ -133,7 +129,6 @@ Child opens app → Landing page (ambient music, floating animations)
         → sends "Begin!" directly to Gemini Live
         → mic capture starts (AudioWorklet, 16kHz PCM)
         → AudioContext resumed after mic starts (Safari compatibility)
-        → first illustration seeds the canvas immediately
 
 Story plays
     → Gemini speaks → 24kHz PCM → AudioBufferSourceNode scheduling → speakers
@@ -142,7 +137,7 @@ Story plays
         → POST /api/image with Gemini's scene description
         → previous image + scene description passed for visual continuity
         → base64 image → StorySceneGrid (shimmer → fade-in)
-    → turnComplete fallback fires if no tool call in ~30 s
+    → turnComplete fallback fires if no tool call in last 25 s and 8 s since last image
         → POST /api/image with raw turn transcription
 
 Achievement badges
@@ -152,6 +147,10 @@ Achievement badges
 Pause / Resume
     → Pause mutes playback (gain = 0) and suspends mic AudioContext
     → Resume restores both — session and WebSocket stay alive
+
+Home button (🏠 on CharacterSelect, ThemeSelect, StoryScreen)
+    → saves current gallery state to localStorage
+    → returns to landing page without losing previously saved stories
 
 Child interrupts (barge-in)
     → Gemini VAD detects speech → in-flight audio buffer cleared
@@ -182,11 +181,10 @@ The app is live at **https://taleweaver.online** — no account, no setup requir
 
 1. Open https://taleweaver.online on a device with a microphone
 2. Click **Begin Your Adventure**
-3. Pick any storyteller character (try **Wizard Wally** for English, **Dadi Maa** for Hindi)
+3. Pick any storyteller character (try **Wizard Wally** for English, **Dadi Maa** for Hindi, **Mamie Claire** for French)
 4. Choose **Pick a Theme** → select an adventure (e.g. "Space Adventure") or type anything custom
-5. Wait ~5–8 s for the first illustration to appear, then click **Begin**
-6. Allow microphone access when prompted
-7. The character will start narrating immediately — speak to redirect the story
+5. Allow microphone access when prompted — the session starts immediately
+6. The character will start narrating within a few seconds — speak to redirect the story
 
 ### Feature checklist for judges
 
@@ -202,7 +200,7 @@ The app is live at **https://taleweaver.online** — no account, no setup requir
 | **Pause / Resume** | Tap the pause button mid-story; tap again to resume from the same point |
 | **End Story + Recap** | Tap "End Story" — the "📖 See our story!" button appears; open it for the illustrated storybook |
 | **Past Adventures** | Go back to home; tap "Past Adventures" to see and re-read all saved stories |
-| **Multilingual** | Pick **Dadi Maa** — the entire story is narrated in Hindi; try asking in English — she stays in Hindi |
+| **Multilingual** | Pick **Dadi Maa** (Hindi), **Raja Vikram** (Tamil), **Yé Ye** (Mandarin), **Abuelo Miguel** (Spanish), or **Mamie Claire** (French) — each stays in their language even if the child speaks English |
 | **Content moderation** | On "Pick a Theme → Custom theme", type something inappropriate — it will be blocked with a friendly message |
 | **Life skills themes** | Pick any character → "Pick a Theme" → select a life skill tile (Sharing, Courage, etc.) |
 
@@ -248,11 +246,13 @@ Open http://localhost:5173 and follow the Quick Start steps above.
 
 ```
 Browser (React)
-  ├── POST /api/story-opening ──→ Backend → Flash Lite (plan + opening + scene → image)
   ├── WebSocket /ws/story ───────→ Backend → Gemini Live API (Vertex AI)
   │     bidirectional audio/text proxy; no audio stored server-side
-  ├── POST /api/image ───────────→ Backend → Gemini image gen
-  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations from images, parallel)
+  ├── POST /api/check-theme ─────→ Backend → Flash Lite (safety check)
+  ├── POST /api/sketch-preview ──→ Backend → Flash Lite (label) + image gen (illustration)
+  ├── POST /api/tts ─────────────→ Backend → gemini-2.5-flash-preview-tts (character voice)
+  ├── POST /api/image ───────────→ Backend → Gemini image gen (scene illustrations)
+  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
 ```
 
 ### Begin! timing (critical path)
