@@ -51,8 +51,7 @@ The AI will:
 Examples:
 
 ```
-Toy dinosaur   → Brave jungle guardian
-Stuffed bear   → Sleepy forest explorer
+Stuffed penguin   → A fluffy penguin pal
 LEGO rocket    → Galactic rescue pilot
 ```
 
