@@ -40,10 +40,10 @@
 │                                                                      │
 │   /api/story-opening ──► image_gen.py                               │
 │                    └─► gemini-2.5-flash-lite  (plan + opening)      │
-│                    └─► gemini image gen       (first illustration)   │
+│                    └─► gemini-3.1-flash-image-preview       (first illustration)   │
 │                                                                      │
 │   /api/image ──► image_gen.py                                       │
-│                    └─► gemini image gen  (scene illustrations)       │
+│                    └─► gemini-3.1-flash-image-preview  (scene illustrations)       │
 │                                                                      │
 │   /api/story-recap ──► image_gen.py                                 │
 │                    └─► gemini-2.5-flash-lite  (storybook title)     │
@@ -63,7 +63,7 @@
 | AudioWorklet capture | Runs off main thread — no audio dropouts; `AudioContext({ sampleRate: 16000 })` handles resampling |
 | `AudioBufferSourceNode` scheduling for playback | Each chunk scheduled at `max(currentTime, nextStartTime)` — Gemini can stream 30 s of audio in 5 s without queue overflow or garbling |
 | `asyncio.sleep(0)` before Begin! | Yields one event-loop tick so `gemini_to_browser` task enters its `async for` loop before Gemini's first audio arrives — no audio is ever silently dropped |
-| `generate_illustration` tool call | Gemini picks visually rich moments rather than a fixed clock; image always matches what was just narrated |
+| `generate_illustration` tool call | Gemini Live acts as an **agent** — picks visually rich moments autonomously and calls `generate_illustration` or `award_badge` tools; image always matches what was just narrated |
 | Narrations from transcript, not LLM | Recap narrations stored from story transcript at session-save time — no parallel LLM calls, no 429 rate limit errors |
 | `ping_interval=None` on Gemini WS | Gemini Live does not respond to standard WS ping frames; disabling prevents 1006 drops |
 | `--timeout-graceful-shutdown 25` | uvicorn cleanly closes WebSocket sessions on Cloud Run SIGTERM before the 30 s SIGKILL |
@@ -195,7 +195,7 @@ useLiveAPI → onGenerateIllustration(description)
         ├── sets lastToolCallTimeRef (fallback stays silent for 25s)
         └── POST /api/image { skip_extraction: true, ... }
               ▼
-            image_gen.py → image generation model → base64
+            image_gen.py → safety filter (blocks dangerous objects) → gemini-3.1-flash-image-preview → base64
   ▼
 StorySceneCard: shimmer skeleton → fade-in
 
@@ -208,7 +208,7 @@ useStoryImages → triggerImageGeneration(turnText)
   └── POST /api/image { scene_description, story_context, image_style, session_id,
                          previous_image_data, previous_image_mime_type, previous_scene_description }
         ▼
-      image_gen.py → image generation model → base64 (with visual continuity context)
+      image_gen.py → safety filter (blocks dangerous objects) → gemini-3.1-flash-image-preview → base64 (with visual continuity context)
   ▼
 StorySceneCard: shimmer skeleton → fade-in
 ```
@@ -282,13 +282,13 @@ Custom domain: taleweaver.online → Cloud Run URL mapping
 
 | ID | Name | Language | Voice |
 |---|---|---|---|
-| wizard | Wizard Wally | English | Puck |
 | fairy | Fairy Flora | English | Aoede |
 | pirate | Captain Coco | English | Charon |
 | robot | Robo Ricky | English | Laomedeia |
-| dragon | Draco the Dragon | English | Fenrir |
+| rajkumari | Rajkumari Meera | English (Indian accent) | Kore |
+| wizard | Wizard Wally | English | Puck |
 | dadi | Dadi Maa | Hindi हिंदी | Autonoe |
-| maharaja | Raja Vikram | Marathi मराठी | Umbriel |
-| hanuman | Little Hanuman | Tamil தமிழ் | Alnilam |
-| rajkumari | Rajkumari Meera | Telugu తెలుగు | Kore |
-| rishi | Rishi Bodhi | Bengali বাংলা | Puck |
+| rajvikram | Raja Vikram | Tamil தமிழ் | Umbriel |
+| naInai | Yé Ye | Mandarin 普通话 | Alnilam |
+| abuela | Abuelo Miguel | Spanish | Fenrir |
+| mamie | Mamie Claire | French | Leda |

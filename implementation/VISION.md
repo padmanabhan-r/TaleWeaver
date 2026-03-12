@@ -121,7 +121,7 @@ Each character has:
 │  │  • Injects character system prompt + voice config       │   │
 │  │  • Adds auth token from service account                 │   │
 │  │  • Bidirectional proxy: browser ↔ Gemini Live API       │   │
-│  │  • Tools: generate_illustration, showChoice, awardBadge │   │
+│  │  • Tools: generate_illustration, showChoice, award_badge │   │
 │  └─────────────────────────────────────────────────────────┘   │
 │                                                                 │
 │  ┌─────────────────────────────────────────────────────────┐   │

@@ -235,7 +235,7 @@
   <text x="860" y="392" font-size="8" fill="#004d40">Frontend responds immediately — Gemini doesn't wait for image</text>
 
   <rect x="854" y="412" width="374" height="66" rx="6" fill="#ffffff" stroke="#00acc1" stroke-width="1.5"/>
-  <text x="860" y="428" font-size="9" fill="#006064" font-weight="700">awardBadge(emoji, name, reason)</text>
+  <text x="860" y="428" font-size="9" fill="#006064" font-weight="700">award_badge(emoji, name, reason)</text>
   <text x="860" y="442" font-size="8" fill="#004d40">Only on explicit child verbal creativity (story idea, imaginative suggestion)</text>
   <text x="860" y="456" font-size="8" fill="#004d40">Max 2 per session · badge popup overlay auto-dismisses after 3s</text>
   <text x="860" y="470" font-size="8" fill="#004d40">Saved in StoryGalleryEntry.badges → shown in Past Adventures</text>
@@ -369,7 +369,7 @@
   <text x="852" y="610" text-anchor="middle" font-size="7.5" fill="#37474f" font-weight="600">Tool calls</text>
   <text x="852" y="622" text-anchor="middle" font-size="7" fill="#546e7a">generate_</text>
   <text x="852" y="632" text-anchor="middle" font-size="7" fill="#546e7a">illustration</text>
-  <text x="852" y="642" text-anchor="middle" font-size="7" fill="#546e7a">awardBadge</text>
+  <text x="852" y="642" text-anchor="middle" font-size="7" fill="#546e7a">award_badge</text>
 
   <!-- 5. Backend → Vertex AI: HTTP API calls -->
   <line x1="820" y1="836" x2="1278" y2="836" stroke="#5f6368" stroke-width="1.5" stroke-dasharray="6,4"

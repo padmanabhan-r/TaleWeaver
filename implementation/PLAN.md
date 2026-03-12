@@ -255,7 +255,7 @@ At key story moments Gemini presents 2–3 choices the child picks from.
 
 ### 7.4 Achievement / Badge System ✅ DONE
 
-- Gemini calls `awardBadge` tool for genuine creative contributions
+- Gemini calls `award_badge` tool for genuine creative contributions
 - `BadgePopup` appears centred on screen, auto-dismisses after 3s
 - Criteria: child suggests story ideas, picks brave/creative options, does a physical challenge, chooses to end the story
 - Explicitly prohibited: turning on camera, random movement, being quiet, just joining the session
@@ -323,7 +323,7 @@ Story branching (at most once per session)
     → OR child speaks → onChildSpoke → overlay dismissed
 
 Achievement badges
-    → Gemini calls awardBadge for genuine creative engagement
+    → Gemini calls award_badge for genuine creative engagement
     → BadgePopup appears centred, auto-dismisses after 3s
 
 Child interrupts
