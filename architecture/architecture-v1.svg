@@ -133,7 +133,7 @@
       <text x="1075" y="195" class="bullet">🎙 Real-time voice conversation</text>
       <text x="1075" y="215" class="bullet">📖 Story narration engine</text>
       <text x="1075" y="235" class="bullet">🔄 Barge-in interruption</text>
-      <text x="1075" y="255" class="bullet">🛠 Tool calls (generate_illustration, awardBadge)</text>
+      <text x="1075" y="255" class="bullet">🛠 Tool calls (generate_illustration, award_badge)</text>
     </g>
 
     <!-- generate_illustration tool call → image box (dashed) -->

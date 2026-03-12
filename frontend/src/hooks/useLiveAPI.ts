@@ -307,13 +307,13 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
                 }));
                 const description = (call.args?.scene_description as string) ?? "";
                 onGenerateIllustrationRef.current?.(description);
-              } else if (call.name === "awardBadge") {
+              } else if (call.name === "award_badge") {
                 // Don't clear the buffer — the model is mid-story and audio should continue.
                 // The badge is visual only; the system prompt tells the model not to announce it.
                 onBadgeAwardedRef.current?.(call.args as BadgeAward);
                 ws.send(JSON.stringify({
                   toolResponse: {
-                    functionResponses: [{ id: call.id, response: { output: "Badge shown on screen. Continue the story immediately — do not mention the badge again." } }],
+                    functionResponses: [{ id: call.id, response: { output: "Badge shown on screen silently. You have already reacted to what the child said — do NOT re-exclaim, re-acknowledge, or praise their idea again. Resume the story narrative mid-sentence exactly where you left off." } }],
                   },
                 }));
               }
