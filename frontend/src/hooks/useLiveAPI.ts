@@ -214,7 +214,7 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
   // preventing the toolResponse from interrupting Gemini's mid-turn audio output.
   // Each entry also carries a timeout handle that fires if turnComplete doesn't
   // arrive in time (model paused waiting for response — avoid deadlock).
-  const pendingIllustrationResponsesRef = useRef<{ msg: string; timer: ReturnType<typeof setTimeout> }[]>([]);
+  const pendingIllustrationResponsesRef = useRef<{ msg: string }[]>([]);
   // Watchdog: if the model produces no audio within 10s of session going active,
   // the Gemini session initialised in a broken state — auto-reconnect once silently.
   const watchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -316,23 +316,16 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
           if (data.toolCall?.functionCalls) {
             for (const call of data.toolCall.functionCalls) {
               if (call.name === "generate_illustration") {
-                // Buffer the toolResponse to avoid interrupting mid-turn audio.
-                // Fallback timer: if turnComplete doesn't arrive within 2.5 s the
-                // model is paused waiting for the response — send it immediately to
-                // unblock it, otherwise we deadlock.
+                // Buffer the toolResponse — only send it at turnComplete.
+                // Sending it while the model is mid-speech interrupts the current
+                // audio turn. turnComplete always arrives within a few seconds,
+                // so there is no deadlock risk.
                 const msg = JSON.stringify({
                   toolResponse: {
                     functionResponses: [{ id: call.id, response: { output: "Illustration generated. Continue the story — do not restart or re-introduce the scene. Do not call generate_illustration again until several more sentences have been narrated." } }],
                   },
                 });
-                const timer = setTimeout(() => {
-                  const idx = pendingIllustrationResponsesRef.current.findIndex(p => p.msg === msg);
-                  if (idx !== -1) {
-                    pendingIllustrationResponsesRef.current.splice(idx, 1);
-                    if (ws.readyState === WebSocket.OPEN) ws.send(msg);
-                  }
-                }, 500);
-                pendingIllustrationResponsesRef.current.push({ msg, timer });
+                pendingIllustrationResponsesRef.current.push({ msg });
                 const description = (call.args?.scene_description as string) ?? "";
                 onGenerateIllustrationRef.current?.(description);
               } else if (call.name === "award_badge") {
@@ -355,7 +348,7 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
           // Barge-in: child interrupted the character
           if (sc.interrupted) {
             outputTextAccRef.current = "";
-            pendingIllustrationResponsesRef.current.splice(0).forEach(({ timer }) => clearTimeout(timer));
+            pendingIllustrationResponsesRef.current = [];
             clearBufferRef.current();
             setCharacterState("listening");
             onChildSpokeRef.current?.();
@@ -394,8 +387,7 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
             // Flush any pending illustration tool responses now that the turn is done.
             // Cancel their fallback timers first — we're sending them cleanly here.
             const pending = pendingIllustrationResponsesRef.current.splice(0);
-            pending.forEach(({ msg, timer }) => {
-              clearTimeout(timer);
+            pending.forEach(({ msg }) => {
               if (ws.readyState === WebSocket.OPEN) ws.send(msg);
             });
 
