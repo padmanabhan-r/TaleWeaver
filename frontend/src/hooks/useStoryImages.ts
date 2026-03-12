@@ -154,20 +154,15 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
   );
 
   // Called when Gemini explicitly triggers an illustration via tool call.
-  // Has a minimum 8 s cooldown to prevent rapid-fire double calls when Gemini
-  // calls the tool twice in quick succession after a tool response.
-  const MIN_FORCE_GAP_MS = 8_000;
+  // Bypasses the rate limit and session delay — Gemini already chose the right moment.
   const forceImageGeneration = useCallback(
     async (sceneDescription: string) => {
       if (stoppedRef.current) return;
       if (sceneCountRef.current >= MAX_SCENES) return;
 
-      const now = Date.now();
-      // Enforce minimum gap between forced calls (skip if too soon after previous)
-      if (sceneCountRef.current > 0 && now - lastTriggerTimeRef.current < MIN_FORCE_GAP_MS) return;
-
       storyContextRef.current = (storyContextRef.current + " " + sceneDescription).slice(-2000).trim();
       // Mark that the tool call path just fired — fallback will stay silent for TOOL_CALL_GRACE_MS
+      const now = Date.now();
       lastToolCallTimeRef.current = now;
       lastTriggerTimeRef.current = now;
 
