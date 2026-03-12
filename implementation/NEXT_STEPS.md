@@ -7,7 +7,7 @@
 
 | Feature | Notes |
 |---|---|
-| ✅ Badge System (7.4) | `awardBadge` tool + `BadgePopup` centred on screen, 3s auto-dismiss, max 2/session |
+| ✅ Badge System (7.4) | `award_badge` tool + `BadgePopup` centred on screen, 3s auto-dismiss, max 2/session |
 | ✅ Sketch a Theme | Drawing canvas (19 colours) → `/api/sketch-preview` → AI recreates → confirm & start |
 | ✅ Content Moderation | `/api/check-theme`, safety check on sketch label and camera label; friendly block message |
 | ✅ Life Skills Themes | 5 life-skill tiles in ThemeSelect (Sharing, Courage, Gratitude, Creativity, Kindness) |
@@ -31,7 +31,7 @@
 | ✅ **Removed participation challenges** | Challenges removed entirely — non-verbal actions (clapping, roaring) are below VAD threshold with `START_SENSITIVITY_LOW`; combined with `proactive_audio` the model never waited reliably. `backend/characters.py` |
 | ✅ **Removed camera during storytelling** | Camera caused model to stop and say "I see you!" mid-story, breaking narrative flow. Removed from `StoryScreen` entirely. `frontend/src/screens/StoryScreen.tsx`, `frontend/src/hooks/useLiveAPI.ts` |
 | ✅ **Simplified badge system** | Badges now awarded only for spontaneous child creativity (max 2/session). No challenge-completion badges. `backend/characters.py` |
-| ✅ **Story continuity** | `clearBuffer()` removed from `awardBadge` handler. Added "NEVER restart mid-session" system prompt rule. Audio no longer cut mid-sentence on badge award. |
+| ✅ **Story continuity** | `clearBuffer()` removed from `award_badge` handler. Added "NEVER restart mid-session" system prompt rule. Audio no longer cut mid-sentence on badge award. |
 | ✅ **Long-form narration** | System prompt instructs model to speak in 5–7 sentence sustained flows like an audiobook narrator, reducing perceived pause frequency. `backend/characters.py` |
 | ✅ **challenges.md** | New living doc at `implementation/challenges.md` — 11 hard-won lessons with symptom, root cause, fix, and file references. |
 | ✅ **Story Gallery / Past Adventures (Phase 10B)** | `StoryGalleryEntry` in localStorage — saves title, images, narrations, badges, timestamp. `PastAdventuresModal` on landing page: grid of story cards → tap → `StorybookView` (same style as StoryRecapModal). Always saves even with 0 images. Narrations patched in after recap. |

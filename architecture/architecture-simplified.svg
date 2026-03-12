@@ -145,7 +145,7 @@
   <text x="800" y="295" font-size="10" font-weight="700" fill="#006064">generate_illustration(scene_description)</text>
   <text x="800" y="312" font-size="9" fill="#555">Bypasses fallback rate limit · skip_extraction=true</text>
   <rect x="788" y="330" width="295" height="44" rx="6" fill="#e0f7fa" stroke="#00acc1" stroke-width="1"/>
-  <text x="800" y="347" font-size="10" font-weight="700" fill="#006064">awardBadge(emoji, name, reason)</text>
+  <text x="800" y="347" font-size="10" font-weight="700" fill="#006064">award_badge(emoji, name, reason)</text>
   <text x="800" y="364" font-size="9" fill="#555">Only on explicit child verbal creativity · max 2/session</text>
   <text x="788" y="400" font-size="10" fill="#aaa" font-style="italic">Anti-repetition · content safety in system prompt</text>
   <text x="788" y="415" font-size="10" fill="#aaa" font-style="italic">10 unique voices · 6 languages</text>

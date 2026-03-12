@@ -22,7 +22,7 @@ Gemini awards virtual badges for genuine creative contributions during the sessi
 ## Tool Declaration (`characters.py`)
 ```python
 {
-    "name": "awardBadge",
+    "name": "award_badge",
     "description": "Award an achievement badge to the child (max 2 per session).",
     "parameters": {
         "type": "object",
@@ -51,7 +51,7 @@ Gemini says it warmly first ("Oh! You just earned a special badge!") then calls 
 
 ## Handler (`useLiveAPI.ts`)
 ```typescript
-if (fn.name === "awardBadge") {
+if (fn.name === "award_badge") {
   onBadgeAwarded?.({
     emoji: fn.args.emoji,
     name: fn.args.name,
@@ -67,7 +67,7 @@ if (fn.name === "awardBadge") {
 ---
 
 ## Files Changed
-- `backend/characters.py` — `awardBadge` tool declaration + ACHIEVEMENT BADGES prompt section
-- `frontend/src/hooks/useLiveAPI.ts` — `awardBadge` toolCall handler
+- `backend/characters.py` — `award_badge` tool declaration + ACHIEVEMENT BADGES prompt section
+- `frontend/src/hooks/useLiveAPI.ts` — `award_badge` toolCall handler
 - `frontend/src/screens/StoryScreen.tsx` — `activeBadge` state, wires `onBadgeAwarded`
 - `frontend/src/components/BadgePopup.tsx` — new component: centred animated badge popup, 3s auto-dismiss
