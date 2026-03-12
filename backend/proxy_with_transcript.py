@@ -6,6 +6,8 @@ import json
 import os
 import ssl
 import certifi
+from datetime import datetime, timezone
+from pathlib import Path
 import google.auth
 from google.auth.transport.requests import Request
 from fastapi import WebSocket, WebSocketDisconnect
@@ -17,6 +19,8 @@ from characters import build_gemini_setup_message, get_character, gemini_service
 PROJECT_ID = os.environ["GOOGLE_CLOUD_PROJECT"]
 LOCATION = os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1")
 
+TRANSCRIPTS_DIR = Path(__file__).parent / "transcripts"
+
 
 def get_access_token() -> str:
     """Get a fresh GCP access token using application default credentials."""
@@ -26,6 +30,88 @@ def get_access_token() -> str:
     if not creds.valid:
         creds.refresh(Request())
     return creds.token
+
+
+def _ts() -> str:
+    return datetime.now(timezone.utc).strftime("%H:%M:%S.%f")[:-3]
+
+
+def _append(events: list, entry: dict, t: str | None = None) -> None:
+    entry["t"] = t or _ts()
+    events.append(entry)
+
+
+def _tap_gemini_message(data: dict, state: dict) -> None:
+    """Extract loggable events from a Gemini→browser message.
+
+    state = {"events": list, "char_buf": str, "char_buf_t": str | None}
+    Character speech chunks are accumulated in char_buf and flushed as a
+    single 'character' entry at turn_complete or interrupted.
+    """
+    events: list = state["events"]
+
+    # Tool calls (generate_illustration, award_badge, …)
+    for call in (data.get("toolCall") or {}).get("functionCalls") or []:
+        _append(events, {
+            "type": "tool_call",
+            "name": call.get("name"),
+            "args": call.get("args"),
+        })
+
+    sc = data.get("serverContent") or {}
+
+    # Accumulate character speech chunks
+    ot = sc.get("outputTranscription") or {}
+    if ot.get("text"):
+        if not state["char_buf_t"]:
+            state["char_buf_t"] = _ts()
+        state["char_buf"] += ot["text"]
+
+    def _flush_char_buf() -> None:
+        if state["char_buf"].strip():
+            _append(events, {"type": "character", "text": state["char_buf"].strip()}, state["char_buf_t"])
+        state["char_buf"] = ""
+        state["char_buf_t"] = None
+
+    # Barge-in: flush whatever was buffered, then log interruption
+    if sc.get("interrupted"):
+        _flush_char_buf()
+        _append(events, {"type": "interrupted"})
+
+    # Child speech (only log finished transcriptions to avoid partial duplicates)
+    it = sc.get("inputTranscription") or {}
+    if it.get("finished") and it.get("text"):
+        _append(events, {"type": "child", "text": it["text"]})
+
+    # Turn complete: flush character speech, then log boundary
+    if sc.get("turnComplete"):
+        _flush_char_buf()
+        _append(events, {"type": "turn_complete"})
+
+
+def _save_transcript(
+    session_id: str,
+    character_name: str,
+    character_id: str,
+    theme: str | None,
+    transcript: list,
+) -> None:
+    try:
+        TRANSCRIPTS_DIR.mkdir(exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        filename = TRANSCRIPTS_DIR / f"{ts}_{session_id}_{character_id}.json"
+        payload = {
+            "session_id": session_id,
+            "character": character_name,
+            "character_id": character_id,
+            "theme": theme,
+            "recorded_at": datetime.now(timezone.utc).isoformat(),
+            "events": transcript,
+        }
+        filename.write_text(json.dumps(payload, ensure_ascii=False, indent=2))
+        print(f"[transcript] Saved → {filename.name} ({len(transcript)} events)")
+    except Exception as e:
+        print(f"[transcript] Save failed: {e}")
 
 
 async def proxy_browser_to_gemini(browser_ws: WebSocket, gemini_ws) -> None:
@@ -48,12 +134,14 @@ async def proxy_browser_to_gemini(browser_ws: WebSocket, gemini_ws) -> None:
 async def proxy_gemini_to_browser(
     gemini_ws,
     browser_ws: WebSocket,
+    state: dict,
 ) -> None:
-    """Forward all messages from Gemini to the browser."""
+    """Forward all messages from Gemini to the browser, tapping the transcript."""
     try:
         async for message in gemini_ws:
             try:
                 data = json.loads(message)
+                _tap_gemini_message(data, state)
                 await browser_ws.send_text(json.dumps(data))
 
             except json.JSONDecodeError:
@@ -117,6 +205,7 @@ async def run_proxy_session(
 
     ssl_context = ssl.create_default_context(cafile=certifi.where())
     setup_message = build_gemini_setup_message(character, PROJECT_ID, LOCATION)
+    state: dict = {"events": [], "char_buf": "", "char_buf_t": None}
 
     print(f"[proxy] Connecting to Gemini for character: {character.name}")
 
@@ -155,7 +244,7 @@ async def run_proxy_session(
                 proxy_browser_to_gemini(browser_ws, gemini_ws)
             )
             gemini_to_browser = asyncio.create_task(
-                proxy_gemini_to_browser(gemini_ws, browser_ws)
+                proxy_gemini_to_browser(gemini_ws, browser_ws, state)
             )
 
             # Yield one event-loop tick so both proxy tasks start and
@@ -194,6 +283,7 @@ async def run_proxy_session(
             else:
                 begin_parts = [{"text": "Begin!"}]
 
+            _append(state["events"], {"type": "session_start", "character": character.name, "theme": theme})
             await gemini_ws.send(json.dumps({
                 "client_content": {
                     "turns": [{"role": "user", "parts": begin_parts}],
@@ -238,3 +328,6 @@ async def run_proxy_session(
             await browser_ws.close(code=1011, reason="Internal error")
         except Exception:
             pass
+    finally:
+        if state["events"]:
+            _save_transcript(session_id, character.name, character.id, theme, state["events"])
