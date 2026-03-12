@@ -26,17 +26,6 @@ export interface Character {
 export const CHARACTERS: Character[] = [
   // ── English storytellers ──────────────────────────────────────────────
   {
-    id: "wizard",
-    name: "Wizard Wally",
-    language: "English",
-    tagline: "Magical tales",
-    description: "A wise and playful wizard who loves magical tales",
-    image: wizardImg,
-    greeting: "Greetings, young adventurer! Ready for a magical story?",
-    imageStyle: "children's fantasy storybook art, warm golden light, rich jewel tones, magical atmosphere, watercolor and ink",
-    category: "english",
-  },
-  {
     id: "fairy",
     name: "Fairy Flora",
     language: "English",
@@ -78,6 +67,17 @@ export const CHARACTERS: Character[] = [
     image: rajkumariImg,
     greeting: "Namaste! Come, let me tell you a wonderful story!",
     imageStyle: "elegant warm watercolor style, golden light, children's picture book art, graceful Indian illustration, soft jewel tones, delicate detail",
+    category: "english",
+  },
+  {
+    id: "wizard",
+    name: "Wizard Wally",
+    language: "English",
+    tagline: "Magical tales",
+    description: "A wise and playful wizard who loves magical tales",
+    image: wizardImg,
+    greeting: "Greetings, young adventurer! Ready for a magical story?",
+    imageStyle: "children's fantasy storybook art, warm golden light, rich jewel tones, magical atmosphere, watercolor and ink",
     category: "english",
   },
   // ── World language storytellers ───────────────────────────────────────

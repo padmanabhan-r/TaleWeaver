@@ -27,7 +27,7 @@ If the camera is on (Phase 7.1), Gemini watches for movement and reacts:
 
 ## Badge
 
-Completing a movement challenge awards the **🏃 Active Hero** badge (via `awardBadge` tool).
+Completing a movement challenge awards the **🏃 Active Hero** badge (via `award_badge` tool).
 
 ---
 

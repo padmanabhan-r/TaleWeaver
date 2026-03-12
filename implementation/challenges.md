@@ -68,12 +68,12 @@ A secondary bug: `BUFFER_MAX_SAMPLES = 48000 * 10` was wrong — the AudioContex
 
 **Symptom:** After a pause or challenge, the model resumes with what sounds like a fresh story opening rather than continuing where it left off.
 
-**Root cause (audio):** `clearBuffer()` was being called on `awardBadge` tool calls. This stopped all scheduled audio mid-sentence, resetting the playback schedule. When the model continued, the abrupt audio gap made the continuation feel like a new start.
+**Root cause (audio):** `clearBuffer()` was being called on `award_badge` tool calls. This stopped all scheduled audio mid-sentence, resetting the playback schedule. When the model continued, the abrupt audio gap made the continuation feel like a new start.
 
 **Root cause (model):** The native audio model with proactive_audio can generate fresh-sounding narrative openers when resuming after silence, especially if context was broken by an interrupt or tool call.
 
 **Fix:**
-- Removed `clearBuffer()` from the `awardBadge` handler — badge is visual only, no need to cut audio
+- Removed `clearBuffer()` from the `award_badge` handler — badge is visual only, no need to cut audio
 - Added explicit system prompt instruction: "NEVER restart the story mid-session. Every sentence must follow naturally from what came before — same characters, same world, same journey."
 
 **Files:** `frontend/src/hooks/useLiveAPI.ts`, `backend/characters.py`

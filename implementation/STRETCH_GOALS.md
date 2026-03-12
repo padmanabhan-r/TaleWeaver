@@ -51,7 +51,7 @@ Illustrator Agent  (gemini-2.0-flash-preview-image-generation)
 
 ~~Character awards virtual badges during the session for engagement behaviours.~~
 
-**Implemented:** `awardBadge` tool call from Gemini → `BadgePopup` appears centred on screen → auto-dismisses after 3 seconds. Criteria: genuine creative contributions (story ideas, brave choices, movement challenges, ending the story). Prohibited: camera toggle, random movement, just being present.
+**Implemented:** `award_badge` tool call from Gemini → `BadgePopup` appears centred on screen → auto-dismisses after 3 seconds. Criteria: genuine creative contributions (story ideas, brave choices, movement challenges, ending the story). Prohibited: camera toggle, random movement, just being present.
 
 ---
 
