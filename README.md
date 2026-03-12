@@ -128,7 +128,9 @@ The badge appears in the centre of the screen and auto-dismisses after a few sec
 
 Badges are saved with the story and shown in the **Story Recap** and **Past Adventures gallery**.
 
-<!-- TODO: Add badge screenshot here -->
+<p align="center">
+  <img src="images/8. Creative badge.png" alt="Creative Badge Award" width="800"/>
+</p>
 
 ---
 
@@ -189,33 +191,24 @@ Each storyteller **always speaks in their own language**.
 
 # How It Works
 
-```
-Child opens app
-↓
-Landing Page
-↓
-Choose Storyteller
-↓
-Choose how to start story
-├── Pick Theme
-├── Magic Camera
-└── Sketch Theme
-↓
-Story begins instantly
-↓
-Real-time voice conversation
-↓
-AI generates illustrations
-↓
-Child interrupts / adds ideas
-↓
-Story evolves dynamically
-↓
-End Story
-↓
-Storybook Recap
-↓
-Saved to Past Adventures
+```mermaid
+flowchart TD
+    A[Child opens app] --> B[Landing Page]
+    B --> C[Choose Storyteller]
+    C --> D[Choose how to start story]
+    D --> E[Pick Theme]
+    D --> F[Magic Camera]
+    D --> G[Sketch Theme]
+    E --> H[Story begins instantly]
+    F --> H
+    G --> H
+    H --> I[Real-time voice conversation]
+    I --> J[AI generates illustrations]
+    J --> K[Child interrupts / adds ideas]
+    K --> L[Story evolves dynamically]
+    L --> M[End Story]
+    M --> N[Storybook Recap]
+    N --> O[Saved to Past Adventures]
 ```
 
 ```
@@ -291,7 +284,7 @@ Past Adventures (landing page)
 # Architecture
 
 <p align="center">
-  <img src="architecture/architecture-v1.gif" alt="TaleWeaver Architecture" width="900"/>
+  <img src="architecture-v1.svg" alt="TaleWeaver Architecture" width="900"/>
 </p>
 
 ### Data flow
@@ -303,7 +296,7 @@ Browser (React)
   ├── POST /api/check-theme ─────→ Backend → Flash Lite (safety check)
   ├── POST /api/sketch-preview ──→ Backend → Flash Lite (label) + image gen (illustration)
   ├── POST /api/tts ─────────────→ Backend → gemini-2.5-flash-preview-tts (character voice)
-  ├── POST /api/image ───────────→ Backend → Gemini image gen (scene illustrations)
+  ├── POST /api/image ───────────→ Backend → safety filter → Gemini image gen (scene illustrations)
   └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
 ```
 
