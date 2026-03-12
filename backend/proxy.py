@@ -36,16 +36,23 @@ def _ts() -> str:
     return datetime.now(timezone.utc).strftime("%H:%M:%S.%f")[:-3]
 
 
-def _append(transcript: list, entry: dict) -> None:
-    entry["t"] = _ts()
-    transcript.append(entry)
+def _append(events: list, entry: dict, t: str | None = None) -> None:
+    entry["t"] = t or _ts()
+    events.append(entry)
 
 
-def _tap_gemini_message(data: dict, transcript: list) -> None:
-    """Extract loggable events from a Gemini→browser message and append to transcript."""
+def _tap_gemini_message(data: dict, state: dict) -> None:
+    """Extract loggable events from a Gemini→browser message.
+
+    state = {"events": list, "char_buf": str, "char_buf_t": str | None}
+    Character speech chunks are accumulated in char_buf and flushed as a
+    single 'character' entry at turn_complete or interrupted.
+    """
+    events: list = state["events"]
+
     # Tool calls (generate_illustration, award_badge, …)
     for call in (data.get("toolCall") or {}).get("functionCalls") or []:
-        _append(transcript, {
+        _append(events, {
             "type": "tool_call",
             "name": call.get("name"),
             "args": call.get("args"),
@@ -53,26 +60,33 @@ def _tap_gemini_message(data: dict, transcript: list) -> None:
 
     sc = data.get("serverContent") or {}
 
-    # Barge-in / interruption
-    if sc.get("interrupted"):
-        _append(transcript, {"type": "interrupted"})
-
-    # Child speech
-    it = sc.get("inputTranscription") or {}
-    if it.get("text"):
-        _append(transcript, {
-            "type": "child",
-            "text": it["text"],
-            "finished": bool(it.get("finished")),
-        })
-
-    # Character speech (accumulate chunks; mark turn boundary)
+    # Accumulate character speech chunks
     ot = sc.get("outputTranscription") or {}
     if ot.get("text"):
-        _append(transcript, {"type": "character_chunk", "text": ot["text"]})
+        if not state["char_buf_t"]:
+            state["char_buf_t"] = _ts()
+        state["char_buf"] += ot["text"]
 
+    def _flush_char_buf() -> None:
+        if state["char_buf"].strip():
+            _append(events, {"type": "character", "text": state["char_buf"].strip()}, state["char_buf_t"])
+        state["char_buf"] = ""
+        state["char_buf_t"] = None
+
+    # Barge-in: flush whatever was buffered, then log interruption
+    if sc.get("interrupted"):
+        _flush_char_buf()
+        _append(events, {"type": "interrupted"})
+
+    # Child speech (only log finished transcriptions to avoid partial duplicates)
+    it = sc.get("inputTranscription") or {}
+    if it.get("finished") and it.get("text"):
+        _append(events, {"type": "child", "text": it["text"]})
+
+    # Turn complete: flush character speech, then log boundary
     if sc.get("turnComplete"):
-        _append(transcript, {"type": "turn_complete"})
+        _flush_char_buf()
+        _append(events, {"type": "turn_complete"})
 
 
 def _save_transcript(
@@ -120,14 +134,14 @@ async def proxy_browser_to_gemini(browser_ws: WebSocket, gemini_ws) -> None:
 async def proxy_gemini_to_browser(
     gemini_ws,
     browser_ws: WebSocket,
-    transcript: list,
+    state: dict,
 ) -> None:
     """Forward all messages from Gemini to the browser, tapping the transcript."""
     try:
         async for message in gemini_ws:
             try:
                 data = json.loads(message)
-                _tap_gemini_message(data, transcript)
+                _tap_gemini_message(data, state)
                 await browser_ws.send_text(json.dumps(data))
 
             except json.JSONDecodeError:
@@ -191,7 +205,7 @@ async def run_proxy_session(
 
     ssl_context = ssl.create_default_context(cafile=certifi.where())
     setup_message = build_gemini_setup_message(character, PROJECT_ID, LOCATION)
-    transcript: list = []
+    state: dict = {"events": [], "char_buf": "", "char_buf_t": None}
 
     print(f"[proxy] Connecting to Gemini for character: {character.name}")
 
@@ -230,7 +244,7 @@ async def run_proxy_session(
                 proxy_browser_to_gemini(browser_ws, gemini_ws)
             )
             gemini_to_browser = asyncio.create_task(
-                proxy_gemini_to_browser(gemini_ws, browser_ws, transcript)
+                proxy_gemini_to_browser(gemini_ws, browser_ws, state)
             )
 
             # Yield one event-loop tick so both proxy tasks start and
@@ -269,7 +283,7 @@ async def run_proxy_session(
             else:
                 begin_parts = [{"text": "Begin!"}]
 
-            _append(transcript, {"type": "session_start", "character": character.name, "theme": theme})
+            _append(state["events"], {"type": "session_start", "character": character.name, "theme": theme})
             await gemini_ws.send(json.dumps({
                 "client_content": {
                     "turns": [{"role": "user", "parts": begin_parts}],
@@ -315,5 +329,5 @@ async def run_proxy_session(
         except Exception:
             pass
     finally:
-        if transcript:
-            _save_transcript(session_id, character.name, character.id, theme, transcript)
+        if state["events"]:
+            _save_transcript(session_id, character.name, character.id, theme, state["events"])

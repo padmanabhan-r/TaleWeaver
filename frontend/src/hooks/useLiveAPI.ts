@@ -210,6 +210,17 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
   const userEndedRef = useRef(false);
   // Accumulates character speech across transcription chunks (finished flag unreliable in native audio)
   const outputTextAccRef = useRef("");
+  // Buffers generate_illustration tool responses to be sent after turnComplete,
+  // preventing the toolResponse from interrupting Gemini's mid-turn audio output.
+  // Each entry also carries a timeout handle that fires if turnComplete doesn't
+  // arrive in time (model paused waiting for response — avoid deadlock).
+  const pendingIllustrationResponsesRef = useRef<{ msg: string; timer: ReturnType<typeof setTimeout> }[]>([]);
+  // Watchdog: if the model produces no audio within 10s of session going active,
+  // the Gemini session initialised in a broken state — auto-reconnect silently.
+  const watchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const watchdogReconnectRef = useRef(false);
+  // Stable ref to connect so onclose can call it after resetting state
+  const connectRef = useRef<() => void>(() => {});
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
   const { initPlayback, playChunk, clearBuffer, isPlaying, playbackCtxRef, playbackGainRef } = useAudioPlayback();
 
@@ -280,8 +291,13 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
             startCaptureRef.current().then(() => {
               setSessionState("active");
               setCharacterState("thinking");
-              // Backend sends Begin! to Gemini after asyncio.sleep(0) ensures
-              // the gemini_to_browser proxy task is running and ready to forward audio.
+              // Watchdog: if no character audio arrives within 10 s the Gemini session
+              // initialised broken (empty turns, no speech). Reconnect automatically.
+              watchdogTimerRef.current = setTimeout(() => {
+                console.warn("[live-api] Watchdog: no audio in 10s — reconnecting");
+                watchdogReconnectRef.current = true;
+                ws.close(1000, "Watchdog reconnect");
+              }, 10_000);
             }).catch((err) => {
               console.error("[live-api] Mic capture failed:", err);
               setSessionState("error");
@@ -299,12 +315,23 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
           if (data.toolCall?.functionCalls) {
             for (const call of data.toolCall.functionCalls) {
               if (call.name === "generate_illustration") {
-                // Respond immediately — don't block Gemini's narration while image generates
-                ws.send(JSON.stringify({
+                // Buffer the toolResponse to avoid interrupting mid-turn audio.
+                // Fallback timer: if turnComplete doesn't arrive within 2.5 s the
+                // model is paused waiting for the response — send it immediately to
+                // unblock it, otherwise we deadlock.
+                const msg = JSON.stringify({
                   toolResponse: {
-                    functionResponses: [{ id: call.id, response: { output: "Illustration generated. Continue narrating the story exactly where you left off — do not restart, do not re-introduce the scene." } }],
+                    functionResponses: [{ id: call.id, response: { output: "Illustration generated. Continue the story — do not restart or re-introduce the scene. Do not call generate_illustration again until several more sentences have been narrated." } }],
                   },
-                }));
+                });
+                const timer = setTimeout(() => {
+                  const idx = pendingIllustrationResponsesRef.current.findIndex(p => p.msg === msg);
+                  if (idx !== -1) {
+                    pendingIllustrationResponsesRef.current.splice(idx, 1);
+                    if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+                  }
+                }, 2500);
+                pendingIllustrationResponsesRef.current.push({ msg, timer });
                 const description = (call.args?.scene_description as string) ?? "";
                 onGenerateIllustrationRef.current?.(description);
               } else if (call.name === "award_badge") {
@@ -327,6 +354,7 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
           // Barge-in: child interrupted the character
           if (sc.interrupted) {
             outputTextAccRef.current = "";
+            pendingIllustrationResponsesRef.current.splice(0).forEach(({ timer }) => clearTimeout(timer));
             clearBufferRef.current();
             setCharacterState("listening");
             onChildSpokeRef.current?.();
@@ -348,14 +376,27 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
           if (sc.modelTurn?.parts) {
             for (const part of sc.modelTurn.parts) {
               if (part.inlineData?.data) {
+                // First audio received — session is healthy, cancel watchdog
+                if (watchdogTimerRef.current) {
+                  clearTimeout(watchdogTimerRef.current);
+                  watchdogTimerRef.current = null;
+                }
                 playChunkRef.current(part.inlineData.data);
                 setCharacterState("speaking");
               }
             }
           }
 
-          // Character finished speaking — trigger image with the full turn text
+          // Character finished speaking — flush buffered tool responses, then trigger image
           if (sc.turnComplete) {
+            // Flush any pending illustration tool responses now that the turn is done.
+            // Cancel their fallback timers first — we're sending them cleanly here.
+            const pending = pendingIllustrationResponsesRef.current.splice(0);
+            pending.forEach(({ msg, timer }) => {
+              clearTimeout(timer);
+              if (ws.readyState === WebSocket.OPEN) ws.send(msg);
+            });
+
             const accText = outputTextAccRef.current.trim();
             if (accText) {
               onTranscriptionRef.current?.({ type: "character", text: accText });
@@ -378,7 +419,20 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
 
       ws.onclose = (event) => {
         console.log("[live-api] WebSocket closed:", event.code, event.reason);
+        if (watchdogTimerRef.current) {
+          clearTimeout(watchdogTimerRef.current);
+          watchdogTimerRef.current = null;
+        }
         stopCapture();
+        if (watchdogReconnectRef.current) {
+          // Broken session detected — reset to idle and retry transparently
+          watchdogReconnectRef.current = false;
+          console.log("[live-api] Watchdog reconnect: resetting session");
+          setCharacterState("idle");
+          setSessionState("idle");
+          setTimeout(() => connectRef.current(), 300);
+          return;
+        }
         // Only transition to "ended" (shows "See our story!") if the user clicked End Story.
         // Unexpected drops (Gemini timeout, network) go to "error" so the child can restart.
         setSessionState(userEndedRef.current ? "ended" : "error");
@@ -390,6 +444,9 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
       setSessionState("error");
     }
   }, [character.id, sessionState, initPlayback, stopCapture]);
+
+  // Keep connectRef pointing to the latest connect so onclose can call it after resetting state
+  useEffect(() => { connectRef.current = connect; }, [connect]);
 
   const notifyActionDone = useCallback(() => {
     const ws = wsRef.current;
@@ -420,6 +477,10 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
 
   const disconnect = useCallback(() => {
     userEndedRef.current = true;
+    if (watchdogTimerRef.current) {
+      clearTimeout(watchdogTimerRef.current);
+      watchdogTimerRef.current = null;
+    }
     setIsPaused(false);
     // Restore gain in case we were paused
     if (playbackGainRef.current) playbackGainRef.current.gain.value = 1;
