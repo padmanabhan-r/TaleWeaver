@@ -216,9 +216,10 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
   // arrive in time (model paused waiting for response — avoid deadlock).
   const pendingIllustrationResponsesRef = useRef<{ msg: string; timer: ReturnType<typeof setTimeout> }[]>([]);
   // Watchdog: if the model produces no audio within 10s of session going active,
-  // the Gemini session initialised in a broken state — auto-reconnect silently.
+  // the Gemini session initialised in a broken state — auto-reconnect once silently.
   const watchdogTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const watchdogReconnectRef = useRef(false);
+  const watchdogAttemptsRef = useRef(0);
   // Stable ref to connect so onclose can call it after resetting state
   const connectRef = useRef<() => void>(() => {});
   const { startCapture, stopCapture, isCapturing, captureCtxRef, captureSourceRef } = useAudioCapture(wsRef);
@@ -330,7 +331,7 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
                     pendingIllustrationResponsesRef.current.splice(idx, 1);
                     if (ws.readyState === WebSocket.OPEN) ws.send(msg);
                   }
-                }, 2500);
+                }, 500);
                 pendingIllustrationResponsesRef.current.push({ msg, timer });
                 const description = (call.args?.scene_description as string) ?? "";
                 onGenerateIllustrationRef.current?.(description);
@@ -376,10 +377,11 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
           if (sc.modelTurn?.parts) {
             for (const part of sc.modelTurn.parts) {
               if (part.inlineData?.data) {
-                // First audio received — session is healthy, cancel watchdog
+                // First audio received — session is healthy, cancel watchdog and reset counter
                 if (watchdogTimerRef.current) {
                   clearTimeout(watchdogTimerRef.current);
                   watchdogTimerRef.current = null;
+                  watchdogAttemptsRef.current = 0;
                 }
                 playChunkRef.current(part.inlineData.data);
                 setCharacterState("speaking");
@@ -425,12 +427,21 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
         }
         stopCapture();
         if (watchdogReconnectRef.current) {
-          // Broken session detected — reset to idle and retry transparently
           watchdogReconnectRef.current = false;
-          console.log("[live-api] Watchdog reconnect: resetting session");
-          setCharacterState("idle");
-          setSessionState("idle");
-          setTimeout(() => connectRef.current(), 300);
+          if (watchdogAttemptsRef.current < 1) {
+            // First failure — retry once transparently
+            watchdogAttemptsRef.current++;
+            console.log(`[live-api] Watchdog reconnect attempt ${watchdogAttemptsRef.current}`);
+            setCharacterState("idle");
+            setSessionState("idle");
+            setTimeout(() => connectRef.current(), 300);
+          } else {
+            // Already retried once — give up and show error so user can retry manually
+            console.warn("[live-api] Watchdog: retry limit reached, showing error");
+            watchdogAttemptsRef.current = 0;
+            setSessionState("error");
+            setCharacterState("idle");
+          }
           return;
         }
         // Only transition to "ended" (shows "See our story!") if the user clicked End Story.
