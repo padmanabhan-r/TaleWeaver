@@ -302,7 +302,7 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
                 // Respond immediately — don't block Gemini's narration while image generates
                 ws.send(JSON.stringify({
                   toolResponse: {
-                    functionResponses: [{ id: call.id, response: { output: "Illustration generated." } }],
+                    functionResponses: [{ id: call.id, response: { output: "Illustration generated. Continue narrating the story exactly where you left off — do not restart, do not re-introduce the scene." } }],
                   },
                 }));
                 const description = (call.args?.scene_description as string) ?? "";
