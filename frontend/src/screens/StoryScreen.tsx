@@ -221,6 +221,7 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
 
   // Story recap modal
   const [showRecap, setShowRecap] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   // Badge popup state (queue: show one at a time) + persistent list for saving
   const [activeBadge, setActiveBadge] = useState<BadgeAward | null>(null);
@@ -507,6 +508,42 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
                 </motion.div>
               )}
             </div>
+
+            {/* Disclaimer */}
+            <AnimatePresence>
+              {showDisclaimer ? (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
+                  className="flex items-start gap-1.5 px-2 mt-1"
+                >
+                  <p className="text-xs text-muted-foreground/60 leading-snug flex-1">
+                    If the storyteller doesn't begin on its own, just say something — a cold start may need a nudge.{" "}
+                    Free accounts have limited image generation capacity.
+                  </p>
+                  <button
+                    onClick={() => setShowDisclaimer(false)}
+                    className="text-red-300/60 hover:text-red-400/80 transition-colors flex-shrink-0 mt-0.5"
+                    title="Dismiss"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.button
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                  onClick={() => setShowDisclaimer(true)}
+                  className="mt-1 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
+                  title="Show info"
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2"/>
+                    <text x="7" y="11" textAnchor="middle" fontSize="9" fill="currentColor" fontWeight="600">i</text>
+                  </svg>
+                </motion.button>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Right — story canvas */}
