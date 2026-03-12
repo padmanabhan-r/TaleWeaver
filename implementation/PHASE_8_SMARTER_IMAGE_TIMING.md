@@ -31,7 +31,7 @@ Gemini decides *when* and *what* — no guessing, no clock.
 
 ## Approach
 
-**Frontend-handled tool call** — same pattern as `showChoice` / `awardBadge`. No new backend infrastructure needed.
+**Frontend-handled tool call** — same pattern as `showChoice` / `award_badge`. No new backend infrastructure needed.
 
 ### Files to Change
 
@@ -99,7 +99,7 @@ ILLUSTRATION TOOL (using generate_illustration tool):
 
 ### useLiveAPI.ts
 
-In the `toolCall` handler (alongside `showChoice` / `awardBadge`):
+In the `toolCall` handler (alongside `showChoice` / `award_badge`):
 
 ```typescript
 if (fn.name === "generate_illustration") {

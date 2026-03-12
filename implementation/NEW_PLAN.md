@@ -32,7 +32,7 @@ Browser WS ──→ FastAPI ──→ raw websockets ──→ Gemini Live API
                 └──→ POST /api/image  (browser calls this directly when tool fires)
 ```
 
-Tools (`generate_illustration`, `showChoice`, `awardBadge`) fire from Gemini → forwarded as JSON to browser → browser handles them.
+Tools (`generate_illustration`, `showChoice`, `award_badge`) fire from Gemini → forwarded as JSON to browser → browser handles them.
 
 ### Target (ADK approach)
 ```
@@ -65,7 +65,7 @@ The browser never makes `POST /api/image` calls — images flow as WebSocket mes
 │  │    show_choice(options)                                        │ │
 │  │      → pushes { type:"showChoice", options } to browser       │ │
 │  │    award_badge(emoji, name, reason)                            │ │
-│  │      → pushes { type:"awardBadge", ... } to browser           │ │
+│  │      → pushes { type:"award_badge", ... } to browser           │ │
 │  │                                                                │ │
 │  │  RunConfig:                                                    │ │
 │  │    speech_config: character voice name (Aoede, Charon, etc.)  │ │
@@ -179,7 +179,7 @@ def _build_agent(character: Character, push_to_browser: Callable) -> Agent:
 
     async def award_badge(emoji: str, name: str, reason: str) -> dict:
         """Award an achievement badge to the child."""
-        await push_to_browser({"type": "awardBadge", "emoji": emoji, "name": name, "reason": reason})
+        await push_to_browser({"type": "award_badge", "emoji": emoji, "name": name, "reason": reason})
         return {"status": "ok"}
 
     return Agent(
