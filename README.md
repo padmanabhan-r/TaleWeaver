@@ -22,8 +22,6 @@ TaleWeaver is powered by **Gemini Live's native audio model** — which means ea
 
 **5 English storytellers. 5 world-language grandmothers.** Each one language-locked — they never switch to English, even if the child does.
 
-<p align="center">
-
 | Character | Language | Style |
 |---|---|---|
 | Wizard Wally | English | Magical adventures |
@@ -36,8 +34,6 @@ TaleWeaver is powered by **Gemini Live's native audio model** — which means ea
 | Yé Ye | Mandarin | Wise storytelling |
 | Abuelo Miguel | Spanish | Warm family stories |
 | Mamie Claire | French | Cozy storybook adventures |
-
-</p>
 
 <br/>
 
@@ -92,6 +88,8 @@ Stuffed penguin   → A fluffy penguin pal
 LEGO rocket    → Galactic rescue pilot
 ```
 
+If the object shown is inappropriate, the safety filter blocks it before the story starts.
+
 <p align="center">
   <img src="images/4. Magic camera - photo.png" alt="Magic Camera - Photo" width="340"/>
   <img src="images/5. Magic camera - image.png" alt="Magic Camera - Illustrated" width="340"/>
@@ -105,7 +103,7 @@ Kids can **draw anything** on a canvas.
 
 The AI turns the drawing into a **storybook illustration** and starts a story around it.
 
-Draw mountains, a house, a robot, a dragon, a castle, a flying whale — and watch it come to life.
+Draw mountains, a house, a robot, a dragon, a castle, a flying whale — and watch it come to life. If the drawing is inappropriate, the safety filter blocks it before the story starts.
 
 <p align="center">
   <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="340"/>
@@ -192,6 +190,59 @@ All completed stories are saved locally and accessible from the landing page. Ta
 - **Life skills themes** — Sharing, Courage, Gratitude, Creativity, Kindness
 - **15-minute session timeout** — idle sessions close automatically
 - **Graceful shutdown** — Cloud Run SIGTERM handled cleanly within the 30 s grace window
+
+---
+
+# Architecture
+
+<p align="center">
+  <img src="architecture-v1.svg" alt="TaleWeaver Architecture" width="900"/>
+</p>
+
+### Data flow
+
+```
+Browser (React)
+  ├── WebSocket /ws/story ───────→ Backend → Gemini Live API (Vertex AI)
+  │     bidirectional audio/text proxy; no audio stored server-side
+  ├── POST /api/check-theme ─────→ Backend → Flash Lite (safety check)
+  ├── POST /api/sketch-preview ──→ Backend → Flash Lite (label) + image gen (illustration)
+  ├── POST /api/tts ─────────────→ Backend → gemini-2.5-flash-preview-tts (character voice)
+  ├── POST /api/image ───────────→ Backend → safety filter → Gemini image gen (scene illustrations)
+  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
+```
+
+### Session start (critical path)
+
+The backend ensures the first audio frame Gemini produces is never dropped:
+
+1. Opens the Gemini Live WebSocket
+2. Starts both proxy tasks (browser ↔ Gemini) concurrently
+3. Sends "Begin!" to Gemini only after both tasks are running and ready to forward data
+4. Gemini's audio response streams through immediately as it arrives
+
+### Audio pipeline
+
+- **Capture:** Mic → 16kHz PCM → WebSocket → Gemini Live (streamed in real time)
+- **Playback:** Gemini → 24kHz PCM → scheduled audio playback → speakers
+  - Chunks are scheduled precisely to handle bursts where Gemini streams faster than real-time
+  - AudioContext starts after mic permission is granted (Safari compatibility)
+
+### Image generation
+
+Two paths, both hitting `POST /api/image`:
+
+1. **Primary:** Gemini decides the right visual moment and writes a scene description. Image is generated immediately with no extra processing step.
+2. **Fallback:** fires if no image has been triggered in ~25 s. Uses the last narration as the scene description. Rate-limited to avoid flooding.
+
+Each request passes the previous image as reference for visual continuity.
+
+### Deployment
+
+- Single Cloud Run service — multi-stage Docker: Node 22 builds React, Python 3.13 serves API + static files
+- Single async worker, optimised for WebSocket-heavy I/O
+- CI/CD: push to `main` → Cloud Build → Artifact Registry → Cloud Run
+- Secrets: `GEMINI_API_KEY` from Secret Manager; GCP auth via Application Default Credentials
 
 ---
 
@@ -283,59 +334,6 @@ Past Adventures (landing page)
 | Hosting | Cloud Run — single service serves frontend + backend |
 | Domain | taleweaver.online (custom domain mapped to Cloud Run) |
 | CI/CD | Google Cloud Build — auto-deploys on every push to `main` |
-
----
-
-# Architecture
-
-<p align="center">
-  <img src="architecture-v1.svg" alt="TaleWeaver Architecture" width="900"/>
-</p>
-
-### Data flow
-
-```
-Browser (React)
-  ├── WebSocket /ws/story ───────→ Backend → Gemini Live API (Vertex AI)
-  │     bidirectional audio/text proxy; no audio stored server-side
-  ├── POST /api/check-theme ─────→ Backend → Flash Lite (safety check)
-  ├── POST /api/sketch-preview ──→ Backend → Flash Lite (label) + image gen (illustration)
-  ├── POST /api/tts ─────────────→ Backend → gemini-2.5-flash-preview-tts (character voice)
-  ├── POST /api/image ───────────→ Backend → safety filter → Gemini image gen (scene illustrations)
-  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
-```
-
-### Session start (critical path)
-
-The backend ensures the first audio frame Gemini produces is never dropped:
-
-1. Opens the Gemini Live WebSocket
-2. Starts both proxy tasks (browser ↔ Gemini) concurrently
-3. Sends "Begin!" to Gemini only after both tasks are running and ready to forward data
-4. Gemini's audio response streams through immediately as it arrives
-
-### Audio pipeline
-
-- **Capture:** Mic → 16kHz PCM → WebSocket → Gemini Live (streamed in real time)
-- **Playback:** Gemini → 24kHz PCM → scheduled audio playback → speakers
-  - Chunks are scheduled precisely to handle bursts where Gemini streams faster than real-time
-  - AudioContext starts after mic permission is granted (Safari compatibility)
-
-### Image generation
-
-Two paths, both hitting `POST /api/image`:
-
-1. **Primary:** Gemini decides the right visual moment and writes a scene description. Image is generated immediately with no extra processing step.
-2. **Fallback:** fires if no image has been triggered in ~25 s. Uses the last narration as the scene description. Rate-limited to avoid flooding.
-
-Each request passes the previous image as reference for visual continuity.
-
-### Deployment
-
-- Single Cloud Run service — multi-stage Docker: Node 22 builds React, Python 3.13 serves API + static files
-- Single async worker, optimised for WebSocket-heavy I/O
-- CI/CD: push to `main` → Cloud Build → Artifact Registry → Cloud Run
-- Secrets: `GEMINI_API_KEY` from Secret Manager; GCP auth via Application Default Credentials
 
 ---
 
