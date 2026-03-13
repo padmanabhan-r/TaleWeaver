@@ -1,5 +1,6 @@
 # backend/main.py
 """FastAPI application — WebSocket proxy and image generation."""
+# version bump
 
 import asyncio
 import json
