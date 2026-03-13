@@ -118,12 +118,6 @@ TaleWeaver recognises and celebrates when a child contributes something genuinel
 
 When a child suggests a wild idea, invents a new character name, or takes the story in an unexpected direction, **Gemini awards them a creativity badge** on the spot.
 
-Examples of what earns a badge:
-
-- *"Let's make the dragon a chef who only cooks spaghetti!"*
-- *"The spaceship should be made of chocolate!"*
-- *"I want the villain to become the hero's best friend!"*
-
 The badge appears in the centre of the screen and auto-dismisses after a few seconds — a small moment of delight that tells the child their imagination matters.
 
 Badges are saved with the story and shown in the **Story Recap** and **Past Adventures gallery**.
