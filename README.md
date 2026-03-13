@@ -192,6 +192,7 @@ flowchart TD
     C --> subE
 
     subgraph subE[Choose how to start]
+        direction LR
         E[Pick Theme]
         F[Magic Camera]
         G[Sketch Theme]
