@@ -277,15 +277,19 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
               console.log("[live-api] Playback AudioContext resumed at setupComplete");
             }
 
-            startCaptureRef.current().then(() => {
-              setSessionState("active");
-              setCharacterState("thinking");
-              // Backend sends Begin! to Gemini after asyncio.sleep(0) ensures
-              // the gemini_to_browser proxy task is running and ready to forward audio.
-            }).catch((err) => {
-              console.error("[live-api] Mic capture failed:", err);
-              setSessionState("error");
-            });
+            // Delay mic capture by 800ms — gives Gemini's first audio a head start
+            // and allows the browser's echo cancellation (AEC) to engage before
+            // the mic starts streaming. Without this, the mic picks up Gemini's
+            // opening words and sends them back as barge-in, silencing the story.
+            setTimeout(() => {
+              startCaptureRef.current().then(() => {
+                setSessionState("active");
+                setCharacterState("thinking");
+              }).catch((err) => {
+                console.error("[live-api] Mic capture failed:", err);
+                setSessionState("error");
+              });
+            }, 800);
             return;
           }
 
