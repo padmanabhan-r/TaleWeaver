@@ -2,7 +2,7 @@
 
 **TaleWeaver turns everyday objects into magical stories.**
 
-A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live API**.
+A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live** and **Nano Banana 2**.
 
 Children simply pick a storyteller, hold up a toy or draw an idea, and begin a **real-time conversation** where the AI and child co-create a story together.
 
@@ -22,6 +22,8 @@ TaleWeaver is powered by **Gemini Live's native audio model** — which means ea
 
 **5 English storytellers. 5 world-language grandmothers.** Each one language-locked — they never switch to English, even if the child does.
 
+<p align="center">
+
 | Character | Language | Style |
 |---|---|---|
 | Wizard Wally | English | Magical adventures |
@@ -34,6 +36,10 @@ TaleWeaver is powered by **Gemini Live's native audio model** — which means ea
 | Yé Ye | Mandarin | Wise storytelling |
 | Abuelo Miguel | Spanish | Warm family stories |
 | Mamie Claire | French | Cozy storybook adventures |
+
+</p>
+
+<br/>
 
 <p align="center">
   <img src="images/1. Choose Storyteller.png" alt="Choose Your Storyteller" width="700"/>
