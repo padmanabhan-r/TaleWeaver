@@ -11,7 +11,32 @@ Using **Gemini Live**, the storyteller speaks, listens, adapts to interruptions,
 Kids don't just listen to a story — **they shape it.**
 
 <p align="center">
-  <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="800"/>
+  <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="700"/>
+</p>
+
+---
+
+# Meet Your Storytellers
+
+TaleWeaver is powered by **Gemini Live's native audio model** — which means each character has a real voice, speaks fluently in their own language, and holds a genuine back-and-forth conversation with the child. Not text-to-speech. Not a chatbot. A living storyteller.
+
+**5 English storytellers. 5 world-language grandmothers.** Each one language-locked — they never switch to English, even if the child does.
+
+| Character | Language | Style |
+|---|---|---|
+| Wizard Wally | English | Magical adventures |
+| Fairy Flora | English | Enchanted fairy tales |
+| Captain Coco | English | Pirate adventures |
+| Robo Ricky | English | Sci-fi robot stories |
+| Rajkumari Meera | English (Indian accent) | Indian folk tales |
+| Dadi Maa | Hindi | Traditional bedtime stories |
+| Raja Vikram | Tamil | Legendary Tamil tales |
+| Yé Ye | Mandarin | Wise storytelling |
+| Abuelo Miguel | Spanish | Warm family stories |
+| Mamie Claire | French | Cozy storybook adventures |
+
+<p align="center">
+  <img src="images/1. Choose Storyteller.png" alt="Choose Your Storyteller" width="700"/>
 </p>
 
 ---
@@ -21,7 +46,7 @@ Kids don't just listen to a story — **they shape it.**
 Children start a story in **three magical ways**:
 
 <p align="center">
-  <img src="images/2. Pick mode.png" alt="Choose How to Start" width="800"/>
+  <img src="images/2. Pick mode.png" alt="Choose How to Start" width="700"/>
 </p>
 
 ---
@@ -33,13 +58,13 @@ Choose from adventure themes or life-skills topics
 Or type **anything their imagination invents**.
 
 <p align="center">
-  <img src="images/3. Pick a theme.png" alt="Pick a Theme" width="800"/>
+  <img src="images/3. Pick a theme.png" alt="Pick a Theme" width="700"/>
 </p>
 
 If a custom theme isn't appropriate for children, a friendly message blocks it before the story starts.
 
 <p align="center">
-  <img src="images/9. Safety filter.png" alt="Content Safety Filter" width="800"/>
+  <img src="images/9. Safety filter.png" alt="Content Safety Filter" width="700"/>
 </p>
 
 ---
@@ -62,8 +87,8 @@ LEGO rocket    → Galactic rescue pilot
 ```
 
 <p align="center">
-  <img src="images/4. Magic camera - photo.png" alt="Magic Camera - Photo" width="400"/>
-  <img src="images/5. Magic camera - image.png" alt="Magic Camera - Illustrated" width="400"/>
+  <img src="images/4. Magic camera - photo.png" alt="Magic Camera - Photo" width="340"/>
+  <img src="images/5. Magic camera - image.png" alt="Magic Camera - Illustrated" width="340"/>
 </p>
 
 ---
@@ -77,8 +102,8 @@ The AI turns the drawing into a **storybook illustration** and starts a story ar
 Draw mountains, a house, a robot, a dragon, a castle, a flying whale — and watch it come to life.
 
 <p align="center">
-  <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="400"/>
-  <img src="images/7. Sketch - image.png" alt="Sketch - Illustrated" width="400"/>
+  <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="340"/>
+  <img src="images/7. Sketch - image.png" alt="Sketch - Illustrated" width="340"/>
 </p>
 
 ---
@@ -101,7 +126,7 @@ Barge-in is native — Gemini detects when the child starts speaking, stops the 
 As the story unfolds, **illustrations appear automatically**. Gemini decides the right visual moment — a new location, character reveal, or dramatic transformation — and generates an image from its own scene description, so it always matches what was just narrated. Each new image receives the **previous image as context**, keeping characters and art style consistent across every scene.
 
 <p align="center">
-  <img src="images/10. Story screen.png" alt="Story Screen" width="800"/>
+  <img src="images/10. Story screen.png" alt="Story Screen" width="700"/>
 </p>
 
 ---
@@ -117,7 +142,7 @@ The badge appears in the centre of the screen and auto-dismisses after a few sec
 Badges are saved with the story and shown in the **Story Recap** and **Past Adventures gallery**.
 
 <p align="center">
-  <img src="images/8. Creative badge.png" alt="Creative Badge Award" width="800"/>
+  <img src="images/8. Creative badge.png" alt="Creative Badge Award" width="700"/>
 </p>
 
 ---
@@ -131,13 +156,13 @@ All session images are sent to Gemini, which generates a title and per-scene nar
 Children get a scrollable storybook with title, illustrated scenes, narration captions, and creativity badges. All saved to the **Past Adventures gallery**.
 
 <p align="center">
-  <img src="images/11. Story Recap.png" alt="Story Recap Storybook" width="800"/>
+  <img src="images/11. Story Recap.png" alt="Story Recap Storybook" width="700"/>
 </p>
 
 All completed stories are saved locally and accessible from the landing page. Tap any card to re-read the full storybook.
 
 <p align="center">
-  <img src="images/12. Past adventures.png" alt="Past Adventures Gallery" width="800"/>
+  <img src="images/12. Past adventures.png" alt="Past Adventures Gallery" width="700"/>
 </p>
 
 ---
@@ -161,29 +186,6 @@ All completed stories are saved locally and accessible from the landing page. Ta
 - **Life skills themes** — Sharing, Courage, Gratitude, Creativity, Kindness
 - **15-minute session timeout** — idle sessions close automatically
 - **Graceful shutdown** — Cloud Run SIGTERM handled cleanly within the 30 s grace window
-
----
-
-# Storyteller Characters
-
-| Character | Language | Style |
-|---|---|---|
-| Wizard Wally | English | Magical adventures |
-| Fairy Flora | English | Enchanted fairy tales |
-| Captain Coco | English | Pirate adventures |
-| Robo Ricky | English | Sci-fi robot stories |
-| Rajkumari Meera | English (Indian accent) | Indian folk tales |
-| Dadi Maa | Hindi | Traditional bedtime stories |
-| Raja Vikram | Tamil | Legendary Tamil tales |
-| Yé Ye | Mandarin | Wise storytelling |
-| Abuelo Miguel | Spanish | Warm family stories |
-| Mamie Claire | French | Cozy storybook adventures |
-
-Each storyteller **always speaks in their own language**.
-
-<p align="center">
-  <img src="images/1. Choose Storyteller.png" alt="Choose Your Storyteller" width="800"/>
-</p>
 
 ---
 
