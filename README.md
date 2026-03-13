@@ -74,7 +74,7 @@ Kids can **draw anything** on a canvas.
 
 The AI turns the drawing into a **storybook illustration** and starts a story around it.
 
-Draw a robot, a dragon, a castle, a flying whale — and watch it come to life.
+Draw mountains, a house, a robot, a dragon, a castle, a flying whale — and watch it come to life.
 
 <p align="center">
   <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="400"/>
