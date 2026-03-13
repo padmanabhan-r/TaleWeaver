@@ -36,6 +36,12 @@ Or type **anything their imagination invents**.
   <img src="images/3. Pick a theme.png" alt="Pick a Theme" width="800"/>
 </p>
 
+If a custom theme isn't appropriate for children, a friendly message blocks it before the story starts.
+
+<p align="center">
+  <img src="images/9. Safety filter.png" alt="Content Safety Filter" width="800"/>
+</p>
+
 ---
 
 ### 2. Magic Camera
@@ -96,6 +102,10 @@ AI:    Suddenly, a giant flying whale soared above the ship,
 
 Barge-in is native — Gemini detects when the child starts speaking, stops the current narration, and weaves their words into the next story beat.
 
+<p align="center">
+  <img src="images/10. Story screen.png" alt="Story Screen" width="800"/>
+</p>
+
 ---
 
 # AI-Generated Illustrations
@@ -135,6 +145,16 @@ When the adventure ends, the app generates a **storybook recap**.
 All session images are sent to Gemini, which generates a title and per-scene narrations in parallel. Original session images are reused — no new images generated during recap.
 
 Children get a scrollable storybook with title, illustrated scenes, narration captions, and creativity badges. All saved to the **Past Adventures gallery**.
+
+<p align="center">
+  <img src="images/11. Story Recap.png" alt="Story Recap Storybook" width="800"/>
+</p>
+
+All completed stories are saved locally and accessible from the landing page. Tap any card to re-read the full storybook.
+
+<p align="center">
+  <img src="images/12. Past adventures.png" alt="Past Adventures Gallery" width="800"/>
+</p>
 
 ---
 
