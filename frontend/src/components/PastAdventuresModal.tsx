@@ -228,9 +228,11 @@ function StorybookView({
 function StoryCard({
   entry,
   onClick,
+  onDelete,
 }: {
   entry: StoryGalleryEntry;
   onClick: () => void;
+  onDelete: () => void;
 }) {
   const thumb = entry.images[0];
   const title = entry.recapTitle || entry.title;
@@ -244,7 +246,7 @@ function StoryCard({
       style={{ background: "#fdf6e3", border: "2px solid #e8d9b5" }}
     >
       {/* Thumbnail */}
-      <div className="w-full aspect-video overflow-hidden bg-amber-100">
+      <div className="relative w-full aspect-video overflow-hidden bg-amber-100">
         {thumb ? (
           <img
             src={`data:${thumb.mimeType};base64,${thumb.imageData}`}
@@ -254,6 +256,14 @@ function StoryCard({
         ) : (
           <div className="w-full h-full flex items-center justify-center text-4xl">📖</div>
         )}
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-xs leading-none transition-opacity hover:opacity-90"
+          style={{ background: "rgba(0,0,0,0.45)", color: "#fff" }}
+          aria-label="Delete story"
+        >
+          ✕
+        </button>
       </div>
 
       {/* Card footer */}
@@ -289,6 +299,12 @@ export default function PastAdventuresModal({ onClose }: Props) {
   const handleClearAll = () => {
     try { localStorage.removeItem("taleweaver_gallery"); } catch { /* ignore */ }
     setEntries([]);
+  };
+
+  const handleDeleteEntry = (id: string) => {
+    const updated = entries.filter((e) => e.id !== id);
+    try { localStorage.setItem("taleweaver_gallery", JSON.stringify(updated)); } catch { /* ignore */ }
+    setEntries(updated);
   };
 
   return (
@@ -383,6 +399,7 @@ export default function PastAdventuresModal({ onClose }: Props) {
                         key={entry.id}
                         entry={entry}
                         onClick={() => setSelected(entry)}
+                        onDelete={() => handleDeleteEntry(entry.id)}
                       />
                     ))}
                   </div>
