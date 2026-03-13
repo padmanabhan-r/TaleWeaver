@@ -337,7 +337,7 @@ Past Adventures (landing page)
 
 ---
 
-# Reproducible Testing
+# Try It Out
 
 The app is live at **https://taleweaver-950758825854.us-central1.run.app** — no account, no setup required.
 
