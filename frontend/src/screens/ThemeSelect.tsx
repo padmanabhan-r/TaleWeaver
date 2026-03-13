@@ -690,6 +690,7 @@ const ThemeSelect = ({ character, onBack, onHome, onConfirm }: Props) => {
                                 onSelect={(label) => {
                                   setSelectedTheme((prev) => (prev === label ? null : label));
                                   setCustomText("");
+                                  setContentWarning(null);
                                 }}
                               />
                               <CustomThemeInput
