@@ -398,6 +398,24 @@ Open http://localhost:5173 and follow the Quick Start steps above.
 
 ---
 
+# Roadmap
+
+Features that are planned or in consideration for future versions.
+
+### Live Camera in Story Mode
+The Magic Camera already works at the theme selection stage — you hold up a prop and it becomes the seed of the story. The next step is bringing the camera *into* the active story: the AI could react to things the child holds up mid-narrative, spawning new story beats around what it sees. This was prototyped but pulled — having both voice and camera active simultaneously caused Gemini to break narrative focus and acknowledge the camera ("Oh, I see you!"), which shattered immersion. Needs a more seamless integration before it's ready.
+
+### Rive Animated Story Characters
+The current character portraits use Framer Motion for idle/thinking/speaking/listening states. The upgrade is Rive state machine animations with real lip-sync tied to live audio amplitude — mouth moves with the voice, eyes react, character breathes. Planned for all 10 characters. Requires custom Rive asset creation (designer work), which is the main blocker.
+
+### Learning Mode
+A dedicated mode where the storyteller weaves curriculum goals into the narrative — phonics, counting, colours, shapes — without the child realising they're "learning". Stories are designed around a specific skill and the AI checks for understanding through the natural story conversation.
+
+### Cloud Storage for Past Adventures
+Currently, story images are compressed and saved to `localStorage` (~100–200 KB per image, 20 story cap). The long-term solution is Google Cloud Storage: images uploaded to GCS at session end, signed URLs returned, gallery entries persist indefinitely across devices. This unblocks larger story archives and cross-device continuity.
+
+---
+
 # Live Demo
 
 **https://taleweaver-950758825854.us-central1.run.app**
