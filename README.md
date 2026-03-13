@@ -92,12 +92,12 @@ Children can interrupt the storyteller, change the story direction, add characte
 Example interaction:
 
 ```
-AI:    The pirate ship sailed into a glowing storm...
+AI:    The ant, the ladybug, and the fairy were tired after their long journey...
 
-Child: Add a flying whale!
+Child: Make a cloud their bed!
 
-AI:    Suddenly, a giant flying whale soared above the ship,
-       lifting it out of the storm!
+AI:    And just like that, a soft fluffy cloud floated down,
+       curling around them like the cosiest bed in the world!
 ```
 
 Barge-in is native — Gemini detects when the child starts speaking, stops the current narration, and weaves their words into the next story beat.
