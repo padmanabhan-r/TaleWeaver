@@ -349,11 +349,11 @@ Each request passes the previous image as reference for visual continuity.
 
 # Reproducible Testing
 
-The app is live at **https://taleweaver.online** — no account, no setup required.
+The app is live at **https://taleweaver-950758825854.us-central1.run.app** — no account, no setup required.
 
 ### Quick start (2 minutes)
 
-1. Open https://taleweaver.online on a device with a microphone
+1. Open https://taleweaver-950758825854.us-central1.run.app on a device with a microphone
 2. Click **Begin Your Adventure**
 3. Pick any storyteller (try **Wizard Wally** for English, **Dadi Maa** for Hindi, **Mamie Claire** for French)
 4. Choose **Pick a Theme** → select an adventure (e.g. "Space Adventure") or type anything custom
@@ -440,6 +440,6 @@ Currently, story images are compressed and saved to `localStorage` (~100–200 K
 
 **https://taleweaver-950758825854.us-central1.run.app**
 
-Custom domain: **https://taleweaver.online**
+Custom domain **https://taleweaver.online** is mapped to the above — use the Cloud Run URL as the primary link.
 
 No account required. Just allow microphone access and start your adventure.
