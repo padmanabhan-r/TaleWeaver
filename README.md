@@ -83,13 +83,9 @@ Draw mountains, a house, a robot, a dragon, a castle, a flying whale — and wat
 
 ---
 
-# Real-Time Storytelling
+# A Living, Illustrated Story
 
-Unlike traditional story generators, TaleWeaver is **fully conversational**.
-
-Children can interrupt the storyteller, change the story direction, add characters, and invent new twists at any moment.
-
-Example interaction:
+Unlike traditional story generators, TaleWeaver is **fully conversational**. Children can interrupt the storyteller, change the story direction, add characters, and invent new twists at any moment.
 
 ```
 AI:    The ant, the ladybug, and the fairy were tired after their long journey...
@@ -102,23 +98,11 @@ AI:    And just like that, a soft fluffy cloud floated down,
 
 Barge-in is native — Gemini detects when the child starts speaking, stops the current narration, and weaves their words into the next story beat.
 
+As the story unfolds, **illustrations appear automatically**. Gemini decides the right visual moment — a new location, character reveal, or dramatic transformation — and generates an image from its own scene description, so it always matches what was just narrated. Each new image receives the **previous image as context**, keeping characters and art style consistent across every scene.
+
 <p align="center">
   <img src="images/10. Story screen.png" alt="Story Screen" width="800"/>
 </p>
-
----
-
-# AI-Generated Illustrations
-
-As the story unfolds, **illustrations appear automatically**.
-
-Gemini decides when to generate an illustration — at a new location, character reveal, or dramatic transformation. Images are generated from Gemini's own scene description, so they always match what was just narrated.
-
-Each new image receives the **previous image as context**, ensuring:
-
-- Consistent characters across all scenes
-- Stable art style throughout the story
-- Visual continuity with no manual prompting
 
 ---
 
