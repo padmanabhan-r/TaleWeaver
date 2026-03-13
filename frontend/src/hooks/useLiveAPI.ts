@@ -38,9 +38,14 @@ function useAudioCapture(wsRef: React.RefObject<WebSocket | null>) {
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  // Mic data is captured immediately but not forwarded to the backend until
+  // this timestamp passes — prevents ambient noise / echo from triggering
+  // barge-in before Gemini's opening narration has had a chance to play.
+  const suppressUntilRef = useRef<number>(0);
 
-  const startCapture = useCallback(async () => {
+  const startCapture = useCallback(async (suppressMs: number = 0) => {
     if (isCapturing) return;
+    suppressUntilRef.current = suppressMs > 0 ? Date.now() + suppressMs : 0;
 
     // Do NOT specify sampleRate in getUserMedia — browsers (especially macOS) often
     // ignore it or produce malformed audio when it conflicts with the native rate.
@@ -67,11 +72,12 @@ function useAudioCapture(wsRef: React.RefObject<WebSocket | null>) {
 
     workletNode.port.onmessage = (event) => {
       if (event.data.type !== "audio") return;
+      if (Date.now() < suppressUntilRef.current) return;
       const ws = wsRef.current;
       if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
       const int16Array: Int16Array = event.data.data;
-      const base64 = arrayBufferToBase64(int16Array.buffer);
+      const base64 = arrayBufferToBase64(int16Array.buffer as ArrayBuffer);
 
       ws.send(JSON.stringify({
         realtime_input: {
@@ -138,42 +144,48 @@ function useAudioPlayback() {
     const gainNode = gainNodeRef.current;
     if (!audioContext || !gainNode) return;
 
-    // Safari may auto-suspend an AudioContext that hasn't played audio recently.
-    // Schedule the chunk to play immediately after resuming instead of dropping it.
+    const decode = (data: string) => {
+      const binaryString = atob(data);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
+      const int16 = new Int16Array(bytes.buffer as ArrayBuffer);
+      const float32 = new Float32Array(int16.length);
+      for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
+      return float32;
+    };
+
+    const schedule = (float32: Float32Array) => {
+      const audioBuffer = audioContext.createBuffer(1, float32.length, 24000);
+      audioBuffer.getChannelData(0).set(float32);
+
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(gainNode);
+
+      const now = audioContext.currentTime;
+      const startTime = Math.max(now, nextStartTimeRef.current);
+      source.start(startTime);
+      nextStartTimeRef.current = startTime + audioBuffer.duration;
+
+      sourcesRef.current.push(source);
+      source.onended = () => {
+        const idx = sourcesRef.current.indexOf(source);
+        if (idx >= 0) sourcesRef.current.splice(idx, 1);
+        if (sourcesRef.current.length === 0) setIsPlaying(false);
+      };
+
+      setIsPlaying(true);
+    };
+
+    // AudioContext may be suspended during the gap between init and first audio chunk.
+    // Decode now, resume, then schedule — no external ref needed.
     if (audioContext.state === "suspended") {
-      audioContext.resume().then(() => playChunkRef.current(base64AudioData)).catch(console.warn);
+      const float32 = decode(base64AudioData);
+      audioContext.resume().then(() => schedule(float32)).catch(console.warn);
       return;
     }
 
-    // Decode base64 → PCM16 LE → Float32
-    const binaryString = atob(base64AudioData);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) bytes[i] = binaryString.charCodeAt(i);
-    const int16 = new Int16Array(bytes.buffer);
-    const float32 = new Float32Array(int16.length);
-    for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768;
-
-    // Create an AudioBuffer and schedule it to play immediately after the previous chunk
-    const audioBuffer = audioContext.createBuffer(1, float32.length, 24000);
-    audioBuffer.getChannelData(0).set(float32);
-
-    const source = audioContext.createBufferSource();
-    source.buffer = audioBuffer;
-    source.connect(gainNode);
-
-    const now = audioContext.currentTime;
-    const startTime = Math.max(now, nextStartTimeRef.current);
-    source.start(startTime);
-    nextStartTimeRef.current = startTime + audioBuffer.duration;
-
-    sourcesRef.current.push(source);
-    source.onended = () => {
-      const idx = sourcesRef.current.indexOf(source);
-      if (idx >= 0) sourcesRef.current.splice(idx, 1);
-      if (sourcesRef.current.length === 0) setIsPlaying(false);
-    };
-
-    setIsPlaying(true);
+    schedule(decode(base64AudioData));
   }, []);
 
   const clearBuffer = useCallback(() => {
@@ -277,19 +289,17 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
               console.log("[live-api] Playback AudioContext resumed at setupComplete");
             }
 
-            // Delay mic capture by 800ms — gives Gemini's first audio a head start
-            // and allows the browser's echo cancellation (AEC) to engage before
-            // the mic starts streaming. Without this, the mic picks up Gemini's
-            // opening words and sends them back as barge-in, silencing the story.
-            setTimeout(() => {
-              startCaptureRef.current().then(() => {
-                setSessionState("active");
-                setCharacterState("thinking");
-              }).catch((err) => {
-                console.error("[live-api] Mic capture failed:", err);
-                setSessionState("error");
-              });
-            }, 800);
+            // Start mic immediately so the AudioContext stays alive and Gemini's
+            // opening audio plays without interruption. Suppress forwarding mic
+            // data to the backend for 2s so ambient noise doesn't trigger barge-in
+            // before Gemini has had a chance to start narrating.
+            startCaptureRef.current(2000).then(() => {
+              setSessionState("active");
+              setCharacterState("thinking");
+            }).catch((err) => {
+              console.error("[live-api] Mic capture failed:", err);
+              setSessionState("error");
+            });
             return;
           }
 
@@ -394,17 +404,6 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
       setSessionState("error");
     }
   }, [character.id, sessionState, initPlayback, stopCapture]);
-
-  const notifyActionDone = useCallback(() => {
-    const ws = wsRef.current;
-    if (ws?.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify({
-      client_content: {
-        turns: [{ role: "user", parts: [{ text: "I did it! Did you see me?" }] }],
-        turn_complete: true,
-      },
-    }));
-  }, []);
 
   const togglePause = useCallback(() => {
     const gain = playbackGainRef.current;

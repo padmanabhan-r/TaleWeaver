@@ -518,15 +518,12 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
               )}
             </div>
 
-            {/* Disclaimer */}
-            <AnimatePresence>
+            {/* Disclaimer — fixed height so nothing above shifts */}
+            <div className="px-2 mt-1" style={{ minHeight: "52px" }}>
               {showDisclaimer ? (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
-                  className="flex items-start gap-1.5 px-2 mt-1"
-                >
+                <div className="flex items-start gap-1.5">
                   <p className="text-xs text-muted-foreground/60 leading-snug flex-1">
-                    If the storyteller doesn't begin on its own, just say something — a cold start may need a nudge.{" "}
+                    To get started, just say <em>"Start"</em> or <em>"Hello there!"</em>{" "}
                     Free accounts have limited image generation capacity.
                   </p>
                   <button
@@ -538,21 +535,20 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
                       <path d="M1 1l10 10M11 1L1 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                     </svg>
                   </button>
-                </motion.div>
+                </div>
               ) : (
-                <motion.button
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                <button
                   onClick={() => setShowDisclaimer(true)}
-                  className="mt-1 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
+                  className="text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors"
                   title="Show info"
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2"/>
                     <text x="7" y="11" textAnchor="middle" fontSize="9" fill="currentColor" fontWeight="600">i</text>
                   </svg>
-                </motion.button>
+                </button>
               )}
-            </AnimatePresence>
+            </div>
           </motion.div>
 
           {/* Right — story canvas */}
