@@ -200,6 +200,11 @@ flowchart TD
     L --> M[End Story]
     M --> N[Storybook Recap]
     N --> O[Saved to Past Adventures]
+
+    SC -.-> m1([gemini-2.5-flash-lite])
+    I  -.-> m2([gemini-live-2.5-flash-native-audio])
+    J  -.-> m3([gemini-3.1-flash-image-preview])
+    N  -.-> m4([gemini-2.5-flash-lite])
 ```
 
 ```
