@@ -148,7 +148,7 @@ const CharacterSelect = ({ onSelect, onBack }: Props) => {
           transition={{ delay: 0.4 }}
         >
           <h2 className="font-display text-xl sm:text-2xl font-bold text-magic-orange mb-4 text-center">
-            🌏 World Language Storytellers
+            🌏 World Language Storytellers (Experimental)
           </h2>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
             {otherChars.map((char, i) => (
