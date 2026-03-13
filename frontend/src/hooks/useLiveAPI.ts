@@ -289,11 +289,7 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
               console.log("[live-api] Playback AudioContext resumed at setupComplete");
             }
 
-            // Start mic immediately so the AudioContext stays alive and Gemini's
-            // opening audio plays without interruption. Suppress forwarding mic
-            // data to the backend for 2s so ambient noise doesn't trigger barge-in
-            // before Gemini has had a chance to start narrating.
-            startCaptureRef.current(2000).then(() => {
+            startCaptureRef.current().then(() => {
               setSessionState("active");
               setCharacterState("thinking");
             }).catch((err) => {

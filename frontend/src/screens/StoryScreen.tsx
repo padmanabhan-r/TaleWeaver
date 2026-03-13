@@ -523,8 +523,9 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
               {showDisclaimer ? (
                 <div className="flex items-start gap-1.5">
                   <p className="text-xs text-muted-foreground/60 leading-snug flex-1">
-                    To get started, just say <em>"Start"</em> or <em>"Hello there!"</em>{" "}
-                    Free accounts have limited image generation capacity.
+                    Say something to start your adventure!{" "}
+                    Free accounts have limited image generation quota.{" "}
+                    A fast internet connection makes the experience smoother.
                   </p>
                   <button
                     onClick={() => setShowDisclaimer(false)}
