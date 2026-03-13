@@ -201,13 +201,7 @@ flowchart TD
     M --> N[Storybook Recap]
     N --> O[Saved to Past Adventures]
 
-    SC -.- m1>gemini-2.5-flash-lite]
-    I  -.- m2>gemini-live-2.5-flash-native-audio]
-    J  -.- m3>gemini-3.1-flash-image-preview]
-    N  -.- m4>gemini-2.5-flash-lite]
 
-    classDef model fill:none,stroke:none,color:#888,font-size:11px
-    class m1,m2,m3,m4 model
 ```
 
 ```
