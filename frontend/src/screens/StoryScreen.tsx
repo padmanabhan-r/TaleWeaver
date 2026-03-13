@@ -560,7 +560,13 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
                   scenes={scenesRef.current}
                   badges={awardedBadgesRef.current}
                   onClose={() => setShowRecap(false)}
-                  onRecapGenerated={(t, n) => updateGalleryEntry(sessionIdRef.current, { recapTitle: t, narrations: n })}
+                  onRecapGenerated={async (t, n) => {
+                    // Images are guaranteed loaded at this point (recap API just used them).
+                    // Re-save so the gallery entry always has images, even if earlier saves
+                    // fired while images were still in-flight.
+                    await saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+                    updateGalleryEntry(sessionIdRef.current, { recapTitle: t, narrations: n });
+                  }}
                 />
               ) : sessionState === "ended" ? (
                 <OurStoryCard
