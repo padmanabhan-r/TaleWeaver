@@ -293,6 +293,15 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
     }
   }, [sessionState, character]);
 
+  // Re-save whenever a new image finishes loading after the session has ended.
+  // This ensures the gallery has all images even if the user skips the recap.
+  useEffect(() => {
+    if (sessionState !== "ended" && sessionState !== "error") return;
+    const loadedCount = scenes.filter((s) => s.status === "loaded" && s.imageData).length;
+    if (loadedCount === 0) return;
+    void saveToGallery(sessionIdRef.current, character, scenes, storyFirstLineRef.current, awardedBadgesRef.current);
+  }, [scenes, sessionState, character]);
+
   const handleBegin = useCallback(() => {
     connect();
   }, [connect]);
@@ -560,7 +569,13 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
                   scenes={scenesRef.current}
                   badges={awardedBadgesRef.current}
                   onClose={() => setShowRecap(false)}
-                  onRecapGenerated={(t, n) => updateGalleryEntry(sessionIdRef.current, { recapTitle: t, narrations: n })}
+                  onRecapGenerated={async (t, n) => {
+                    // Images are guaranteed loaded at this point (recap API just used them).
+                    // Re-save so the gallery entry always has images, even if earlier saves
+                    // fired while images were still in-flight.
+                    await saveToGallery(sessionIdRef.current, character, scenesRef.current, storyFirstLineRef.current, awardedBadgesRef.current);
+                    updateGalleryEntry(sessionIdRef.current, { recapTitle: t, narrations: n });
+                  }}
                 />
               ) : sessionState === "ended" ? (
                 <OurStoryCard

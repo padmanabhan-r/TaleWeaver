@@ -2,7 +2,7 @@
 
 **TaleWeaver turns everyday objects into magical stories.**
 
-A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live API**.
+A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live** and **Nano Banana 2**.
 
 Children simply pick a storyteller, hold up a toy or draw an idea, and begin a **real-time conversation** where the AI and child co-create a story together.
 
@@ -11,7 +11,34 @@ Using **Gemini Live**, the storyteller speaks, listens, adapts to interruptions,
 Kids don't just listen to a story — **they shape it.**
 
 <p align="center">
-  <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="800"/>
+  <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="700"/>
+</p>
+
+---
+
+# Meet Your Storytellers
+
+TaleWeaver is powered by **Gemini Live's native audio model** — which means each character has a real voice, speaks fluently in their own language, and holds a genuine back-and-forth conversation with the child. Not text-to-speech. Not a chatbot. A living storyteller.
+
+**5 English storytellers. 5 world-language grandmothers.** Each one language-locked — they never switch to English, even if the child does.
+
+| Character | Language | Style |
+|---|---|---|
+| Wizard Wally | English | Magical adventures |
+| Fairy Flora | English | Enchanted fairy tales |
+| Captain Coco | English | Pirate adventures |
+| Robo Ricky | English | Sci-fi robot stories |
+| Rajkumari Meera | English (Indian accent) | Indian folk tales |
+| Dadi Maa | Hindi | Traditional bedtime stories |
+| Raja Vikram | Tamil | Legendary Tamil tales |
+| Yé Ye | Mandarin | Wise storytelling |
+| Abuelo Miguel | Spanish | Warm family stories |
+| Mamie Claire | French | Cozy storybook adventures |
+
+<br/>
+
+<p align="center">
+  <img src="images/1. Choose Storyteller.png" alt="Choose Your Storyteller" width="700"/>
 </p>
 
 ---
@@ -21,7 +48,7 @@ Kids don't just listen to a story — **they shape it.**
 Children start a story in **three magical ways**:
 
 <p align="center">
-  <img src="images/2. Pick mode.png" alt="Choose How to Start" width="800"/>
+  <img src="images/2. Pick mode.png" alt="Choose How to Start" width="700"/>
 </p>
 
 ---
@@ -33,7 +60,13 @@ Choose from adventure themes or life-skills topics
 Or type **anything their imagination invents**.
 
 <p align="center">
-  <img src="images/3. Pick a theme.png" alt="Pick a Theme" width="800"/>
+  <img src="images/3. Pick a theme.png" alt="Pick a Theme" width="700"/>
+</p>
+
+If a custom theme isn't appropriate for children, a friendly message blocks it before the story starts.
+
+<p align="center">
+  <img src="images/9. Safety filter.png" alt="Content Safety Filter" width="700"/>
 </p>
 
 ---
@@ -55,9 +88,11 @@ Stuffed penguin   → A fluffy penguin pal
 LEGO rocket    → Galactic rescue pilot
 ```
 
+If the object shown is inappropriate, the safety filter blocks it before the story starts.
+
 <p align="center">
-  <img src="images/4. Magic camera - photo.png" alt="Magic Camera - Photo" width="400"/>
-  <img src="images/5. Magic camera - image.png" alt="Magic Camera - Illustrated" width="400"/>
+  <img src="images/4. Magic camera - photo.png" alt="Magic Camera - Photo" width="340"/>
+  <img src="images/5. Magic camera - image.png" alt="Magic Camera - Illustrated" width="340"/>
 </p>
 
 ---
@@ -68,47 +103,35 @@ Kids can **draw anything** on a canvas.
 
 The AI turns the drawing into a **storybook illustration** and starts a story around it.
 
-Draw a robot, a dragon, a castle, a flying whale — and watch it come to life.
+Draw mountains, a house, a robot, a dragon, a castle, a flying whale — and watch it come to life. If the drawing is inappropriate, the safety filter blocks it before the story starts.
 
 <p align="center">
-  <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="400"/>
-  <img src="images/7. Sketch - image.png" alt="Sketch - Illustrated" width="400"/>
+  <img src="images/6. Sketch - drawing.png" alt="Sketch - Drawing" width="340"/>
+  <img src="images/7. Sketch - image.png" alt="Sketch - Illustrated" width="340"/>
 </p>
 
 ---
 
-# Real-Time Storytelling
+# A Living, Illustrated Story
 
-Unlike traditional story generators, TaleWeaver is **fully conversational**.
-
-Children can interrupt the storyteller, change the story direction, add characters, and invent new twists at any moment.
-
-Example interaction:
+Unlike traditional story generators, TaleWeaver is **fully conversational**. Children can interrupt the storyteller, change the story direction, add characters, and invent new twists at any moment.
 
 ```
-AI:    The pirate ship sailed into a glowing storm...
+AI:    The ant, the ladybug, and the fairy were tired after their long journey...
 
-Child: Add a flying whale!
+Child: Make a cloud their bed!
 
-AI:    Suddenly, a giant flying whale soared above the ship,
-       lifting it out of the storm!
+AI:    And just like that, a soft fluffy cloud floated down,
+       curling around them like the cosiest bed in the world!
 ```
 
 Barge-in is native — Gemini detects when the child starts speaking, stops the current narration, and weaves their words into the next story beat.
 
----
+As the story unfolds, **illustrations appear automatically**. Gemini decides the right visual moment — a new location, character reveal, or dramatic transformation — and generates an image from its own scene description, so it always matches what was just narrated. Each new image receives the **previous image as context**, keeping characters and art style consistent across every scene.
 
-# AI-Generated Illustrations
-
-As the story unfolds, **illustrations appear automatically**.
-
-Gemini decides when to generate an illustration — at a new location, character reveal, or dramatic transformation. Images are generated from Gemini's own scene description, so they always match what was just narrated.
-
-Each new image receives the **previous image as context**, ensuring:
-
-- Consistent characters across all scenes
-- Stable art style throughout the story
-- Visual continuity with no manual prompting
+<p align="center">
+  <img src="images/10. Story screen.png" alt="Story Screen" width="700"/>
+</p>
 
 ---
 
@@ -118,18 +141,12 @@ TaleWeaver recognises and celebrates when a child contributes something genuinel
 
 When a child suggests a wild idea, invents a new character name, or takes the story in an unexpected direction, **Gemini awards them a creativity badge** on the spot.
 
-Examples of what earns a badge:
-
-- *"Let's make the dragon a chef who only cooks spaghetti!"*
-- *"The spaceship should be made of chocolate!"*
-- *"I want the villain to become the hero's best friend!"*
-
 The badge appears in the centre of the screen and auto-dismisses after a few seconds — a small moment of delight that tells the child their imagination matters.
 
 Badges are saved with the story and shown in the **Story Recap** and **Past Adventures gallery**.
 
 <p align="center">
-  <img src="images/8. Creative badge.png" alt="Creative Badge Award" width="800"/>
+  <img src="images/8. Creative badge.png" alt="Creative Badge Award" width="700"/>
 </p>
 
 ---
@@ -141,6 +158,16 @@ When the adventure ends, the app generates a **storybook recap**.
 All session images are sent to Gemini, which generates a title and per-scene narrations in parallel. Original session images are reused — no new images generated during recap.
 
 Children get a scrollable storybook with title, illustrated scenes, narration captions, and creativity badges. All saved to the **Past Adventures gallery**.
+
+<p align="center">
+  <img src="images/11. Story Recap.png" alt="Story Recap Storybook" width="700"/>
+</p>
+
+All completed stories are saved locally and accessible from the landing page. Tap any card to re-read the full storybook.
+
+<p align="center">
+  <img src="images/12. Past adventures.png" alt="Past Adventures Gallery" width="700"/>
+</p>
 
 ---
 
@@ -166,26 +193,56 @@ Children get a scrollable storybook with title, illustrated scenes, narration ca
 
 ---
 
-# Storyteller Characters
-
-| Character | Language | Style |
-|---|---|---|
-| Wizard Wally | English | Magical adventures |
-| Fairy Flora | English | Enchanted fairy tales |
-| Captain Coco | English | Pirate adventures |
-| Robo Ricky | English | Sci-fi robot stories |
-| Rajkumari Meera | English (Indian accent) | Indian folk tales |
-| Dadi Maa | Hindi | Traditional bedtime stories |
-| Raja Vikram | Tamil | Legendary Tamil tales |
-| Yé Ye | Mandarin | Wise storytelling |
-| Abuelo Miguel | Spanish | Warm family stories |
-| Mamie Claire | French | Cozy storybook adventures |
-
-Each storyteller **always speaks in their own language**.
+# Architecture
 
 <p align="center">
-  <img src="images/1. Choose Storyteller.png" alt="Choose Your Storyteller" width="800"/>
+  <img src="architecture-v1.svg" alt="TaleWeaver Architecture" width="900"/>
 </p>
+
+### Data flow
+
+```
+Browser (React)
+  ├── WebSocket /ws/story ───────→ Backend → Gemini Live API (Vertex AI)
+  │     bidirectional audio/text proxy; no audio stored server-side
+  ├── POST /api/check-theme ─────→ Backend → Flash Lite (safety check)
+  ├── POST /api/sketch-preview ──→ Backend → Flash Lite (label) + image gen (illustration)
+  ├── POST /api/tts ─────────────→ Backend → gemini-2.5-flash-preview-tts (character voice)
+  ├── POST /api/image ───────────→ Backend → safety filter → Gemini image gen (scene illustrations)
+  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
+```
+
+### Session start (critical path)
+
+The backend ensures the first audio frame Gemini produces is never dropped:
+
+1. Opens the Gemini Live WebSocket
+2. Starts both proxy tasks (browser ↔ Gemini) concurrently
+3. Sends "Begin!" to Gemini only after both tasks are running and ready to forward data
+4. Gemini's audio response streams through immediately as it arrives
+
+### Audio pipeline
+
+- **Capture:** Mic → 16kHz PCM → WebSocket → Gemini Live (streamed in real time)
+- **Playback:** Gemini → 24kHz PCM → scheduled audio playback → speakers
+  - Chunks are scheduled precisely to handle bursts where Gemini streams faster than real-time
+  - AudioContext starts after mic permission is granted (Safari compatibility)
+
+### Image generation
+
+Two paths, both hitting `POST /api/image`:
+
+1. **Primary:** Gemini decides the right visual moment and writes a scene description. Image is generated immediately with no extra processing step.
+2. **Fallback:** fires if no image has been triggered in ~25 s. Uses the last narration as the scene description. Rate-limited to avoid flooding.
+
+Each request passes the previous image as reference for visual continuity.
+
+### Deployment
+
+- Single Cloud Run service — multi-stage Docker: Node 22 builds React, Python 3.13 serves API + static files
+- Single async worker, optimised for WebSocket-heavy I/O
+- CI/CD: push to `main` → Cloud Build → Artifact Registry → Cloud Run
+- Secrets: `GEMINI_API_KEY` from Secret Manager; GCP auth via Application Default Credentials
 
 ---
 
@@ -195,13 +252,10 @@ Each storyteller **always speaks in their own language**.
 flowchart TD
     A[Child opens app] --> B[Landing Page]
     B --> C[Choose Storyteller]
-    C --> D[Choose how to start story]
-    D --> E[Pick Theme]
-    D --> F[Magic Camera]
-    D --> G[Sketch Theme]
-    E --> H[Story begins instantly]
-    F --> H
-    G --> H
+    C --> D["Choose how to start<br/>──────────────────────<br/>Pick Theme · Magic Camera · Sketch Theme"]
+    D --> SC{Safety check}
+    SC -->|Pass| H[Story begins instantly]
+    SC -->|Fail| D
     H --> I[Real-time voice conversation]
     I --> J[AI generates illustrations]
     J --> K[Child interrupts / adds ideas]
@@ -209,6 +263,8 @@ flowchart TD
     L --> M[End Story]
     M --> N[Storybook Recap]
     N --> O[Saved to Past Adventures]
+
+
 ```
 
 ```
@@ -281,66 +337,13 @@ Past Adventures (landing page)
 
 ---
 
-# Architecture
+# Try It Out
 
-<p align="center">
-  <img src="architecture-v1.svg" alt="TaleWeaver Architecture" width="900"/>
-</p>
-
-### Data flow
-
-```
-Browser (React)
-  ├── WebSocket /ws/story ───────→ Backend → Gemini Live API (Vertex AI)
-  │     bidirectional audio/text proxy; no audio stored server-side
-  ├── POST /api/check-theme ─────→ Backend → Flash Lite (safety check)
-  ├── POST /api/sketch-preview ──→ Backend → Flash Lite (label) + image gen (illustration)
-  ├── POST /api/tts ─────────────→ Backend → gemini-2.5-flash-preview-tts (character voice)
-  ├── POST /api/image ───────────→ Backend → safety filter → Gemini image gen (scene illustrations)
-  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
-```
-
-### Session start (critical path)
-
-The backend ensures the first audio frame Gemini produces is never dropped:
-
-1. Opens the Gemini Live WebSocket
-2. Starts both proxy tasks (browser ↔ Gemini) concurrently
-3. Sends "Begin!" to Gemini only after both tasks are running and ready to forward data
-4. Gemini's audio response streams through immediately as it arrives
-
-### Audio pipeline
-
-- **Capture:** Mic → 16kHz PCM → WebSocket → Gemini Live (streamed in real time)
-- **Playback:** Gemini → 24kHz PCM → scheduled audio playback → speakers
-  - Chunks are scheduled precisely to handle bursts where Gemini streams faster than real-time
-  - AudioContext starts after mic permission is granted (Safari compatibility)
-
-### Image generation
-
-Two paths, both hitting `POST /api/image`:
-
-1. **Primary:** Gemini decides the right visual moment and writes a scene description. Image is generated immediately with no extra processing step.
-2. **Fallback:** fires if no image has been triggered in ~25 s. Uses the last narration as the scene description. Rate-limited to avoid flooding.
-
-Each request passes the previous image as reference for visual continuity.
-
-### Deployment
-
-- Single Cloud Run service — multi-stage Docker: Node 22 builds React, Python 3.13 serves API + static files
-- Single async worker, optimised for WebSocket-heavy I/O
-- CI/CD: push to `main` → Cloud Build → Artifact Registry → Cloud Run
-- Secrets: `GEMINI_API_KEY` from Secret Manager; GCP auth via Application Default Credentials
-
----
-
-# Reproducible Testing
-
-The app is live at **https://taleweaver.online** — no account, no setup required.
+The app is live at **https://taleweaver-950758825854.us-central1.run.app** — no account, no setup required.
 
 ### Quick start (2 minutes)
 
-1. Open https://taleweaver.online on a device with a microphone
+1. Open https://taleweaver-950758825854.us-central1.run.app on a device with a microphone
 2. Click **Begin Your Adventure**
 3. Pick any storyteller (try **Wizard Wally** for English, **Dadi Maa** for Hindi, **Mamie Claire** for French)
 4. Choose **Pick a Theme** → select an adventure (e.g. "Space Adventure") or type anything custom
@@ -405,10 +408,21 @@ Open http://localhost:5173 and follow the Quick Start steps above.
 
 ---
 
+# Roadmap
+
+| Feature | Notes |
+|---|---|
+| **Live Camera in Story Mode** | Prototyped but pulled — camera active during narration caused Gemini to break story focus and acknowledge the camera directly. Needs a more seamless integration. |
+| **Rive Animated Characters** | Replace Framer Motion portraits with Rive state machine animations — real lip-sync tied to audio amplitude. Blocked on Rive asset creation for all 10 characters. |
+| **Learning Mode** | Storyteller weaves curriculum goals (phonics, counting, colours) into the narrative without the child realising they're learning. |
+| **Cloud Storage for Past Adventures** | Move from `localStorage` to GCS — images persist across devices and sessions indefinitely, no 20-story cap. |
+
+---
+
 # Live Demo
 
 **https://taleweaver-950758825854.us-central1.run.app**
 
-Custom domain: **https://taleweaver.online**
+Custom domain **https://taleweaver.online** is mapped to the above — use the Cloud Run URL as the primary link.
 
 No account required. Just allow microphone access and start your adventure.
