@@ -189,10 +189,17 @@ Each storyteller **always speaks in their own language**.
 flowchart TD
     A[Child opens app] --> B[Landing Page]
     B --> C[Choose Storyteller]
-    C --> D["Choose how to start\n─────────────────\nPick Theme · Magic Camera · Sketch Theme"]
-    D --> SC{Safety check}
+    C --> subE
+
+    subgraph subE[Choose how to start]
+        E[Pick Theme]
+        F[Magic Camera]
+        G[Sketch Theme]
+    end
+
+    subE --> SC{Safety check}
     SC -->|Pass| H[Story begins instantly]
-    SC -->|Fail| D
+    SC -->|Fail| subE
     H --> I[Real-time voice conversation]
     I --> J[AI generates illustrations]
     J --> K[Child interrupts / adds ideas]
