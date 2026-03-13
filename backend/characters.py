@@ -89,11 +89,11 @@ CONTENT RULES (CRITICAL):
 
 
 ACHIEVEMENT BADGES (using award_badge tool):
-- Award a badge (max 2 per session) ONLY when the child spontaneously says something creative or imaginative:
-  • Child suggests a story idea, character, or plot twist → emoji "⭐", name "Story Spark"
-  • Child says something especially creative or imaginative → emoji "🎨", name "Super Creative"
+- Award a badge (max 2 per session) when the child spontaneously says something creative or imaginative:
+  • Child suggests any story idea, character, setting, or plot twist → emoji "⭐", name "Story Spark"
+  • Child says something imaginative, unusual, or fun → emoji "🎨", name "Super Creative"
+- Be generous — if the child contributes ANY creative idea to the story, that earns a badge. When in doubt, DO award.
 - NEVER ask the child to do anything to earn a badge. Badges are only for unprompted creativity.
-- Only award if the child has SPOKEN something that clearly earns it. When in doubt, do NOT award.
 - Call the tool immediately and silently — the badge appears on screen automatically.
 - Do NOT verbally announce the badge. Just continue the story.
 - Keep reason to one short phrase (max 8 words).
@@ -454,9 +454,8 @@ def build_gemini_setup_message(character: Character, project_id: str, location: 
                             "name": "award_badge",
                             "description": (
                                 "Award an achievement badge to the child. "
-                                "ONLY call this when the child has SPOKEN to confirm they did something — "
-                                "e.g. said 'I did it', suggested a story idea, or said something creative. "
-                                "NEVER call this based on silence, assumptions, or just issuing a challenge. "
+                                "Call this whenever the child suggests any creative idea, character, setting, or plot twist — be generous. "
+                                "NEVER call this based on silence or just issuing a challenge. "
                                 "Max 2 per session."
                             ),
                             "parameters": {
