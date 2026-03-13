@@ -293,6 +293,15 @@ const StoryScreen = ({ character, theme, propImage, propDescription, propImageMi
     }
   }, [sessionState, character]);
 
+  // Re-save whenever a new image finishes loading after the session has ended.
+  // This ensures the gallery has all images even if the user skips the recap.
+  useEffect(() => {
+    if (sessionState !== "ended" && sessionState !== "error") return;
+    const loadedCount = scenes.filter((s) => s.status === "loaded" && s.imageData).length;
+    if (loadedCount === 0) return;
+    void saveToGallery(sessionIdRef.current, character, scenes, storyFirstLineRef.current, awardedBadgesRef.current);
+  }, [scenes, sessionState, character]);
+
   const handleBegin = useCallback(() => {
     connect();
   }, [connect]);
