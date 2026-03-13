@@ -186,7 +186,7 @@ Each storyteller **always speaks in their own language**.
 # How It Works
 
 ```mermaid
-flowchart LR
+flowchart TD
     A[Child opens app] --> B[Landing Page]
     B --> C[Choose Storyteller]
     C --> D[Choose how to start]
@@ -194,10 +194,10 @@ flowchart LR
     D --> F[Magic Camera]
     D --> G[Sketch Theme]
     E --> SC{Safety check}
+    F --> SC
+    G --> SC
     SC -->|Pass| H[Story begins instantly]
-    SC -->|Fail| E
-    F --> H
-    G --> H
+    SC -->|Fail| D
     H --> I[Real-time voice conversation]
     I --> J[AI generates illustrations]
     J --> K[Child interrupts / adds ideas]
