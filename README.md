@@ -22,6 +22,8 @@ TaleWeaver is powered by **Gemini Live's native audio model** — which means ea
 
 **5 English storytellers. 5 world-language storytellers.** Each one language-locked — they never switch to English, even if the child does.
 
+> **Note:** World-language characters are experimental — they showcase Gemini Live's multilingual capabilities but still need polish. English storytellers are the primary, fully-tested experience.
+
 | Character | Language | Style |
 |---|---|---|
 | Wizard Wally | English | Magical adventures |
