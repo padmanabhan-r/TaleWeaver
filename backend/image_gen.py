@@ -164,11 +164,12 @@ async def _is_safe_for_children(content: str) -> bool:
         "- Adult/sexual themes, nudity, romance\n"
         "- Drugs, alcohol, smoking\n"
         "- Hate speech, racism, abuse, war, terrorism\n"
-        "- Any real-world dangerous object a parent would keep away from a young child\n\n"
-        "SAFE — mark SAFE only for clearly child-friendly themes such as: animals, magic, "
+        "- Any physically dangerous object (e.g. power tools, sharp blades, firearms)\n\n"
+        "SAFE — mark SAFE for clearly child-friendly content such as: animals, magic, "
         "adventure, friendship, food, space, nature, fantasy, fairy tales, superheroes, "
         "everyday life, mild spooky/Halloween themes (ghosts, witches, pumpkins), mysteries, "
-        "and playful imaginative content.\n\n"
+        "playful imaginative content, and common everyday objects like toys, phones, tablets, "
+        "books, household items, clothing, vehicles, and similar ordinary objects.\n\n"
         "When in doubt, mark UNSAFE."
     )
     try:
