@@ -24,7 +24,7 @@ interface UseLiveAPIOptions {
   propImage?: string;       // raw base64 JPEG, no data: prefix
   propDescription?: string; // human-readable label, e.g. "a friendly blue dragon"
   onImageTrigger?: ((text: string) => void) | null;
-  onGenerateIllustration?: ((description: string) => void) | null;
+  onGenerateIllustration?: ((sceneDescription: string, narratorText: string) => void) | null;
   onTranscription?: ((msg: Transcription) => void) | null;
   onBadgeAwarded?: ((badge: BadgeAward) => void) | null;
   onChildSpoke?: (() => void) | null;
@@ -316,7 +316,7 @@ export function useLiveAPI({ character, theme, propImage, propDescription, onIma
                   },
                 }));
                 const description = (call.args?.scene_description as string) ?? "";
-                onGenerateIllustrationRef.current?.(description);
+                onGenerateIllustrationRef.current?.(description, outputTextAccRef.current.trim());
               } else if (call.name === "award_badge") {
                 // Don't clear the buffer — the model is mid-story and audio should continue.
                 // The badge is visual only; the system prompt tells the model not to announce it.
