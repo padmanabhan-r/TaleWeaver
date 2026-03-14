@@ -107,7 +107,9 @@ async def _generate_gemini(prompt: str, previous_image_data: str = "", previous_
                     ],
                 ),
             )
-            for part in response.candidates[0].content.parts:
+            candidate = response.candidates[0] if response.candidates else None
+            parts = (candidate.content.parts if candidate and candidate.content else None) or []
+            for part in parts:
                 if part.inline_data:
                     return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
             raise HTTPException(status_code=500, detail="No image in response")
@@ -135,7 +137,9 @@ async def _generate_gemini_api_key(prompt: str, previous_image_data: str = "", p
                     response_modalities=["IMAGE", "TEXT"],
                 ),
             )
-            for part in response.candidates[0].content.parts:
+            candidate = response.candidates[0] if response.candidates else None
+            parts = (candidate.content.parts if candidate and candidate.content else None) or []
+            for part in parts:
                 if part.inline_data and part.inline_data.data:
                     return base64.b64encode(part.inline_data.data).decode("utf-8"), part.inline_data.mime_type or "image/png"
             raise HTTPException(status_code=500, detail="No image in response")

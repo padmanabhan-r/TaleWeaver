@@ -238,11 +238,14 @@ function StoryCard({
   const title = entry.recapTitle || entry.title;
 
   return (
-    <motion.button
+    <motion.div
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
-      className="flex flex-col rounded-2xl overflow-hidden text-left shadow-md transition-shadow hover:shadow-xl"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onClick(); }}
+      className="flex flex-col rounded-2xl overflow-hidden text-left shadow-md transition-shadow hover:shadow-xl cursor-pointer"
       style={{ background: "#fdf6e3", border: "2px solid #e8d9b5" }}
     >
       {/* Thumbnail */}
@@ -286,7 +289,7 @@ function StoryCard({
           </p>
         </div>
       </div>
-    </motion.button>
+    </motion.div>
   );
 }
 
