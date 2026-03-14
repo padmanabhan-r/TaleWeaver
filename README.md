@@ -212,6 +212,15 @@ Browser (React)
   └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
 ```
 
+### The Agent
+
+`gemini-live-2.5-flash-native-audio` is not just a conversational model — it is the agent at the core of TaleWeaver. It holds two tools and decides autonomously when to call them mid-narration:
+
+- **`generate_illustration`** — the model decides the right visual moment (scene change, character reveal, dramatic transformation) and writes its own scene description. No external trigger, no timer.
+- **`award_badge`** — the model recognises when a child has contributed something genuinely creative and silently awards a badge. No rule-based trigger.
+
+This is what makes the experience feel alive rather than scripted. The model is driving the story, the visuals, and the reward loop — all from within a single real-time audio session.
+
 ### Why a WebSocket proxy?
 
 The browser cannot talk to the Gemini Live API directly — for three reasons:
@@ -331,7 +340,7 @@ Past Adventures (landing page)
 ### AI Models & APIs
 | Model | Role |
 |---|---|
-| `gemini-live-2.5-flash-native-audio` | Real-time voice conversation via Gemini Live API (Vertex AI) |
+| `gemini-live-2.5-flash-native-audio` | **The Agent** — real-time voice conversation, barge-in, and autonomous tool calls (`generate_illustration`, `award_badge`) via Gemini Live API (Vertex AI) |
 | `gemini-2.5-flash-lite` | Content moderation (themes, sketches, camera props) + story recap titles and narrations |
 | `gemini-2.5-flash-preview-tts` | Character TTS — speaks prop/sketch label in the character's voice on theme select |
 | `gemini-3.1-flash-image-preview` | Storybook illustration generation from scene descriptions |
