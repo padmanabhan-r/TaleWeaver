@@ -1,6 +1,9 @@
 # macOS
 .DS_Store
 
+# Claude Code
+.claude/
+
 # Python-generated files
 __pycache__/
 *.py[oc]
@@ -12,6 +15,7 @@ wheels/
 # Virtual environments
 .venv
 .env*
+!.env.example
 .backup/
 Current Steps.md
 CLAUDE.md
