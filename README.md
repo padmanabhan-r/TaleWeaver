@@ -318,22 +318,42 @@ Past Adventures (landing page)
 
 ---
 
-# Tech Stack
+# Built With
 
-| Layer | Technology |
+### AI Models & APIs
+| Model | Role |
 |---|---|
-| Conversation | `gemini-live-2.5-flash-native-audio` via Vertex AI |
-| Content moderation | `gemini-2.5-flash-lite` — safety-checks themes, sketches, and camera props |
-| Character TTS | `gemini-2.5-flash-preview-tts` — speaks prop/sketch label in character's voice on ThemeSelect |
-| Image generation | `gemini-3.1-flash-image-preview` — scene description passed directly, no extraction step |
-| Story recap | `gemini-2.5-flash-lite` — generates storybook title + per-scene narrations in parallel |
-| Backend | Python 3.13 + FastAPI + WebSocket |
-| Frontend | React 19 + Vite + TailwindCSS v3 + TypeScript + Framer Motion |
-| Audio I/O | Web Audio API + AudioWorklet (16kHz capture, 24kHz playback) |
-| Auth | GCP Application Default Credentials for Vertex AI; Gemini API key for image gen |
-| Hosting | Cloud Run — single service serves frontend + backend |
-| Domain | taleweaver.online (custom domain mapped to Cloud Run) |
-| CI/CD | Google Cloud Build — auto-deploys on every push to `main` |
+| `gemini-live-2.5-flash-native-audio` | Real-time voice conversation via Gemini Live API (Vertex AI) |
+| `gemini-2.5-flash-lite` | Content moderation (themes, sketches, camera props) + story recap titles and narrations |
+| `gemini-2.5-flash-preview-tts` | Character TTS — speaks prop/sketch label in the character's voice on theme select |
+| `gemini-3.1-flash-image-preview` | Storybook illustration generation from scene descriptions |
+
+### SDKs & Frameworks
+| SDK / Framework | Usage |
+|---|---|
+| **Google GenAI Python SDK** (`google-genai`) | Image generation, scene extraction, story recap, TTS — all Gemini API calls on the backend |
+| **Gemini Live API** (Vertex AI WebSocket) | Bidirectional real-time audio streaming for voice storytelling sessions |
+| **FastAPI** | Python backend — WebSocket proxy, REST endpoints, SPA serving |
+| **React 19 + Vite + TypeScript** | Frontend SPA |
+| **TailwindCSS v3** | Styling |
+| **Framer Motion** | Character and UI animations |
+| **Web Audio API + AudioWorklet** | 16kHz mic capture and 24kHz PCM playback in the browser |
+
+### Google Cloud Services
+| Service | Role |
+|---|---|
+| **Vertex AI** | Hosts Gemini Live API and Flash Lite model endpoints |
+| **Cloud Run** | Single-service deployment — serves both the FastAPI backend and compiled React frontend |
+| **Cloud Build** | CI/CD — auto-deploys on every push to `main` via `cloudbuild.yaml` |
+| **Artifact Registry** | Stores Docker container images between builds |
+| **Secret Manager** | Stores `GEMINI_API_KEY` securely, injected at runtime |
+| **Application Default Credentials (ADC)** | Authenticates backend to Vertex AI without embedded keys |
+
+### Languages & Tools
+- **Python 3.13** — backend runtime
+- **Node 22** — frontend build (multi-stage Docker)
+- **Docker** — containerisation
+- **WebSockets** — browser ↔ backend and backend ↔ Gemini Live bidirectional streaming
 
 ---
 
