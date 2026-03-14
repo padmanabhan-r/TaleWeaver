@@ -20,7 +20,7 @@ Kids don't just listen to a story — **they shape it.**
 
 TaleWeaver is powered by **Gemini Live's native audio model** — which means each character has a real voice, speaks fluently in their own language, and holds a genuine back-and-forth conversation with the child. Not text-to-speech. Not a chatbot. A living storyteller.
 
-**5 English storytellers. 5 world-language grandmothers.** Each one language-locked — they never switch to English, even if the child does.
+**5 English storytellers. 5 world-language storytellers.** Each one language-locked — they never switch to English, even if the child does.
 
 | Character | Language | Style |
 |---|---|---|
@@ -211,6 +211,14 @@ Browser (React)
   ├── POST /api/image ───────────→ Backend → safety filter → Gemini image gen (scene illustrations)
   └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
 ```
+
+### Why a WebSocket proxy?
+
+The browser cannot talk to the Gemini Live API directly — for three reasons:
+
+1. **Credentials can't live in the browser.** Vertex AI requires GCP auth (Application Default Credentials or signed tokens). Exposing these to the client would be a security hole. The proxy authenticates server-side and the browser never sees a credential.
+2. **Vertex AI's Live API has no public browser-accessible endpoint.** Unlike a simple REST API with an API key, the Gemini Live WebSocket on Vertex AI requires server-generated auth headers that can only be produced backend-side.
+3. **The session needs server-side orchestration.** The proxy is where the character system prompt is injected, the story opening is sent, the "Begin!" trigger is timed precisely, tool calls (`generate_illustration`, `award_badge`) are routed to the right endpoints, and SIGTERM is handled cleanly on shutdown. None of this is possible if the browser connects directly.
 
 ### Session start (critical path)
 
