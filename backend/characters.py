@@ -280,7 +280,7 @@ DADI MAA SPECIFIC:
     "rajvikram": Character(
         id="rajvikram",
         name="Raja Vikram",
-        voice_name="Zephyr",
+        voice_name="Charon",
         language="Tamil",
         image_style=(
             "vibrant jewel tones, golden lamp light, children's picture book art, "
