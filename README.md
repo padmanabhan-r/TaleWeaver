@@ -409,39 +409,67 @@ The app is live at **https://taleweaver-950758825854.us-central1.run.app** — n
 
 # Running Locally
 
-**Prerequisites:** Google Cloud project with Vertex AI enabled + Gemini API key.
+**Prerequisites:** Python 3.12+, Node.js 18+, [uv](https://docs.astral.sh/uv/getting-started/installation/), a Google Cloud project with Vertex AI enabled, and a Gemini API key.
 
-### Backend (port 8000)
+> For a full step-by-step setup guide (Google Cloud account, Vertex AI, gcloud auth), see [QUICKSTART.md](QUICKSTART.md).
+
+### 1. Clone and install
 
 ```bash
-cd backend
-pip install -r requirements.txt
+git clone https://github.com/padmanabhan-r/TaleWeaver.git
+cd TaleWeaver
+uv sync
+source .venv/bin/activate
+```
 
-export GOOGLE_CLOUD_PROJECT=your-project-id
-export GOOGLE_CLOUD_LOCATION=us-central1
-export GOOGLE_GENAI_USE_VERTEXAI=true
-export IMAGE_MODEL=gemini-3.1-flash-image-preview
-export IMAGE_LOCATION=global
-export GEMINI_API_KEY=your-gemini-api-key
+### 2. Configure environment
 
+```bash
+cp backend/.env.example backend/.env
+```
+
+Fill in `backend/.env`:
+
+```env
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
+GOOGLE_GENAI_USE_VERTEXAI=true
+GEMINI_API_KEY=your-gemini-api-key
+IMAGE_MODEL=gemini-3.1-flash-image-preview
+IMAGE_LOCATION=global
+```
+
+### 3. Authenticate with Google Cloud
+
+```bash
 gcloud auth application-default login
-uvicorn main:app --reload --port 8000
 ```
 
-### Frontend (port 5173)
+### 4. Run
+
+**Option A — one command:**
 
 ```bash
-cd frontend
-npm install
-
-# Create frontend/.env.local
-echo "VITE_WS_URL=ws://localhost:8000/ws/story" > .env.local
-echo "VITE_API_URL=http://localhost:8000" >> .env.local
-
-npm run dev
+./start.sh
 ```
 
-Open http://localhost:5173 and follow the Quick Start steps above.
+Starts backend (port 8000) and frontend (port 8080) together. Press `Ctrl+C` to stop both.
+
+**Option B — separately:**
+
+```bash
+# Backend (port 8000)
+cd backend && uvicorn main:app --reload --port 8000
+
+# Frontend (port 5173) — new terminal
+cd frontend && npm install && cp .env.example .env.local && npm run dev
+```
+
+| | URL |
+|---|---|
+| Frontend | http://localhost:8080 (or 5173) |
+| Backend | http://localhost:8000 |
+| Health check | http://localhost:8000/api/health |
 
 ---
 
