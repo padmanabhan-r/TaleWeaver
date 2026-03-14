@@ -55,19 +55,21 @@ It takes about 30–60 seconds to activate.
 
 ## 6. Configure Environment Variables
 
-Create a `.env` file inside the `backend/` folder:
+Create a `.env` file inside the `backend/` folder by copying the example:
 
 ```bash
-touch backend/.env
+cp backend/.env.example backend/.env
 ```
 
-Add the following variables:
+Fill in your values:
 
 ```env
 GOOGLE_CLOUD_PROJECT=your-project-id
 GOOGLE_CLOUD_LOCATION=us-central1
 GOOGLE_GENAI_USE_VERTEXAI=true
 GEMINI_API_KEY=your-gemini-api-key
+IMAGE_MODEL=gemini-3.1-flash-image-preview
+IMAGE_LOCATION=global
 ```
 
 ---
@@ -156,8 +158,7 @@ uvicorn main:app --reload --port 8000
 ```bash
 cd frontend
 npm install
-echo "VITE_WS_URL=ws://localhost:8000/ws/story" > .env.local
-echo "VITE_API_URL=http://localhost:8000" >> .env.local
+cp .env.example .env.local
 npm run dev
 ```
 

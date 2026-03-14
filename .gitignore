@@ -15,6 +15,7 @@ wheels/
 # Virtual environments
 .venv
 .env*
+!.env.example
 .backup/
 Current Steps.md
 CLAUDE.md
