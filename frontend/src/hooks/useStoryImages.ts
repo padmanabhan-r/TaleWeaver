@@ -156,7 +156,7 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
   // Called when Gemini explicitly triggers an illustration via tool call.
   // Bypasses the rate limit and session delay — Gemini already chose the right moment.
   const forceImageGeneration = useCallback(
-    async (sceneDescription: string) => {
+    async (sceneDescription: string, narratorText = "") => {
       if (stoppedRef.current) return;
       if (sceneCountRef.current >= MAX_SCENES) return;
 
@@ -168,10 +168,13 @@ export function useStoryImages(imageStyle: string, sessionId: string, intervalSe
 
       const sceneId = `scene-${++sceneCountRef.current}`;
       const prevImage = lastImageRef.current;
+      // Use the character's spoken text as the narration description so non-English
+      // stories stay in the character's language; fall back to scene_description if unavailable.
+      const narrationText = (narratorText || sceneDescription).slice(0, 500);
 
       setScenes((prev) => [
         ...prev,
-        { id: sceneId, status: "loading", imageData: null, mimeType: null, description: sceneDescription.slice(0, 100) },
+        { id: sceneId, status: "loading", imageData: null, mimeType: null, description: narrationText },
       ]);
 
       const abortController = new AbortController();
