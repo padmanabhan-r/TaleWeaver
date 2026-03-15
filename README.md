@@ -293,6 +293,8 @@ Single Cloud Run service — Node 22 builds the React frontend, Python 3.13 serv
 
 The app is live at **https://taleweaver-950758825854.us-central1.run.app** — no account, no setup required.
 
+> **Note:** This deployment runs on a GCP free trial account. If the trial has expired by the time you visit, the live app may be unavailable. In that case, please use the [Running Locally](#running-locally) instructions to run it yourself.
+
 ### Quick start (2 minutes)
 
 1. Open https://taleweaver-950758825854.us-central1.run.app on a device with a microphone
