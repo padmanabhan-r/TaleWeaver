@@ -36,13 +36,23 @@ echo -n "your-gemini-api-key" | gcloud secrets create gemini-api-key \
 
 ---
 
-## 4. Grant Cloud Build access to the secret
+## 4. Grant Cloud Build service account permissions
+
+Grant access to Secret Manager and Cloud Storage:
 
 ```bash
+PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
+
+# Access to the Gemini API key secret
 gcloud secrets add-iam-policy-binding gemini-api-key \
-  --member="serviceAccount:$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')@cloudbuild.gserviceaccount.com" \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/secretmanager.secretAccessor" \
   --project=$PROJECT_ID
+
+# Access to Cloud Storage (required to upload source for builds)
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/storage.objectAdmin"
 ```
 
 ---
