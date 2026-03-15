@@ -55,6 +55,9 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --role="roles/storage.objectAdmin"
 ```
 
+> **Note:** If prompted with a condition selector, choose **None** (option 2).
+
+
 ---
 
 ## 5. Set up the Cloud Build trigger (one-time)
