@@ -1,5 +1,11 @@
 # TaleWeaver
 
+[![Live App](https://img.shields.io/badge/Live%20App-taleweaver.online-4f46e5?style=for-the-badge&logo=googlechrome&logoColor=white)](https://taleweaver.online)
+[![Gemini Live](https://img.shields.io/badge/Gemini%20Live%20API-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://cloud.google.com/vertex-ai)
+[![Cloud Run](https://img.shields.io/badge/Google%20Cloud%20Run-4285F4?style=for-the-badge&logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+[![Python](https://img.shields.io/badge/Python%203.13-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
+[![React](https://img.shields.io/badge/React%2019-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
+
 **TaleWeaver turns everyday objects into magical stories.**
 
 A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live** and **Nano Banana 2**.
