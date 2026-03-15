@@ -367,6 +367,12 @@ cd frontend && npm install && cp .env.example .env.local && npm run dev
 
 ---
 
+# Deploying to Google Cloud
+
+The app deploys as a single Cloud Run service via Cloud Build CI/CD. For full instructions — Secret Manager setup, Cloud Build trigger, and manual deploy — see [DEPLOYMENT_INSTRUCTIONS.md](DEPLOYMENT_INSTRUCTIONS.md).
+
+---
+
 # Roadmap
 
 The immediate focus is polish — fine-tuning prompts, hardening edge cases, and perfecting the end-to-end experience. World-language characters in particular need more testing and refinement before they're ready for everyday use.
