@@ -22,14 +22,15 @@ Kids don't just listen to a story — **they shape it.**
 
 ## Contents
 
-- [Meet Your Storytellers](#meet-your-storytellers)
-- [The Experience](#the-experience)
-  - [Pick a Theme](#1-pick-a-theme)
-  - [Magic Camera](#2-magic-camera)
-  - [Sketch a Theme](#3-sketch-a-theme)
-- [A Living, Illustrated Story](#a-living-illustrated-story)
-- [Creativity Rewards](#creativity-rewards)
-- [Story Recap](#story-recap)
+- [The App](#the-app)
+  - [Meet Your Storytellers](#meet-your-storytellers)
+  - [The Experience](#the-experience)
+    - [Pick a Theme](#1-pick-a-theme)
+    - [Magic Camera](#2-magic-camera)
+    - [Sketch a Theme](#3-sketch-a-theme)
+  - [A Living, Illustrated Story](#a-living-illustrated-story)
+  - [Creativity Rewards](#creativity-rewards)
+  - [Story Recap](#story-recap)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
 - [Built With](#built-with)
@@ -40,7 +41,9 @@ Kids don't just listen to a story — **they shape it.**
 
 ---
 
-# Meet Your Storytellers
+# The App
+
+## Meet Your Storytellers
 
 TaleWeaver is powered by **Gemini Live's native audio model** — which means each character has a real voice, speaks fluently in their own language, and holds a genuine back-and-forth conversation with the child. Not text-to-speech. Not a chatbot. A living storyteller.
 
@@ -69,7 +72,7 @@ TaleWeaver is powered by **Gemini Live's native audio model** — which means ea
 
 ---
 
-# The Experience
+## The Experience
 
 Children start a story in **three magical ways**:
 
@@ -138,7 +141,7 @@ Draw mountains, a house, a robot, a dragon, a castle, a flying whale — and wat
 
 ---
 
-# A Living, Illustrated Story
+## A Living, Illustrated Story
 
 Unlike traditional story generators, TaleWeaver is **fully conversational**. Children can interrupt the storyteller, change the story direction, add characters, and invent new twists at any moment.
 
@@ -161,7 +164,7 @@ As the story unfolds, **illustrations appear automatically**. Gemini decides the
 
 ---
 
-# Creativity Rewards
+## Creativity Rewards
 
 TaleWeaver recognises and celebrates when a child contributes something genuinely imaginative.
 
@@ -177,7 +180,7 @@ Badges are saved with the story and shown in the **Story Recap** and **Past Adve
 
 ---
 
-# Story Recap
+## Story Recap
 
 When the adventure ends, the app generates a **storybook recap**.
 
