@@ -198,23 +198,16 @@ All completed stories are saved locally and accessible from the landing page. Ta
 
 # Key Features
 
-- **Voice-first storytelling** using Gemini Live API — native audio with no added latency
-- **Real-time interruption (barge-in)** — kids can change the story anytime
-- **Smart illustration timing** — Gemini decides the right visual moment automatically
-- **Visual continuity** — each image is generated with the previous image as context
-- **Unlimited scene illustrations** — images generate continuously with no cap
-- **Magic Camera** — turn toys into story characters
-- **Sketch-to-story** drawing canvas (19 colours)
-- **10 storyteller characters** — 5 English + 5 world-language
-- **Multilingual** — Hindi, Tamil, Mandarin, Spanish, French; language-locked (never switches to English)
-- **Achievement badges** — Gemini awards a badge for genuine creative contributions; auto-dismisses after 3 s
-- **Pause / resume** — mutes playback and suspends mic; session and WebSocket stay alive
-- **Story recap storybook** — title + per-scene narrations generated in parallel
-- **Past Adventures gallery** — all stories saved locally with title, images, captions, and badges
-- **Kid-safe content moderation** — themes, sketches, and camera props safety-checked before story starts
-- **Life skills themes** — Sharing, Courage, Gratitude, Creativity, Kindness
-- **15-minute session timeout** — idle sessions close automatically
-- **Graceful shutdown** — Cloud Run SIGTERM handled cleanly within the 30 s grace window
+- **Barge-in voice conversation** — Gemini Live listens while it speaks; kids interrupt naturally mid-sentence
+- **Autonomous illustrations** — the agent decides the right visual moment and writes its own scene description
+- **Visual continuity** — each image is generated with the previous as context; characters stay consistent
+- **Magic Camera** — hold up any toy; Gemini names it, draws it, makes it the hero
+- **Sketch-to-story** — draw anything on the canvas; it becomes the opening illustration
+- **10 storyteller characters** — 5 English + 5 world-language (Hindi, Tamil, Mandarin, Spanish, French), each language-locked
+- **Creativity badges** — the agent awards a badge when a child contributes something genuinely imaginative
+- **Story recap storybook** — illustrated scenes + narrations generated from the session; saved to Past Adventures
+- **Kid-safe content moderation** — themes, camera props, and sketches safety-checked before the story starts
+- **Pause / resume** — session and WebSocket stay alive while paused
 
 ---
 
