@@ -70,7 +70,7 @@ From this point, every `git push origin main` automatically builds and deploys.
 ## 6. Trigger a manual build (optional)
 
 ```bash
-gcloud builds submit --no-source \
+gcloud builds submit . \
   --config=cloudbuild.yaml \
   --project=$PROJECT_ID \
   --region=$REGION
