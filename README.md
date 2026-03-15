@@ -180,7 +180,7 @@ Badges are saved with the story and shown in the **Story Recap** and **Past Adve
 
 When the adventure ends, the app generates a **storybook recap**.
 
-All session images are sent to Gemini, which generates a storybook title and per-scene narration captions. Original session images are reused — no new images generated during recap.
+All session images are sent to Gemini, which generates a storybook title and a narration for each scene. Original session images are reused — no new images generated during recap.
 
 Children get a scrollable storybook with title, illustrated scenes, narration captions, and creativity badges. All saved to the **Past Adventures gallery**.
 
