@@ -306,15 +306,14 @@ The app is live at **https://taleweaver.online** (also at https://taleweaver-950
 
 **Prerequisites:** Python 3.12+, Node.js 18+, [uv](https://docs.astral.sh/uv/getting-started/installation/), a Google Cloud project with Vertex AI enabled, and a Gemini API key.
 
-> For a full step-by-step setup guide (Google Cloud account, Vertex AI, gcloud auth), see [QUICKSTART.md](QUICKSTART.md).
+> First time? See [QUICKSTART.md](QUICKSTART.md) for step-by-step GCP setup (account, Vertex AI, gcloud auth).
 
 ### 1. Clone and install
 
 ```bash
 git clone https://github.com/padmanabhan-r/TaleWeaver.git
 cd TaleWeaver
-uv sync
-source .venv/bin/activate
+uv sync && source .venv/bin/activate
 ```
 
 ### 2. Configure environment
@@ -329,7 +328,7 @@ Fill in `backend/.env`:
 GOOGLE_CLOUD_PROJECT=your-project-id
 GOOGLE_CLOUD_LOCATION=us-central1
 GOOGLE_GENAI_USE_VERTEXAI=true
-GEMINI_API_KEY=your-gemini-api-key
+GEMINI_API_KEY=your-gemini-api-key        # from Google AI Studio
 IMAGE_MODEL=gemini-3.1-flash-image-preview
 IMAGE_LOCATION=global
 ```
@@ -342,29 +341,29 @@ gcloud auth application-default login
 
 ### 4. Run
 
-**Option A — one command:**
+**One command (recommended):**
 
 ```bash
 ./start.sh
 ```
 
-Starts backend (port 8000) and frontend (port 8080) together. Press `Ctrl+C` to stop both.
+Starts backend on port 8000 and frontend on port 8080. Press `Ctrl+C` to stop both.
 
-**Option B — separately:**
+**Or run separately:**
 
 ```bash
-# Backend (port 8000)
+# Terminal 1 — backend
 cd backend && uvicorn main:app --reload --port 8000
 
-# Frontend (port 5173) — new terminal
+# Terminal 2 — frontend
 cd frontend && npm install && cp .env.example .env.local && npm run dev
 ```
 
 | | URL |
 |---|---|
-| Frontend | http://localhost:8080 (or 5173) |
+| App | http://localhost:8080 |
 | Backend | http://localhost:8000 |
-| Health check | http://localhost:8000/api/health |
+| Health | http://localhost:8000/api/health |
 
 ---
 
