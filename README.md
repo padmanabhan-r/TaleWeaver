@@ -299,9 +299,11 @@ Single Cloud Run service — Node 22 builds the React frontend, Python 3.13 serv
 
 # Try It Out
 
-The app is live at **https://taleweaver.online** (also at https://taleweaver-950758825854.us-central1.run.app) — no account, no setup required.
+Both deployments run on GCP free trial accounts and may be unavailable if the trials have expired:
+- **https://taleweaver.online** (also at https://taleweaver-950758825854.us-central1.run.app) — primary (no account, no setup required)
+- https://taleweaver-319719246868.us-central1.run.app — backup (teammate's account)
 
-> **Note:** This deployment runs on a GCP free trial account. If the trial has expired by the time you visit, the live app may be unavailable. In that case, please use the [Running Locally](#running-locally) instructions to run it yourself.
+> **Note:** If the deployed versions are not working at the time of testing, try [running locally](#running-locally).
 
 1. Open the app on a device with a microphone
 2. Click **Begin Your Adventure** → pick a storyteller → choose a theme, use Magic Camera, or draw a Sketch
