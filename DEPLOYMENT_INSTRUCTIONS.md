@@ -38,7 +38,7 @@ echo -n "your-gemini-api-key" | gcloud secrets create gemini-api-key \
 
 ## 4. Grant Cloud Build service account permissions
 
-Grant access to Secret Manager and Cloud Storage:
+Grant access to Secret Manager, Cloud Storage, and Cloud Logging:
 
 ```bash
 PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')
@@ -53,14 +53,30 @@ gcloud secrets add-iam-policy-binding gemini-api-key \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/storage.objectAdmin"
+
+# Permission to write build logs
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/logging.logWriter"
 ```
 
 > **Note:** If prompted with a condition selector, choose **None** (option 2).
 
+---
+
+## 5. Create the Artifact Registry repository
+
+```bash
+gcloud artifacts repositories create taleweaver \
+  --repository-format=docker \
+  --location=us-central1 \
+  --project=$PROJECT_ID
+```
+
 
 ---
 
-## 5. Set up the Cloud Build trigger (one-time)
+## 6. Set up the Cloud Build trigger (one-time)
 
 1. Go to [Cloud Build Triggers](https://console.cloud.google.com/cloud-build/triggers)
 2. Click **Create trigger** and fill in:
@@ -80,20 +96,23 @@ From this point, every `git push origin main` automatically builds and deploys.
 
 ---
 
-## 6. Trigger a manual build (optional)
+## 7. Trigger a manual build (optional)
 
 ```bash
 gcloud builds submit . \
   --config=cloudbuild.yaml \
   --project=$PROJECT_ID \
-  --region=$REGION
+  --region=$REGION \
+  --substitutions=COMMIT_SHA=manual
 ```
+
+> **Note:** `--substitutions=COMMIT_SHA=manual` is required for manual builds — `$COMMIT_SHA` is only set automatically when triggered by a git push.
 
 Or just push any commit to `main` — the trigger fires automatically.
 
 ---
 
-## 7. Check build logs
+## 8. Check build logs
 
 ```bash
 gcloud builds list --project=$PROJECT_ID --region=$REGION --limit=5
