@@ -149,24 +149,6 @@ gcloud builds list --project=$PROJECT_ID --region=$REGION --limit=5
 
 ---
 
-## Manual deploy without Cloud Build
-
-```bash
-# Build and push the image
-docker build --platform linux/amd64 \
-  -t $REGION-docker.pkg.dev/$PROJECT_ID/taleweaver/backend:latest .
-
-docker push $REGION-docker.pkg.dev/$PROJECT_ID/taleweaver/backend:latest
-
-# Deploy to Cloud Run
-gcloud run deploy taleweaver \
-  --image=$REGION-docker.pkg.dev/$PROJECT_ID/taleweaver/backend:latest \
-  --region=$REGION \
-  --project=$PROJECT_ID
-```
-
----
-
 ## Rotating the API key
 
 If your Gemini API key changes, add a new secret version:
