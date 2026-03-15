@@ -47,7 +47,8 @@ export default function StoryRecapModal({ character, scenes, badges = [], onClos
       }),
     })
       .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (res.status === 413) throw new Error("TOO_LONG");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then((data) => {
@@ -57,7 +58,11 @@ export default function StoryRecapModal({ character, scenes, badges = [], onClos
         setNarrations(n);
         if (t) onRecapGenerated?.(t, n);
       })
-      .catch(() => setError("Couldn't create the storybook. Please try again!"))
+      .catch((err) => setError(
+        err?.message === "TOO_LONG"
+          ? "Story too long to save in the current version of the app — will be handled in a later version when GCS is enabled."
+          : "Couldn't create the storybook. Please try again!"
+      ))
       .finally(() => setLoading(false));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
