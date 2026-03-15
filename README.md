@@ -22,7 +22,7 @@ Kids don't just listen to a story — **they shape it.**
 
 ## Contents
 
-- [The App](#the-app)
+- [Meet TaleWeaver](#meet-taleweaver)
   - [Meet Your Storytellers](#meet-your-storytellers)
   - [The Experience](#the-experience)
     - [Pick a Theme](#1-pick-a-theme)
@@ -41,7 +41,7 @@ Kids don't just listen to a story — **they shape it.**
 
 ---
 
-# The App
+# Meet TaleWeaver
 
 ## Meet Your Storytellers
 
