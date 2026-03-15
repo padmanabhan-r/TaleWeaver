@@ -115,7 +115,7 @@ gcloud artifacts repositories create taleweaver \
    - **Source:**
      - **Repository service:** Cloud Build repositories
      - **Repository generation:** 1st gen
-     - Click **Connect Repository** → authenticate with GitHub → select `padmanabhan-r/TaleWeaver`
+     - Click **Connect Repository** → authenticate with GitHub → select your repository
    - **Branch:** `^main$`
    - **Configuration:** Cloud Build configuration file → `cloudbuild.yaml`
    - **Service account:** Select the service account listed (e.g. `<project-number>@cloudbuild.gserviceaccount.com`)
