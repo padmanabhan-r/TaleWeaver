@@ -217,67 +217,34 @@ All completed stories are saved locally and accessible from the landing page. Ta
   <img src="architecture-v1.svg" alt="TaleWeaver Architecture" width="900"/>
 </p>
 
-### Data flow
+Four Gemini models, each with a distinct role:
 
-```
-Browser (React)
-  ├── WebSocket /ws/story ───────→ Backend → Gemini Live API (Vertex AI)
-  │     bidirectional audio/text proxy; no audio stored server-side
-  ├── POST /api/check-theme ─────→ Backend → Flash Lite (safety check)
-  ├── POST /api/sketch-preview ──→ Backend → Flash Lite (label) + image gen (illustration)
-  ├── POST /api/tts ─────────────→ Backend → gemini-2.5-flash-preview-tts (character voice)
-  ├── POST /api/image ───────────→ Backend → safety filter → Gemini image gen (scene illustrations)
-  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
-```
+| Model | Role |
+|---|---|
+| `gemini-live-2.5-flash-native-audio` | **The Agent** — real-time voice, barge-in, autonomous tool calls |
+| `gemini-3.1-flash-image-preview` | Scene illustration generation |
+| `gemini-2.5-flash-preview-tts` | Character voice for prop/sketch labels |
+| `gemini-2.5-flash-lite` | Content moderation + story recap |
 
 ### The Agent
 
-`gemini-live-2.5-flash-native-audio` is not just a conversational model — it is the agent at the core of TaleWeaver. It holds two tools and decides autonomously when to call them mid-narration:
+`gemini-live-2.5-flash-native-audio` drives the entire experience from within a single real-time audio session. It holds two tools and calls them autonomously mid-narration:
 
-- **`generate_illustration`** — the model decides the right visual moment (scene change, character reveal, dramatic transformation) and writes its own scene description. No external trigger, no timer.
-- **`award_badge`** — the model recognises when a child has contributed something genuinely creative and silently awards a badge. No rule-based trigger.
+- **`generate_illustration`** — decides the right visual moment, writes its own scene description, triggers image generation. No external timer or trigger.
+- **`award_badge`** — recognises genuine creative contributions from the child and silently awards a badge.
 
-This is what makes the experience feel alive rather than scripted. The model is driving the story, the visuals, and the reward loop — all from within a single real-time audio session.
+### The Backend Proxy
 
-### Why a WebSocket proxy?
+The browser can't connect to Gemini Live directly — Vertex AI requires server-side GCP auth and session orchestration. The FastAPI backend handles authentication, injects character system prompts, routes tool calls, and sends the "Begin!" trigger only after both proxy tasks are running — ensuring no audio is dropped at session start.
 
-The browser cannot talk to the Gemini Live API directly — for three reasons:
+### Audio Pipeline
 
-1. **Credentials can't live in the browser.** Vertex AI requires GCP auth (Application Default Credentials or signed tokens). Exposing these to the client would be a security hole. The proxy authenticates server-side and the browser never sees a credential.
-2. **Vertex AI's Live API has no public browser-accessible endpoint.** Unlike a simple REST API with an API key, the Gemini Live WebSocket on Vertex AI requires server-generated auth headers that can only be produced backend-side.
-3. **The session needs server-side orchestration.** The proxy is where the character system prompt is injected, the story opening is sent, the "Begin!" trigger is timed precisely, tool calls (`generate_illustration`, `award_badge`) are routed to the right endpoints, and SIGTERM is handled cleanly on shutdown. None of this is possible if the browser connects directly.
-
-### Session start (critical path)
-
-The backend ensures the first audio frame Gemini produces is never dropped:
-
-1. Opens the Gemini Live WebSocket
-2. Starts both proxy tasks (browser ↔ Gemini) concurrently
-3. Sends "Begin!" to Gemini only after both tasks are running and ready to forward data
-4. Gemini's audio response streams through immediately as it arrives
-
-### Audio pipeline
-
-- **Capture:** Mic → 16kHz PCM → WebSocket → Gemini Live (streamed in real time)
-- **Playback:** Gemini → 24kHz PCM → scheduled audio playback → speakers
-  - Chunks are scheduled precisely to handle bursts where Gemini streams faster than real-time
-  - AudioContext starts after mic permission is granted (Safari compatibility)
-
-### Image generation
-
-Two paths, both hitting `POST /api/image`:
-
-1. **Primary:** Gemini decides the right visual moment and writes a scene description. Image is generated immediately with no extra processing step.
-2. **Fallback:** fires if no image has been triggered in ~25 s. Uses the last narration as the scene description. Rate-limited to avoid flooding.
-
-Each request passes the previous image as reference for visual continuity.
+- **Capture:** Mic → 16kHz PCM → WebSocket → Gemini Live
+- **Playback:** Gemini → 24kHz PCM → precisely scheduled AudioWorklet → speakers
 
 ### Deployment
 
-- Single Cloud Run service — multi-stage Docker: Node 22 builds React, Python 3.13 serves API + static files
-- Single async worker, optimised for WebSocket-heavy I/O
-- CI/CD: push to `main` → Cloud Build → Artifact Registry → Cloud Run
-- Secrets: `GEMINI_API_KEY` from Secret Manager; GCP auth via Application Default Credentials
+Single Cloud Run service — Node 22 builds the React frontend, Python 3.13 serves both API and static files. Push to `main` → Cloud Build → Artifact Registry → Cloud Run.
 
 ---
 
