@@ -1,8 +1,14 @@
 # TaleWeaver
 
+[![Live App](https://img.shields.io/badge/Live%20App-taleweaver.online-4f46e5?style=flat&logo=googlechrome&logoColor=white)](https://taleweaver.online)
+[![Gemini Live](https://img.shields.io/badge/Gemini%20Live%20API-4285F4?style=flat&logo=google&logoColor=white)](https://cloud.google.com/vertex-ai)
+[![Cloud Run](https://img.shields.io/badge/Cloud%20Run-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
+[![Python](https://img.shields.io/badge/Python%203.13-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![React](https://img.shields.io/badge/React%2019-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
+
 **TaleWeaver turns everyday objects into magical stories.**
 
-A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live** and **Nano Banana 2**.
+A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live** and **Nano Banana 2** 🍌.
 
 Children simply pick a storyteller, hold up a toy or draw an idea, and begin a **real-time conversation** where the AI and child co-create a story together.
 
@@ -26,16 +32,11 @@ Kids don't just listen to a story — **they shape it.**
 - [Story Recap](#story-recap)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
-  - [The Agent](#the-agent)
-  - [Why a WebSocket Proxy?](#why-a-websocket-proxy)
-  - [Audio Pipeline](#audio-pipeline)
-  - [Image Generation](#image-generation)
-  - [Deployment](#deployment)
 - [Built With](#built-with)
 - [Try It Out](#try-it-out)
 - [Running Locally](#running-locally)
+- [Deploying to Google Cloud](#deploying-to-google-cloud)
 - [Roadmap](#roadmap)
-- [Live Demo](#live-demo)
 
 ---
 
@@ -180,7 +181,7 @@ Badges are saved with the story and shown in the **Story Recap** and **Past Adve
 
 When the adventure ends, the app generates a **storybook recap**.
 
-All session images are sent to Gemini, which generates a title and per-scene narrations in parallel. Original session images are reused — no new images generated during recap.
+All session images are sent to Gemini, which generates a storybook title and a narration for each scene. Original session images are reused — no new images generated during recap.
 
 Children get a scrollable storybook with title, illustrated scenes, narration captions, and creativity badges. All saved to the **Past Adventures gallery**.
 
@@ -198,23 +199,16 @@ All completed stories are saved locally and accessible from the landing page. Ta
 
 # Key Features
 
-- **Voice-first storytelling** using Gemini Live API — native audio with no added latency
-- **Real-time interruption (barge-in)** — kids can change the story anytime
-- **Smart illustration timing** — Gemini decides the right visual moment automatically
-- **Visual continuity** — each image is generated with the previous image as context
-- **Unlimited scene illustrations** — images generate continuously with no cap
-- **Magic Camera** — turn toys into story characters
-- **Sketch-to-story** drawing canvas (19 colours)
-- **10 storyteller characters** — 5 English + 5 world-language
-- **Multilingual** — Hindi, Tamil, Mandarin, Spanish, French; language-locked (never switches to English)
-- **Achievement badges** — Gemini awards a badge for genuine creative contributions; auto-dismisses after 3 s
-- **Pause / resume** — mutes playback and suspends mic; session and WebSocket stay alive
-- **Story recap storybook** — title + per-scene narrations generated in parallel
-- **Past Adventures gallery** — all stories saved locally with title, images, captions, and badges
-- **Kid-safe content moderation** — themes, sketches, and camera props safety-checked before story starts
-- **Life skills themes** — Sharing, Courage, Gratitude, Creativity, Kindness
-- **15-minute session timeout** — idle sessions close automatically
-- **Graceful shutdown** — Cloud Run SIGTERM handled cleanly within the 30 s grace window
+- **Barge-in voice conversation** — Gemini Live listens while it speaks; kids interrupt naturally mid-sentence
+- **Autonomous illustrations** — the agent decides the right visual moment and writes its own scene description
+- **Visual continuity** — each image is generated with the previous as context; characters stay consistent
+- **Magic Camera** — hold up any toy; Gemini names it, draws it, makes it the hero
+- **Sketch-to-story** — draw anything on the canvas; it becomes the opening illustration
+- **10 storyteller characters** — 5 English + 5 world-language (Hindi, Tamil, Mandarin, Spanish, French), each language-locked
+- **Creativity badges** — the agent awards a badge when a child contributes something genuinely imaginative
+- **Story recap storybook** — illustrated scenes + narrations generated from the session; saved to Past Adventures
+- **Kid-safe content moderation** — themes, camera props, and sketches safety-checked before the story starts
+- **Pause / resume** — session and WebSocket stay alive while paused
 
 ---
 
@@ -224,139 +218,36 @@ All completed stories are saved locally and accessible from the landing page. Ta
   <img src="architecture-v1.svg" alt="TaleWeaver Architecture" width="900"/>
 </p>
 
-### Data flow
+Four Gemini models, each with a distinct role:
 
-```
-Browser (React)
-  ├── WebSocket /ws/story ───────→ Backend → Gemini Live API (Vertex AI)
-  │     bidirectional audio/text proxy; no audio stored server-side
-  ├── POST /api/check-theme ─────→ Backend → Flash Lite (safety check)
-  ├── POST /api/sketch-preview ──→ Backend → Flash Lite (label) + image gen (illustration)
-  ├── POST /api/tts ─────────────→ Backend → gemini-2.5-flash-preview-tts (character voice)
-  ├── POST /api/image ───────────→ Backend → safety filter → Gemini image gen (scene illustrations)
-  └── POST /api/story-recap ─────→ Backend → Flash Lite (title + per-scene narrations, parallel)
-```
+| Model | Role |
+|---|---|
+| `gemini-live-2.5-flash-native-audio` | **The Agent** — real-time voice, barge-in, autonomous tool calls |
+| `gemini-3.1-flash-image-preview` | Scene illustration generation |
+| `gemini-2.5-flash-preview-tts` | Character voice for prop/sketch labels |
+| `gemini-2.5-flash-lite` | Content moderation + story recap |
 
 ### The Agent
 
-`gemini-live-2.5-flash-native-audio` is not just a conversational model — it is the agent at the core of TaleWeaver. It holds two tools and decides autonomously when to call them mid-narration:
+`gemini-live-2.5-flash-native-audio` drives the entire experience from within a single real-time audio session. It holds two tools and calls them autonomously mid-narration:
 
-- **`generate_illustration`** — the model decides the right visual moment (scene change, character reveal, dramatic transformation) and writes its own scene description. No external trigger, no timer.
-- **`award_badge`** — the model recognises when a child has contributed something genuinely creative and silently awards a badge. No rule-based trigger.
+- **`generate_illustration`** — decides the right visual moment, writes its own scene description, triggers image generation. No external timer or trigger.
+- **`award_badge`** — recognises genuine creative contributions from the child and silently awards a badge.
 
-This is what makes the experience feel alive rather than scripted. The model is driving the story, the visuals, and the reward loop — all from within a single real-time audio session.
+### The Backend Proxy
 
-### Why a WebSocket proxy?
+The browser can't connect to Gemini Live directly — Vertex AI requires server-side GCP auth and session orchestration. The FastAPI backend handles authentication, injects character system prompts, routes tool calls, and sends the "Begin!" trigger only after both proxy tasks are running — ensuring no audio is dropped at session start.
 
-The browser cannot talk to the Gemini Live API directly — for three reasons:
+### Audio Pipeline
 
-1. **Credentials can't live in the browser.** Vertex AI requires GCP auth (Application Default Credentials or signed tokens). Exposing these to the client would be a security hole. The proxy authenticates server-side and the browser never sees a credential.
-2. **Vertex AI's Live API has no public browser-accessible endpoint.** Unlike a simple REST API with an API key, the Gemini Live WebSocket on Vertex AI requires server-generated auth headers that can only be produced backend-side.
-3. **The session needs server-side orchestration.** The proxy is where the character system prompt is injected, the story opening is sent, the "Begin!" trigger is timed precisely, tool calls (`generate_illustration`, `award_badge`) are routed to the right endpoints, and SIGTERM is handled cleanly on shutdown. None of this is possible if the browser connects directly.
-
-### Session start (critical path)
-
-The backend ensures the first audio frame Gemini produces is never dropped:
-
-1. Opens the Gemini Live WebSocket
-2. Starts both proxy tasks (browser ↔ Gemini) concurrently
-3. Sends "Begin!" to Gemini only after both tasks are running and ready to forward data
-4. Gemini's audio response streams through immediately as it arrives
-
-### Audio pipeline
-
-- **Capture:** Mic → 16kHz PCM → WebSocket → Gemini Live (streamed in real time)
-- **Playback:** Gemini → 24kHz PCM → scheduled audio playback → speakers
-  - Chunks are scheduled precisely to handle bursts where Gemini streams faster than real-time
-  - AudioContext starts after mic permission is granted (Safari compatibility)
-
-### Image generation
-
-Two paths, both hitting `POST /api/image`:
-
-1. **Primary:** Gemini decides the right visual moment and writes a scene description. Image is generated immediately with no extra processing step.
-2. **Fallback:** fires if no image has been triggered in ~25 s. Uses the last narration as the scene description. Rate-limited to avoid flooding.
-
-Each request passes the previous image as reference for visual continuity.
+- **Capture:** Mic → 16kHz PCM → WebSocket → Gemini Live
+- **Playback:** Gemini → 24kHz PCM → precisely scheduled AudioWorklet → speakers
 
 ### Deployment
 
-- Single Cloud Run service — multi-stage Docker: Node 22 builds React, Python 3.13 serves API + static files
-- Single async worker, optimised for WebSocket-heavy I/O
-- CI/CD: push to `main` → Cloud Build → Artifact Registry → Cloud Run
-- Secrets: `GEMINI_API_KEY` from Secret Manager; GCP auth via Application Default Credentials
+Single Cloud Run service — Node 22 builds the React frontend, Python 3.13 serves both API and static files. Push to `main` → Cloud Build → Artifact Registry → Cloud Run.
 
----
-
-# How It Works
-
-```mermaid
-flowchart TD
-    A[Child opens app] --> B[Landing Page]
-    B --> C[Choose Storyteller]
-    C --> D["Choose how to start<br/>──────────────────────<br/>Pick Theme · Magic Camera · Sketch Theme"]
-    D --> SC{Safety check}
-    SC -->|Pass| H[Story begins instantly]
-    SC -->|Fail| D
-    H --> I[Real-time voice conversation]
-    I --> J[AI generates illustrations]
-    J --> K[Child interrupts / adds ideas]
-    K --> L[Story evolves dynamically]
-    L --> M[End Story]
-    M --> N[Storybook Recap]
-    N --> O[Saved to Past Adventures]
-
-
-```
-
-```
-Child opens app → Landing page (ambient music, floating animations)
-    → "Begin Your Adventure" → Choose a storyteller character
-    → ThemeSelect
-        Option A: Pick a Theme — 12 adventure tiles + 5 life skills + free-text custom
-        Option B: Magic Camera — live viewfinder → capture prop → safety check
-                  → AI labels prop → character speaks the label aloud
-                  → AI recreates prop as storybook illustration → confirm & start
-        Option C: Sketch a Theme — draw on canvas (19 colours) → AI labels sketch
-                  → character speaks the label aloud
-                  → AI recreates drawing as illustration → confirm & start
-
-    → Story starts → WebSocket connects to backend → backend proxies to Gemini Live API
-        → character system prompt + voice sent to Gemini
-        → Gemini begins narrating immediately
-        → mic capture starts (16kHz audio streamed to Gemini in real time)
-
-Story plays
-    → Gemini speaks → audio streamed to browser → played through speakers
-    → Gemini triggers illustration at key visual moments
-        → POST /api/image with Gemini's scene description
-        → previous image passed for visual continuity
-        → image fades in alongside the story
-    → Fallback: if no illustration triggered in ~25 s, one is generated from the last narration
-
-Achievement badges
-    → Gemini awards a badge when the child makes a genuine creative contribution
-    → Badge appears on screen, auto-dismisses after 3 s
-
-Pause / Resume
-    → Pause mutes playback and suspends mic — session stays alive
-    → Resume restores both
-
-Child interrupts (barge-in)
-    → Gemini detects speech → stops current narration
-    → weaves child's words into the next story beat
-
-Session ends (child says stop or presses End Story)
-    → story + badges saved to local gallery automatically
-    → "📖 See our story!" button appears
-    → POST /api/story-recap with all session images
-        → Gemini generates title + per-image narration captions in parallel
-    → scrollable storybook rendered and saved to gallery
-
-Past Adventures (landing page)
-    → story card grid (thumbnail, title, date)
-    → tap any story → full storybook with narrations, badges, "The End"
-```
+> For a detailed step-by-step flow of how a session works end-to-end, see [HOW_IT_WORKS.md](HOW_IT_WORKS.md).
 
 ---
 
@@ -401,34 +292,14 @@ Past Adventures (landing page)
 
 # Try It Out
 
-The app is live at **https://taleweaver-950758825854.us-central1.run.app** — no account, no setup required.
+The app is live at **https://taleweaver.online** (also at https://taleweaver-950758825854.us-central1.run.app) — no account, no setup required.
 
-### Quick start (2 minutes)
+> **Note:** This deployment runs on a GCP free trial account. If the trial has expired by the time you visit, the live app may be unavailable. In that case, please use the [Running Locally](#running-locally) instructions to run it yourself.
 
-1. Open https://taleweaver-950758825854.us-central1.run.app on a device with a microphone
-2. Click **Begin Your Adventure**
-3. Pick any storyteller (try **Wizard Wally** for English, **Dadi Maa** for Hindi, **Mamie Claire** for French)
-4. Choose **Pick a Theme** → select an adventure (e.g. "Space Adventure") or type anything custom
-5. Allow microphone access when prompted — the session starts immediately
-6. The character will start narrating within a few seconds — speak to redirect the story
-
-### Feature checklist
-
-| Feature | How to test |
-|---|---|
-| **Voice narration starts automatically** | After clicking Begin, the character speaks within 2–3 s with no prompting |
-| **Barge-in / interruption** | Speak while the character is talking — narration stops, your words are woven in |
-| **AI-generated illustrations** | Images appear as the story progresses; each matches the current scene |
-| **Visual continuity** | Characters look the same across multiple images in the same session |
-| **Magic Camera** | On ThemeSelect, choose "Magic Camera", hold up any toy, tap the shutter; see it reimagined as a storybook character and become the story's hero |
-| **Sketch a Theme** | Choose "Sketch a Theme", draw anything, see it recreated as a storybook illustration |
-| **Achievement badge** | Suggest a creative story idea ("add a flying whale!") — a badge may appear on screen |
-| **Pause / Resume** | Tap the pause button mid-story; tap again to resume from the same point |
-| **End Story + Recap** | Tap "End Story" — the "📖 See our story!" button appears; open it for the illustrated storybook |
-| **Past Adventures** | Go back to home; tap "Past Adventures" to see and re-read all saved stories |
-| **Multilingual** | Pick **Dadi Maa** (Hindi), **Raja Vikram** (Tamil), **Yé Ye** (Mandarin), **Abuelo Miguel** (Spanish), or **Mamie Claire** (French) — each stays in their language even if the child speaks English |
-| **Content moderation** | On "Pick a Theme → Custom theme", type something inappropriate — it will be blocked with a friendly message |
-| **Life skills themes** | Pick any character → "Pick a Theme" → select a life skill tile (Sharing, Courage, etc.) |
+1. Open the app on a device with a microphone
+2. Click **Begin Your Adventure** → pick a storyteller → choose a theme, use Magic Camera, or draw a Sketch
+3. Allow microphone access — the story starts immediately
+4. Speak to redirect the story, interrupt mid-sentence, or suggest ideas
 
 ---
 
@@ -436,15 +307,14 @@ The app is live at **https://taleweaver-950758825854.us-central1.run.app** — n
 
 **Prerequisites:** Python 3.12+, Node.js 18+, [uv](https://docs.astral.sh/uv/getting-started/installation/), a Google Cloud project with Vertex AI enabled, and a Gemini API key.
 
-> For a full step-by-step setup guide (Google Cloud account, Vertex AI, gcloud auth), see [QUICKSTART.md](QUICKSTART.md).
+> First time? See [QUICKSTART.md](QUICKSTART.md) for step-by-step GCP setup (account, Vertex AI, gcloud auth).
 
 ### 1. Clone and install
 
 ```bash
 git clone https://github.com/padmanabhan-r/TaleWeaver.git
 cd TaleWeaver
-uv sync
-source .venv/bin/activate
+uv sync && source .venv/bin/activate
 ```
 
 ### 2. Configure environment
@@ -459,7 +329,7 @@ Fill in `backend/.env`:
 GOOGLE_CLOUD_PROJECT=your-project-id
 GOOGLE_CLOUD_LOCATION=us-central1
 GOOGLE_GENAI_USE_VERTEXAI=true
-GEMINI_API_KEY=your-gemini-api-key
+GEMINI_API_KEY=your-gemini-api-key        # from Google AI Studio
 IMAGE_MODEL=gemini-3.1-flash-image-preview
 IMAGE_LOCATION=global
 ```
@@ -472,29 +342,35 @@ gcloud auth application-default login
 
 ### 4. Run
 
-**Option A — one command:**
+**One command (recommended):**
 
 ```bash
 ./start.sh
 ```
 
-Starts backend (port 8000) and frontend (port 8080) together. Press `Ctrl+C` to stop both.
+Starts backend on port 8000 and frontend on port 8080. Press `Ctrl+C` to stop both.
 
-**Option B — separately:**
+**Or run separately:**
 
 ```bash
-# Backend (port 8000)
+# Terminal 1 — backend
 cd backend && uvicorn main:app --reload --port 8000
 
-# Frontend (port 5173) — new terminal
+# Terminal 2 — frontend
 cd frontend && npm install && cp .env.example .env.local && npm run dev
 ```
 
 | | URL |
 |---|---|
-| Frontend | http://localhost:8080 (or 5173) |
+| App | http://localhost:8080 |
 | Backend | http://localhost:8000 |
-| Health check | http://localhost:8000/api/health |
+| Health | http://localhost:8000/api/health |
+
+---
+
+# Deploying to Google Cloud
+
+The app deploys as a single Cloud Run service via Cloud Build CI/CD. For full instructions — Secret Manager setup, Cloud Build trigger, and manual deploy — see [DEPLOYMENT_INSTRUCTIONS.md](DEPLOYMENT_INSTRUCTIONS.md).
 
 ---
 
@@ -512,12 +388,3 @@ Native **iOS and Android apps** are the natural next step to put TaleWeaver wher
 | **Cloud Storage for Past Adventures** | Move from `localStorage` to GCS — images persist across devices and sessions indefinitely, no 20-story cap. |
 | **Parent Dashboard** | Session summaries, badge history, themes explored — a window into how your child's imagination works. |
 
----
-
-# Live Demo
-
-**https://taleweaver-950758825854.us-central1.run.app**
-
-Custom domain **https://taleweaver.online** is mapped to the above — use the Cloud Run URL as the primary link.
-
-No account required. Just allow microphone access and start your adventure.
