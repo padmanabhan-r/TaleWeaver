@@ -60,7 +60,7 @@ Session ends (child says stop or presses End Story)
     → story + badges saved to local gallery automatically
     → "📖 See our story!" button appears
     → POST /api/story-recap with all session images
-        → Gemini generates title + per-image narration captions in parallel
+        → Gemini generates a storybook title + per-image narration captions
     → scrollable storybook rendered and saved to gallery
 
 Past Adventures (landing page)
