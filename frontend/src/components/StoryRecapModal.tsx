@@ -36,6 +36,14 @@ export default function StoryRecapModal({ character, scenes, badges = [], onClos
       description: s.description,
     }));
 
+    // Estimate payload size (base64 length × 0.75 ≈ bytes); bail early if > 25 MB
+    const estimatedBytes = sceneData.reduce((sum, s) => sum + s.image_data.length * 0.75, 0);
+    if (estimatedBytes > 25 * 1024 * 1024) {
+      setError("Story too long to save in the current version of the app — will be handled in a later version when GCS is enabled.");
+      setLoading(false);
+      return;
+    }
+
     fetch(`${API_BASE}/api/story-recap`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
