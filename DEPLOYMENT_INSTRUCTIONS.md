@@ -2,7 +2,7 @@
 
 TaleWeaver deploys as a single Cloud Run service. The multi-stage Docker build compiles the React frontend and serves it alongside the FastAPI backend from one container. Deployments are automated via Cloud Build — every push to `main` triggers a build and deploy.
 
-**Prerequisites:** Docker, gcloud CLI, a GCP project with Vertex AI and Cloud Run APIs enabled.
+**Prerequisites:** Docker, gcloud CLI, a GCP project with Vertex AI, Cloud Run, and Secret Manager APIs enabled.
 
 ---
 
@@ -16,7 +16,17 @@ gcloud config set project $PROJECT_ID
 
 ---
 
-## 2. Store your Gemini API key in Secret Manager
+## 2. Enable required APIs
+
+```bash
+gcloud services enable secretmanager.googleapis.com --project=$PROJECT_ID
+```
+
+Wait ~60 seconds after enabling before proceeding.
+
+---
+
+## 3. Store your Gemini API key in Secret Manager
 
 ```bash
 echo -n "your-gemini-api-key" | gcloud secrets create gemini-api-key \
@@ -26,7 +36,7 @@ echo -n "your-gemini-api-key" | gcloud secrets create gemini-api-key \
 
 ---
 
-## 3. Grant Cloud Build access to the secret
+## 4. Grant Cloud Build access to the secret
 
 ```bash
 gcloud secrets add-iam-policy-binding gemini-api-key \
@@ -37,7 +47,7 @@ gcloud secrets add-iam-policy-binding gemini-api-key \
 
 ---
 
-## 4. Set up the Cloud Build trigger (one-time)
+## 5. Set up the Cloud Build trigger (one-time)
 
 1. Go to [Cloud Build Triggers](https://console.cloud.google.com/cloud-build/triggers)
 2. Click **Create trigger** and fill in:
@@ -53,7 +63,7 @@ From this point, every `git push origin main` automatically builds and deploys.
 
 ---
 
-## 5. Trigger a manual build (optional)
+## 6. Trigger a manual build (optional)
 
 ```bash
 gcloud builds submit --no-source \
@@ -66,7 +76,7 @@ Or just push any commit to `main` — the trigger fires automatically.
 
 ---
 
-## 6. Check build logs
+## 7. Check build logs
 
 ```bash
 gcloud builds list --project=$PROJECT_ID --region=$REGION --limit=5
