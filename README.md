@@ -17,6 +17,14 @@ Using **Gemini Live**, the storyteller speaks, listens, adapts to interruptions,
 Kids don't just listen to a story — **they shape it.**
 
 <p align="center">
+  <a href="https://www.youtube.com/watch?v=dMHBRXP4IAU">
+    <img src="https://img.youtube.com/vi/dMHBRXP4IAU/maxresdefault.jpg" alt="TaleWeaver Demo Video" width="700"/>
+  </a>
+  <br/>
+  <em>▶ Watch the demo</em>
+</p>
+
+<p align="center">
   <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="700"/>
 </p>
 
