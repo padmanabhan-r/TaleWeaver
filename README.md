@@ -14,6 +14,29 @@ Kids don't just listen to a story — **they shape it.**
   <img src="images/0. TaleWeaver - Landing Page.png" alt="TaleWeaver Landing Page" width="700"/>
 </p>
 
+## Contents
+
+- [Meet Your Storytellers](#meet-your-storytellers)
+- [The Experience](#the-experience)
+  - [Pick a Theme](#1-pick-a-theme)
+  - [Magic Camera](#2-magic-camera)
+  - [Sketch a Theme](#3-sketch-a-theme)
+- [A Living, Illustrated Story](#a-living-illustrated-story)
+- [Creativity Rewards](#creativity-rewards)
+- [Story Recap](#story-recap)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+  - [The Agent](#the-agent)
+  - [Why a WebSocket Proxy?](#why-a-websocket-proxy)
+  - [Audio Pipeline](#audio-pipeline)
+  - [Image Generation](#image-generation)
+  - [Deployment](#deployment)
+- [Built With](#built-with)
+- [Try It Out](#try-it-out)
+- [Running Locally](#running-locally)
+- [Roadmap](#roadmap)
+- [Live Demo](#live-demo)
+
 ---
 
 # Meet Your Storytellers
@@ -477,12 +500,17 @@ cd frontend && npm install && cp .env.example .env.local && npm run dev
 
 # Roadmap
 
+The immediate focus is polish — fine-tuning prompts, hardening edge cases, and perfecting the end-to-end experience. World-language characters in particular need more testing and refinement before they're ready for everyday use.
+
+Native **iOS and Android apps** are the natural next step to put TaleWeaver where children actually are, with proper mobile audio handling and offline resilience.
+
 | Feature | Notes |
 |---|---|
 | **Live Camera in Story Mode** | Prototyped but pulled — camera active during narration caused Gemini to break story focus and acknowledge the camera directly. Needs a more seamless integration. |
 | **Rive Animated Characters** | Replace Framer Motion portraits with Rive state machine animations — real lip-sync tied to audio amplitude. Blocked on Rive asset creation for all 10 characters. |
 | **Learning Mode** | Storyteller weaves curriculum goals (phonics, counting, colours) into the narrative without the child realising they're learning. |
 | **Cloud Storage for Past Adventures** | Move from `localStorage` to GCS — images persist across devices and sessions indefinitely, no 20-story cap. |
+| **Parent Dashboard** | Session summaries, badge history, themes explored — a window into how your child's imagination works. |
 
 ---
 
