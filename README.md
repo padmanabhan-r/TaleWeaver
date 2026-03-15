@@ -295,32 +295,10 @@ The app is live at **https://taleweaver.online** (also at https://taleweaver-950
 
 > **Note:** This deployment runs on a GCP free trial account. If the trial has expired by the time you visit, the live app may be unavailable. In that case, please use the [Running Locally](#running-locally) instructions to run it yourself.
 
-### Quick start (2 minutes)
-
-1. Open https://taleweaver-950758825854.us-central1.run.app on a device with a microphone
-2. Click **Begin Your Adventure**
-3. Pick any storyteller (try **Wizard Wally** for English, **Dadi Maa** for Hindi, **Mamie Claire** for French)
-4. Choose **Pick a Theme** → select an adventure (e.g. "Space Adventure") or type anything custom
-5. Allow microphone access when prompted — the session starts immediately
-6. The character will start narrating within a few seconds — speak to redirect the story
-
-### Feature checklist
-
-| Feature | How to test |
-|---|---|
-| **Voice narration starts automatically** | After clicking Begin, the character speaks within 2–3 s with no prompting |
-| **Barge-in / interruption** | Speak while the character is talking — narration stops, your words are woven in |
-| **AI-generated illustrations** | Images appear as the story progresses; each matches the current scene |
-| **Visual continuity** | Characters look the same across multiple images in the same session |
-| **Magic Camera** | On ThemeSelect, choose "Magic Camera", hold up any toy, tap the shutter; see it reimagined as a storybook character and become the story's hero |
-| **Sketch a Theme** | Choose "Sketch a Theme", draw anything, see it recreated as a storybook illustration |
-| **Achievement badge** | Suggest a creative story idea ("add a flying whale!") — a badge may appear on screen |
-| **Pause / Resume** | Tap the pause button mid-story; tap again to resume from the same point |
-| **End Story + Recap** | Tap "End Story" — the "📖 See our story!" button appears; open it for the illustrated storybook |
-| **Past Adventures** | Go back to home; tap "Past Adventures" to see and re-read all saved stories |
-| **Multilingual** | Pick **Dadi Maa** (Hindi), **Raja Vikram** (Tamil), **Yé Ye** (Mandarin), **Abuelo Miguel** (Spanish), or **Mamie Claire** (French) — each stays in their language even if the child speaks English |
-| **Content moderation** | On "Pick a Theme → Custom theme", type something inappropriate — it will be blocked with a friendly message |
-| **Life skills themes** | Pick any character → "Pick a Theme" → select a life skill tile (Sharing, Courage, etc.) |
+1. Open the app on a device with a microphone
+2. Click **Begin Your Adventure** → pick a storyteller → choose a theme, use Magic Camera, or draw a Sketch
+3. Allow microphone access — the story starts immediately
+4. Speak to redirect the story, interrupt mid-sentence, or suggest ideas
 
 ---
 
