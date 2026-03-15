@@ -19,7 +19,13 @@ gcloud config set project $PROJECT_ID
 ## 2. Enable required APIs
 
 ```bash
-gcloud services enable secretmanager.googleapis.com cloudbuild.googleapis.com developerconnect.googleapis.com --project=$PROJECT_ID
+gcloud services enable \
+  secretmanager.googleapis.com \
+  cloudbuild.googleapis.com \
+  developerconnect.googleapis.com \
+  run.googleapis.com \
+  artifactregistry.googleapis.com \
+  --project=$PROJECT_ID
 ```
 
 Wait ~60 seconds after enabling before proceeding.
