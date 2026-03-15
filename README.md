@@ -26,16 +26,11 @@ Kids don't just listen to a story — **they shape it.**
 - [Story Recap](#story-recap)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
-  - [The Agent](#the-agent)
-  - [Why a WebSocket Proxy?](#why-a-websocket-proxy)
-  - [Audio Pipeline](#audio-pipeline)
-  - [Image Generation](#image-generation)
-  - [Deployment](#deployment)
 - [Built With](#built-with)
 - [Try It Out](#try-it-out)
 - [Running Locally](#running-locally)
+- [Deploying to Google Cloud](#deploying-to-google-cloud)
 - [Roadmap](#roadmap)
-- [Live Demo](#live-demo)
 
 ---
 
