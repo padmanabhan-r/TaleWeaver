@@ -23,7 +23,7 @@ Kids don't just listen to a story — **they shape it.**
 ## Contents
 
 - [Meet TaleWeaver](#meet-taleweaver)
-  - [Meet Your Storytellers](#meet-your-storytellers)
+  - [Your Storytellers](#your-storytellers)
   - [The Experience](#the-experience)
     - [Pick a Theme](#1-pick-a-theme)
     - [Magic Camera](#2-magic-camera)
@@ -43,7 +43,7 @@ Kids don't just listen to a story — **they shape it.**
 
 # Meet TaleWeaver
 
-## Meet Your Storytellers
+## Your Storytellers
 
 TaleWeaver is powered by **Gemini Live's native audio model** — which means each character has a real voice, speaks fluently in their own language, and holds a genuine back-and-forth conversation with the child. Not text-to-speech. Not a chatbot. A living storyteller.
 
