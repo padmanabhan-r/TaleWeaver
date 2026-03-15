@@ -19,7 +19,7 @@ gcloud config set project $PROJECT_ID
 ## 2. Enable required APIs
 
 ```bash
-gcloud services enable secretmanager.googleapis.com cloudbuild.googleapis.com --project=$PROJECT_ID
+gcloud services enable secretmanager.googleapis.com cloudbuild.googleapis.com developerconnect.googleapis.com --project=$PROJECT_ID
 ```
 
 Wait ~60 seconds after enabling before proceeding.
@@ -54,7 +54,10 @@ gcloud secrets add-iam-policy-binding gemini-api-key \
    - **Name:** `deploy-on-push-to-main`
    - **Region:** `us-central1`
    - **Event:** Push to a branch
-   - **Source:** Connect to GitHub → select `padmanabhan-r/TaleWeaver`
+   - **Source:**
+     - **Repository service:** Cloud Build repositories
+     - **Repository generation:** 1st gen
+     - Click **Connect Repository** → authenticate with GitHub → select `padmanabhan-r/TaleWeaver`
    - **Branch:** `^main$`
    - **Configuration:** Cloud Build configuration file → `cloudbuild.yaml`
 3. Click **Create**
