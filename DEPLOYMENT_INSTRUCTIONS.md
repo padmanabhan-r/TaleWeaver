@@ -25,6 +25,7 @@ gcloud services enable \
   developerconnect.googleapis.com \
   run.googleapis.com \
   artifactregistry.googleapis.com \
+  aiplatform.googleapis.com \
   --project=$PROJECT_ID
 ```
 
@@ -81,6 +82,11 @@ gcloud iam service-accounts add-iam-policy-binding \
   --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
   --role="roles/iam.serviceAccountUser" \
   --project=$PROJECT_ID
+
+# Permission to call Vertex AI (Gemini Live API)
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role="roles/aiplatform.user"
 ```
 
 > **Note:** If prompted with a condition selector, choose **None** (option 2).
