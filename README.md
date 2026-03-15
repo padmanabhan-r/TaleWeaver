@@ -382,12 +382,3 @@ Native **iOS and Android apps** are the natural next step to put TaleWeaver wher
 | **Cloud Storage for Past Adventures** | Move from `localStorage` to GCS — images persist across devices and sessions indefinitely, no 20-story cap. |
 | **Parent Dashboard** | Session summaries, badge history, themes explored — a window into how your child's imagination works. |
 
----
-
-# Live Demo
-
-**https://taleweaver-950758825854.us-central1.run.app**
-
-Custom domain **https://taleweaver.online** is mapped to the above — use the Cloud Run URL as the primary link.
-
-No account required. Just allow microphone access and start your adventure.
