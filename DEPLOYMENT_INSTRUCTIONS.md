@@ -60,6 +60,7 @@ gcloud secrets add-iam-policy-binding gemini-api-key \
      - Click **Connect Repository** → authenticate with GitHub → select `padmanabhan-r/TaleWeaver`
    - **Branch:** `^main$`
    - **Configuration:** Cloud Build configuration file → `cloudbuild.yaml`
+   - **Service account:** Select the service account listed (e.g. `<project-number>@cloudbuild.gserviceaccount.com`)
 3. Click **Create**
 
 From this point, every `git push origin main` automatically builds and deploys.
