@@ -4,7 +4,7 @@ All notable changes to TaleWeaver are documented here.
 
 ---
 
-## [1.0.1-beta] — 2026-03-16
+## [1.0.1] — 2026-03-16
 
 ### Fixed
 
