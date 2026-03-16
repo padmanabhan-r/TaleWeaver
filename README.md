@@ -4,11 +4,11 @@
 [![Gemini Live](https://img.shields.io/badge/Gemini%20Live%20API-4285F4?style=flat&logo=google&logoColor=white)](https://cloud.google.com/vertex-ai)
 [![Cloud Run](https://img.shields.io/badge/Cloud%20Run-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
 [![Python](https://img.shields.io/badge/Python%203.13-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![React](https://img.shields.io/badge/React%2019-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
+[![React](https://img.shields.io/badge/React%2018-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
 
 **TaleWeaver turns everyday objects into magical stories.**
 
-A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live** and **Nano Banana 2** 🍌.
+A voice-first interactive storytelling app for kids, powered by **Google Gemini Live** and **Nano Banana 2** 🍌.
 
 Children simply pick a storyteller, hold up a toy or draw an idea, and begin a **real-time conversation** where the AI and child co-create a story together.
 
@@ -51,9 +51,9 @@ Kids don't just listen to a story — **they shape it.**
 
 TaleWeaver is powered by **Gemini Live's native audio model** — which means each character has a real voice, speaks fluently in their own language, and holds a genuine back-and-forth conversation with the child. Not text-to-speech. Not a chatbot. A living storyteller.
 
-**5 English storytellers. 5 world-language storytellers.** Each one language-locked — they never switch to English, even if the child does.
+**5 English storytellers. 5 world-language storytellers.**
 
-> **Note:** World-language characters are experimental — they showcase Gemini Live's multilingual capabilities but still need polish. English storytellers are the primary, fully-tested experience.
+> **Note:** World-language characters are experimental. Gemini Live narrates fluently in each language, but image generation requires translating the scene description to English internally — which can break the seamlessness of the experience. English storytellers are the primary, fully-tested experience.
 
 | Character | Language | Style |
 |---|---|---|
@@ -231,8 +231,8 @@ Four Gemini models, each with a distinct role:
 |---|---|
 | `gemini-live-2.5-flash-native-audio` | **The Agent** — real-time voice, barge-in, autonomous tool calls |
 | `gemini-3.1-flash-image-preview` | Scene illustration generation |
-| `gemini-2.5-flash-preview-tts` | Character voice for prop/sketch labels |
 | `gemini-2.5-flash-lite` | Content moderation + story recap |
+| `gemini-2.5-flash-preview-tts` | Character voice for prop/sketch labels |
 
 ### The Agent
 
@@ -264,9 +264,9 @@ Single Cloud Run service — Node 22 builds the React frontend, Python 3.13 serv
 | Model | Role |
 |---|---|
 | `gemini-live-2.5-flash-native-audio` | **The Agent** — real-time voice conversation, barge-in, and autonomous tool calls (`generate_illustration`, `award_badge`) via Gemini Live API (Vertex AI) |
+| `gemini-3.1-flash-image-preview` | Storybook illustration generation from scene descriptions |
 | `gemini-2.5-flash-lite` | Content moderation (themes, sketches, camera props) + story recap titles and narrations |
 | `gemini-2.5-flash-preview-tts` | Character TTS — speaks prop/sketch label in the character's voice on theme select |
-| `gemini-3.1-flash-image-preview` | Storybook illustration generation from scene descriptions |
 
 ### SDKs & Frameworks
 | SDK / Framework | Usage |
@@ -274,7 +274,7 @@ Single Cloud Run service — Node 22 builds the React frontend, Python 3.13 serv
 | **Google GenAI Python SDK** (`google-genai`) | Image generation, scene extraction, story recap, TTS — all Gemini API calls on the backend |
 | **Gemini Live API** (Vertex AI WebSocket) | Bidirectional real-time audio streaming for voice storytelling sessions |
 | **FastAPI** | Python backend — WebSocket proxy, REST endpoints, SPA serving |
-| **React 19 + Vite + TypeScript** | Frontend SPA |
+| **React 18 + Vite + TypeScript** | Frontend SPA |
 | **TailwindCSS v3** | Styling |
 | **Framer Motion** | Character and UI animations |
 | **Web Audio API + AudioWorklet** | 16kHz mic capture and 24kHz PCM playback in the browser |
