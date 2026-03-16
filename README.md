@@ -231,8 +231,8 @@ Four Gemini models, each with a distinct role:
 |---|---|
 | `gemini-live-2.5-flash-native-audio` | **The Agent** — real-time voice, barge-in, autonomous tool calls |
 | `gemini-3.1-flash-image-preview` | Scene illustration generation |
-| `gemini-2.5-flash-preview-tts` | Character voice for prop/sketch labels |
 | `gemini-2.5-flash-lite` | Content moderation + story recap |
+| `gemini-2.5-flash-preview-tts` | Character voice for prop/sketch labels |
 
 ### The Agent
 
@@ -264,9 +264,9 @@ Single Cloud Run service — Node 22 builds the React frontend, Python 3.13 serv
 | Model | Role |
 |---|---|
 | `gemini-live-2.5-flash-native-audio` | **The Agent** — real-time voice conversation, barge-in, and autonomous tool calls (`generate_illustration`, `award_badge`) via Gemini Live API (Vertex AI) |
+| `gemini-3.1-flash-image-preview` | Storybook illustration generation from scene descriptions |
 | `gemini-2.5-flash-lite` | Content moderation (themes, sketches, camera props) + story recap titles and narrations |
 | `gemini-2.5-flash-preview-tts` | Character TTS — speaks prop/sketch label in the character's voice on theme select |
-| `gemini-3.1-flash-image-preview` | Storybook illustration generation from scene descriptions |
 
 ### SDKs & Frameworks
 | SDK / Framework | Usage |
