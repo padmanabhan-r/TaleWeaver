@@ -8,7 +8,7 @@
 
 **TaleWeaver turns everyday objects into magical stories.**
 
-A voice-first interactive storytelling app for kids aged **4–10**, powered by **Google Gemini Live** and **Nano Banana 2** 🍌.
+A voice-first interactive storytelling app for kids, powered by **Google Gemini Live** and **Nano Banana 2** 🍌.
 
 Children simply pick a storyteller, hold up a toy or draw an idea, and begin a **real-time conversation** where the AI and child co-create a story together.
 
