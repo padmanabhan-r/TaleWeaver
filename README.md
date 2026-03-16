@@ -51,9 +51,9 @@ Kids don't just listen to a story — **they shape it.**
 
 TaleWeaver is powered by **Gemini Live's native audio model** — which means each character has a real voice, speaks fluently in their own language, and holds a genuine back-and-forth conversation with the child. Not text-to-speech. Not a chatbot. A living storyteller.
 
-**5 English storytellers. 5 world-language storytellers.** Each one language-locked — they never switch to English, even if the child does.
+**5 English storytellers. 5 world-language storytellers.**
 
-> **Note:** World-language characters are experimental — they showcase Gemini Live's multilingual capabilities but still need polish. English storytellers are the primary, fully-tested experience.
+> **Note:** World-language characters are experimental. Gemini Live narrates fluently in each language, but image generation requires translating the scene description to English internally — which can break the seamlessness of the experience. English storytellers are the primary, fully-tested experience.
 
 | Character | Language | Style |
 |---|---|---|
