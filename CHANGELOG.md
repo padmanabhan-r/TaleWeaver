@@ -4,6 +4,35 @@ All notable changes to TaleWeaver are documented here.
 
 ---
 
+## [1.0.1-beta] — 2026-03-16
+
+### Fixed
+
+- **Error handling for oversized story payload** — `StoryRecapModal` now handles stories that exceed the API payload limit gracefully, with a clear user-facing error instead of a silent failure
+- **Raja Vikram voice** — switched to Charon for correct Tamil character voice
+- **Safety filter** — loosened to only block genuinely harmful content; everyday objects (phones, mugs, cups) no longer blocked; safe by default
+- **Non-English story illustrations** — image generation now uses the character's spoken text as the narration description so scene context stays in the story's language, not the tool call description
+- **None content parts** — guarded against `None` content parts in image gen response; fixed nested button in `StoryCard`
+- **Mic capture echo barge-in** — 800ms capture delay after session ready prevents ambient echo from triggering barge-in before the opening narration plays
+
+### Docs
+
+- Added YouTube demo video thumbnail to README
+- Added `taleweaver.online` as primary live URL
+- Restructured README: "Meet TaleWeaver", "The Storytellers", full table of contents
+- Added shields.io badges (Gemini Live, Cloud Run, Python, React)
+- Moved detailed How It Works content to `HOW_IT_WORKS.md`, linked from README
+- Tightened Architecture and Key Features sections for clarity
+- Simplified backend proxy description for non-technical readers
+- Added `DEPLOYMENT_INSTRUCTIONS.md` — full GCP setup: IAM permissions, Artifact Registry, Cloud Build trigger, manual build fallback, API key rotation
+- Expanded `QUICKSTART.md` with step-by-step GCP account setup, gcloud auth, and one-command startup via `start.sh`
+- Corrected React version: 19 → 18 across README and submission materials
+- Clarified world-language experimental note: image generation requires English scene descriptions internally, which can affect seamlessness for non-English stories
+- Removed age range ("4–10") from README tagline
+- Reordered model tables: TTS model moved to fourth position
+
+---
+
 ## [1.0.0] — 2026-03-13
 
 ### Added
