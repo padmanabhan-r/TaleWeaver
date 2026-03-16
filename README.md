@@ -4,7 +4,7 @@
 [![Gemini Live](https://img.shields.io/badge/Gemini%20Live%20API-4285F4?style=flat&logo=google&logoColor=white)](https://cloud.google.com/vertex-ai)
 [![Cloud Run](https://img.shields.io/badge/Cloud%20Run-4285F4?style=flat&logo=googlecloud&logoColor=white)](https://cloud.google.com/run)
 [![Python](https://img.shields.io/badge/Python%203.13-3776AB?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![React](https://img.shields.io/badge/React%2019-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
+[![React](https://img.shields.io/badge/React%2018-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
 
 **TaleWeaver turns everyday objects into magical stories.**
 
@@ -274,7 +274,7 @@ Single Cloud Run service — Node 22 builds the React frontend, Python 3.13 serv
 | **Google GenAI Python SDK** (`google-genai`) | Image generation, scene extraction, story recap, TTS — all Gemini API calls on the backend |
 | **Gemini Live API** (Vertex AI WebSocket) | Bidirectional real-time audio streaming for voice storytelling sessions |
 | **FastAPI** | Python backend — WebSocket proxy, REST endpoints, SPA serving |
-| **React 19 + Vite + TypeScript** | Frontend SPA |
+| **React 18 + Vite + TypeScript** | Frontend SPA |
 | **TailwindCSS v3** | Styling |
 | **Framer Motion** | Character and UI animations |
 | **Web Audio API + AudioWorklet** | 16kHz mic capture and 24kHz PCM playback in the browser |
